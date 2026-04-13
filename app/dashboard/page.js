@@ -140,12 +140,13 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[#383430] text-[10px] uppercase tracking-[0.2em] mb-2">
+          <p className="text-[#383430] text-[10px] uppercase tracking-[0.2em] mb-2" suppressHydrationWarning>
             {dateLabel} · {hourLabel}
           </p>
           <h1
             className="text-[#F0EBE3] text-4xl font-light"
             style={{ fontFamily: 'var(--font-display)' }}
+            suppressHydrationWarning
           >
             {greeting}
           </h1>
