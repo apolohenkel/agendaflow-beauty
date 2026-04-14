@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import NotificationBell from '@/components/dashboard/NotificationBell'
 
 const navItems = [
   {
@@ -148,6 +149,11 @@ export default function Sidebar() {
           )
         })}
       </nav>
+
+      {/* Notificaciones */}
+      <div className="px-3 pb-2">
+        <NotificationBell />
+      </div>
 
       {/* WhatsApp status indicator */}
       <div className="px-3 py-3 mx-3 mb-3 bg-[#111] rounded-xl border border-[#1A1A1A]">

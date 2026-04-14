@@ -80,6 +80,10 @@ export default function ConfiguracionPage() {
   const [savedInfo, setSavedInfo]         = useState(false)
   const [savingHorario, setSavingHorario] = useState(false)
   const [savedHorario, setSavedHorario]   = useState(false)
+  const [pwForm, setPwForm]   = useState({ nueva: '', confirmar: '' })
+  const [savingPw, setSavingPw]   = useState(false)
+  const [savedPw, setSavedPw]     = useState(false)
+  const [errorPw, setErrorPw]     = useState(null)
 
   const [infoForm, setInfoForm] = useState({
     name:             '',
@@ -163,6 +167,20 @@ export default function ConfiguracionPage() {
     setSavingHorario(false)
     setSavedHorario(true)
     setTimeout(() => setSavedHorario(false), 2500)
+  }
+
+  async function handleSavePassword(e) {
+    e.preventDefault()
+    setErrorPw(null)
+    if (pwForm.nueva.length < 8) { setErrorPw('La contraseña debe tener al menos 8 caracteres.'); return }
+    if (pwForm.nueva !== pwForm.confirmar) { setErrorPw('Las contraseñas no coinciden.'); return }
+    setSavingPw(true)
+    const { error } = await supabase.auth.updateUser({ password: pwForm.nueva })
+    setSavingPw(false)
+    if (error) { setErrorPw('Error al cambiar la contraseña. Intenta de nuevo.'); return }
+    setSavedPw(true)
+    setPwForm({ nueva: '', confirmar: '' })
+    setTimeout(() => setSavedPw(false), 2500)
   }
 
   if (loading) {
@@ -311,6 +329,45 @@ export default function ConfiguracionPage() {
 
           <div className="flex justify-end pt-2">
             <SaveButton saving={savingHorario} saved={savedHorario} label="Guardar horario" />
+          </div>
+        </form>
+      </Section>
+
+      {/* ── Cuenta ── */}
+      <Section title="Cuenta" description="Credenciales de acceso al panel">
+        <form onSubmit={handleSavePassword} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Nueva contraseña">
+              <input
+                type="password"
+                value={pwForm.nueva}
+                onChange={(e) => setPwForm((f) => ({ ...f, nueva: e.target.value }))}
+                placeholder="Mínimo 8 caracteres"
+                className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+              />
+            </Field>
+            <Field label="Confirmar contraseña">
+              <input
+                type="password"
+                value={pwForm.confirmar}
+                onChange={(e) => setPwForm((f) => ({ ...f, confirmar: e.target.value }))}
+                placeholder="Repite la contraseña"
+                className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+              />
+            </Field>
+          </div>
+
+          {errorPw && (
+            <div className="flex items-center gap-2.5 bg-red-500/8 border border-red-500/20 rounded-xl px-4 py-3">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F87171" strokeWidth="2" strokeLinecap="round" className="shrink-0">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <p className="text-red-400 text-xs">{errorPw}</p>
+            </div>
+          )}
+
+          <div className="flex justify-end pt-1">
+            <SaveButton saving={savingPw} saved={savedPw} label="Cambiar contraseña" />
           </div>
         </form>
       </Section>
