@@ -33,8 +33,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080808] flex items-center justify-center p-4"
-      style={{ fontFamily: 'var(--font-body, system-ui)' }}>
+    <div className="min-h-screen bg-[#080808] flex items-center justify-center p-4">
 
       <div className="w-full max-w-sm space-y-8">
 
@@ -47,7 +46,7 @@ export default function LoginPage() {
           </div>
           <div className="text-center">
             <h1 className="text-[#F0EBE3] text-2xl font-light tracking-wide"
-              style={{ fontFamily: 'Georgia, serif' }}>
+              style={{ fontFamily: 'var(--font-display)' }}>
               AgendaFlow
             </h1>
             <p className="text-[#5A5550] text-[11px] tracking-[0.25em] uppercase mt-0.5">Beauty</p>
