@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "mcp__0d3eb27b-5c27-41e1-ab76-1de9d76b49b8__list_tables"
+      "mcp__0d3eb27b-5c27-41e1-ab76-1de9d76b49b8__list_tables",
+      "mcp__0d3eb27b-5c27-41e1-ab76-1de9d76b49b8__execute_sql",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(taskkill /PID 20336 /F)",
+      "Bash(cmd /c \"taskkill /PID 20336 /F\")",
+      "Bash(cmd /c \"netstat -ano | findstr :3000\")",
+      "mcp__0d3eb27b-5c27-41e1-ab76-1de9d76b49b8__list_edge_functions",
+      "mcp__0d3eb27b-5c27-41e1-ab76-1de9d76b49b8__list_migrations",
+      "mcp__0d3eb27b-5c27-41e1-ab76-1de9d76b49b8__deploy_edge_function"
     ]
   }
 }

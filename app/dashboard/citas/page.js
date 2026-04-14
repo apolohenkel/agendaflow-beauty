@@ -5,86 +5,230 @@ import { supabase } from '@/lib/supabase'
 import NuevaCitaModal from '@/components/dashboard/citas/NuevaCitaModal'
 
 const STATUS_MAP = {
-  pending:   { bg: 'bg-amber-500/10',   text: 'text-amber-400',   dot: 'bg-amber-400',   label: 'Pendiente'  },
-  confirmed: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', dot: 'bg-emerald-400', label: 'Confirmada' },
-  completed: { bg: 'bg-sky-500/10',     text: 'text-sky-400',     dot: 'bg-sky-400',     label: 'Completada' },
-  cancelled: { bg: 'bg-red-500/10',     text: 'text-red-400',     dot: 'bg-red-400',     label: 'Cancelada'  },
-  no_show:   { bg: 'bg-zinc-500/10',    text: 'text-zinc-500',    dot: 'bg-zinc-500',    label: 'No asistió' },
+  pending:     { bg: 'bg-amber-500/10',   text: 'text-amber-400',   dot: 'bg-amber-400',   label: 'Pendiente'  },
+  confirmed:   { bg: 'bg-emerald-500/10', text: 'text-emerald-400', dot: 'bg-emerald-400', label: 'Confirmada' },
+  completed:   { bg: 'bg-sky-500/10',     text: 'text-sky-400',     dot: 'bg-sky-400',     label: 'Completada' },
+  cancelled:   { bg: 'bg-red-500/10',     text: 'text-red-400',     dot: 'bg-red-400',     label: 'Cancelada'  },
+  no_show:     { bg: 'bg-zinc-500/10',    text: 'text-zinc-500',    dot: 'bg-zinc-500',    label: 'No asistió' },
+  rescheduled: { bg: 'bg-purple-500/10',  text: 'text-purple-400',  dot: 'bg-purple-400',  label: 'Reprogramada'},
 }
 
 const STATUS_OPTIONS = ['pending', 'confirmed', 'completed', 'cancelled', 'no_show']
-const HOURS = Array.from({ length: 13 }, (_, i) => i + 7) // 7am - 7pm
+const HOURS = Array.from({ length: 13 }, (_, i) => i + 7)
 
-function fmt(iso, opts) {
-  return new Date(iso).toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit', ...opts })
+function fmt(iso) {
+  return new Date(iso).toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' })
 }
 
 function fmtDate(date) {
   return date.toLocaleDateString('es-GT', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
-// ─── STATUS BADGE con cambio de estado ───────────────────────────────────────
-function StatusBadge({ apptId, status, onChange }) {
-  const [open, setOpen] = useState(false)
-  const [pos, setPos] = useState({ top: 0, right: 0 })
-  const s = STATUS_MAP[status] || STATUS_MAP.pending
+// ─── MODAL EDITAR CITA ────────────────────────────────────────────────────────
+function EditarCitaModal({ appt, onClose, onSaved }) {
+  const [services, setServices] = useState([])
+  const [staff, setStaff]       = useState([])
+  const [loadingData, setLoadingData] = useState(true)
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState(null)
 
-  async function changeStatus(newStatus) {
-    setOpen(false)
-    await supabase.from('appointments').update({ status: newStatus }).eq('id', apptId)
-    onChange()
+  const startsAt = new Date(appt.starts_at)
+  const [form, setForm] = useState({
+    date:      startsAt.toISOString().split('T')[0],
+    time:      startsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+    serviceId: appt.service_id || '',
+    staffId:   appt.staff_id   || '',
+    status:    appt.status     || 'confirmed',
+    notes:     appt.notes      || '',
+  })
+
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  useEffect(() => {
+    async function loadData() {
+      const { data: biz } = await supabase.from('businesses').select('id').limit(1)
+      const bId = biz?.[0]?.id
+      if (!bId) { setLoadingData(false); return }
+      const [{ data: svcs }, { data: stf }] = await Promise.all([
+        supabase.from('services').select('id, name, duration_minutes, price').eq('business_id', bId).eq('active', true).order('name'),
+        supabase.from('staff').select('id, name, role').eq('business_id', bId).eq('active', true).order('name'),
+      ])
+      setServices(svcs || [])
+      setStaff(stf || [])
+      setLoadingData(false)
+    }
+    loadData()
+  }, [])
+
+  const selectedService = services.find((s) => s.id === form.serviceId)
+  const duration = selectedService?.duration_minutes || Math.round((new Date(appt.ends_at) - new Date(appt.starts_at)) / 60000)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!form.date || !form.time) { setError('La fecha y hora son obligatorias.'); return }
+    setLoading(true)
+    setError(null)
+    try {
+      const startsAt = new Date(`${form.date}T${form.time}:00`)
+      const endsAt   = new Date(startsAt.getTime() + duration * 60000)
+      const { error: err } = await supabase.from('appointments').update({
+        starts_at:  startsAt.toISOString(),
+        ends_at:    endsAt.toISOString(),
+        service_id: form.serviceId || null,
+        staff_id:   form.staffId   || null,
+        status:     form.status,
+        notes:      form.notes.trim() || null,
+      }).eq('id', appt.id)
+      if (err) throw err
+      onSaved()
+      onClose()
+    } catch {
+      setError('Error al guardar. Intenta de nuevo.')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  function handleOpen(e) {
-    const rect = e.currentTarget.getBoundingClientRect()
-    setPos({
-      top: rect.bottom + 6,
-      right: window.innerWidth - rect.right,
-    })
-    setOpen((v) => !v)
+  async function handleCancel() {
+    setLoading(true)
+    await supabase.from('appointments').update({ status: 'cancelled' }).eq('id', appt.id)
+    onSaved()
+    onClose()
   }
 
   return (
-    <div className="relative">
-      <button
-        onClick={handleOpen}
-        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${s.bg} ${s.text} hover:opacity-80 transition-opacity`}
-      >
-        <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-        {s.label}
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div
-            className="fixed z-50 bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl shadow-2xl shadow-black overflow-hidden w-36"
-            style={{ top: pos.top, right: pos.right }}
-          >
-            {STATUS_OPTIONS.map((st) => {
-              const opt = STATUS_MAP[st]
-              return (
-                <button
-                  key={st}
-                  onClick={() => changeStatus(st)}
-                  className={`w-full flex items-center gap-2 px-3 py-2.5 text-xs hover:bg-[#242424] transition-colors ${st === status ? opt.text : 'text-[#888]'}`}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full ${opt.dot}`} />
-                  {opt.label}
-                </button>
-              )
-            })}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-[#111] border border-[#222] rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#1A1A1A]">
+          <div>
+            <h2 className="text-[#F0EBE3] text-lg font-light" style={{ fontFamily: 'var(--font-display)' }}>
+              Editar cita
+            </h2>
+            <p className="text-[#444] text-xs mt-0.5">{appt.clients?.name || 'Cliente'}</p>
           </div>
-        </>
-      )}
+          <button onClick={onClose} className="text-[#444] hover:text-[#888] transition-colors">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        {loadingData ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+
+            {/* Fecha y Hora */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <p className="text-[#555] text-[10px] uppercase tracking-widest">Fecha *</p>
+                <input type="date" value={form.date} onChange={(e) => set('date', e.target.value)}
+                  className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-[#555] text-[10px] uppercase tracking-widest">Hora *</p>
+                <input type="time" value={form.time} onChange={(e) => set('time', e.target.value)}
+                  className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
+              </div>
+            </div>
+
+            {/* Servicio y Staff */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <p className="text-[#555] text-[10px] uppercase tracking-widest">Servicio</p>
+                <select value={form.serviceId} onChange={(e) => set('serviceId', e.target.value)}
+                  className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors appearance-none"
+                  style={{ color: form.serviceId ? '#E8E3DC' : '#333' }}>
+                  <option value="">Sin asignar</option>
+                  {services.map((s) => (
+                    <option key={s.id} value={s.id} style={{ color: '#E8E3DC', background: '#111' }}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[#555] text-[10px] uppercase tracking-widest">Colaborador</p>
+                <select value={form.staffId} onChange={(e) => set('staffId', e.target.value)}
+                  className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors appearance-none"
+                  style={{ color: form.staffId ? '#E8E3DC' : '#333' }}>
+                  <option value="">Cualquiera</option>
+                  {staff.map((m) => (
+                    <option key={m.id} value={m.id} style={{ color: '#E8E3DC', background: '#111' }}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Estado */}
+            <div className="space-y-1">
+              <p className="text-[#555] text-[10px] uppercase tracking-widest">Estado</p>
+              <div className="flex gap-2 flex-wrap">
+                {STATUS_OPTIONS.map((st) => {
+                  const s = STATUS_MAP[st]
+                  return (
+                    <button key={st} type="button" onClick={() => set('status', st)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                        form.status === st ? `${s.bg} ${s.text} border-current/30` : 'text-[#555] border-[#1E1E1E] hover:border-[#333]'
+                      }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                      {s.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Notas */}
+            <div className="space-y-1">
+              <p className="text-[#555] text-[10px] uppercase tracking-widest">Notas</p>
+              <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={2}
+                placeholder="Indicaciones especiales..."
+                className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors resize-none" />
+            </div>
+
+            {error && (
+              <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 px-4 py-2.5 rounded-xl">{error}</p>
+            )}
+
+            {/* Acciones */}
+            <div className="flex gap-3 pt-1">
+              <button type="button" onClick={handleCancel} disabled={loading || appt.status === 'cancelled'}
+                className="px-4 py-2.5 rounded-xl text-sm font-medium text-red-400 border border-red-500/20 hover:bg-red-500/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                Cancelar cita
+              </button>
+              <button type="submit" disabled={loading}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#C8A96E] hover:bg-[#D4B87A] text-[#080808] transition-all disabled:opacity-50">
+                {loading ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   )
 }
 
+// ─── STATUS BADGE ─────────────────────────────────────────────────────────────
+function StatusBadge({ status }) {
+  const s = STATUS_MAP[status] || STATUS_MAP.pending
+  return (
+    <span className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${s.bg} ${s.text}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+      {s.label}
+    </span>
+  )
+}
+
 // ─── VISTA LISTA ─────────────────────────────────────────────────────────────
-function ListView({ appointments, onStatusChange, filterStatus, setFilterStatus }) {
+function ListView({ appointments, onStatusChange, filterStatus, setFilterStatus, onEdit }) {
   return (
     <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl overflow-hidden">
       {/* Filtros */}
@@ -98,11 +242,8 @@ function ListView({ appointments, onStatusChange, filterStatus, setFilterStatus 
         {STATUS_OPTIONS.map((st) => {
           const s = STATUS_MAP[st]
           return (
-            <button
-              key={st}
-              onClick={() => setFilterStatus(st)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${filterStatus === st ? `${s.bg} ${s.text} border border-current/30` : 'text-[#555] border border-[#1E1E1E] hover:border-[#333]'}`}
-            >
+            <button key={st} onClick={() => setFilterStatus(st)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${filterStatus === st ? `${s.bg} ${s.text} border border-current/30` : 'text-[#555] border border-[#1E1E1E] hover:border-[#333]'}`}>
               {s.label}
             </button>
           )
@@ -138,7 +279,7 @@ function ListView({ appointments, onStatusChange, filterStatus, setFilterStatus 
                 <p className="text-[#444] text-xs truncate mt-0.5">
                   {appt.clients?.phone || ''}
                   {appt.services?.name ? ` · ${appt.services.name}` : ''}
-                  {appt.staff?.name ? ` · ${appt.staff.name}` : ''}
+                  {appt.staff?.name    ? ` · ${appt.staff.name}`    : ''}
                 </p>
               </div>
 
@@ -150,7 +291,19 @@ function ListView({ appointments, onStatusChange, filterStatus, setFilterStatus 
               )}
 
               {/* Estado */}
-              <StatusBadge apptId={appt.id} status={appt.status} onChange={onStatusChange} />
+              <StatusBadge status={appt.status} />
+
+              {/* Botón editar — aparece al hover */}
+              <button
+                onClick={() => onEdit(appt)}
+                className="shrink-0 opacity-0 group-hover:opacity-100 p-2 text-[#444] hover:text-[#C8A96E] hover:bg-[#C8A96E]/10 rounded-lg transition-all"
+                title="Editar cita"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+              </button>
             </div>
           ))}
         </div>
@@ -160,7 +313,7 @@ function ListView({ appointments, onStatusChange, filterStatus, setFilterStatus 
 }
 
 // ─── VISTA CALENDARIO ────────────────────────────────────────────────────────
-function CalendarView({ appointments, weekStart }) {
+function CalendarView({ appointments, weekStart, onEdit }) {
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart)
     d.setDate(d.getDate() + i)
@@ -172,8 +325,8 @@ function CalendarView({ appointments, weekStart }) {
       const d = new Date(a.starts_at)
       return (
         d.getFullYear() === day.getFullYear() &&
-        d.getMonth() === day.getMonth() &&
-        d.getDate() === day.getDate()
+        d.getMonth()    === day.getMonth()    &&
+        d.getDate()     === day.getDate()
       )
     })
   }
@@ -187,8 +340,8 @@ function CalendarView({ appointments, weekStart }) {
         <div className="px-3 py-3 border-r border-[#161616]" />
         {days.map((day, i) => {
           const isToday =
-            day.getDate() === today.getDate() &&
-            day.getMonth() === today.getMonth() &&
+            day.getDate()     === today.getDate()     &&
+            day.getMonth()    === today.getMonth()    &&
             day.getFullYear() === today.getFullYear()
           return (
             <div key={i} className={`px-2 py-3 text-center border-r border-[#161616] last:border-r-0 ${isToday ? 'bg-[#C8A96E]/5' : ''}`}>
@@ -207,32 +360,24 @@ function CalendarView({ appointments, weekStart }) {
       <div className="overflow-auto max-h-[500px]">
         {HOURS.map((hour) => (
           <div key={hour} className="grid grid-cols-8 border-b border-[#111] min-h-[56px]">
-            {/* Hora */}
             <div className="px-3 py-2 border-r border-[#161616] flex items-start justify-end">
-              <span className="text-[#333] text-[10px] tabular-nums">
-                {hour.toString().padStart(2, '0')}:00
-              </span>
+              <span className="text-[#333] text-[10px] tabular-nums">{hour.toString().padStart(2, '0')}:00</span>
             </div>
-            {/* Slots por día */}
             {days.map((day, di) => {
-              const dayAppts = getAppts(day).filter((a) => {
-                const h = new Date(a.starts_at).getHours()
-                return h === hour
-              })
+              const dayAppts = getAppts(day).filter((a) => new Date(a.starts_at).getHours() === hour)
               return (
                 <div key={di} className="border-r border-[#111] last:border-r-0 p-1 space-y-1">
                   {dayAppts.map((appt) => {
                     const s = STATUS_MAP[appt.status] || STATUS_MAP.pending
                     return (
-                      <div
+                      <button
                         key={appt.id}
-                        className={`${s.bg} rounded-lg px-2 py-1.5 cursor-default`}
+                        onClick={() => onEdit(appt)}
+                        className={`w-full ${s.bg} rounded-lg px-2 py-1.5 text-left hover:brightness-110 transition-all`}
                       >
-                        <p className={`text-[10px] font-semibold ${s.text} truncate`}>
-                          {fmt(appt.starts_at)}
-                        </p>
+                        <p className={`text-[10px] font-semibold ${s.text} truncate`}>{fmt(appt.starts_at)}</p>
                         <p className="text-[#888] text-[9px] truncate">{appt.clients?.name || '—'}</p>
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
@@ -247,14 +392,15 @@ function CalendarView({ appointments, weekStart }) {
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function CitasPage() {
-  const [view, setView] = useState('lista')
+  const [view, setView]               = useState('lista')
   const [appointments, setAppointments] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false)
+  const [loading, setLoading]         = useState(true)
+  const [showModal, setShowModal]     = useState(false)
+  const [editTarget, setEditTarget]   = useState(null)
   const [filterStatus, setFilterStatus] = useState('all')
-  const [weekStart, setWeekStart] = useState(() => {
+  const [weekStart, setWeekStart]     = useState(() => {
     const d = new Date()
-    d.setDate(d.getDate() - d.getDay() + 1) // Lunes de esta semana
+    d.setDate(d.getDate() - d.getDay() + 1)
     d.setHours(0, 0, 0, 0)
     return d
   })
@@ -265,6 +411,7 @@ export default function CitasPage() {
       .from('appointments')
       .select(`
         id, starts_at, ends_at, status, notes, source,
+        service_id, staff_id,
         clients(name, phone),
         services(name, duration_minutes, price),
         staff(name)
@@ -287,13 +434,8 @@ export default function CitasPage() {
     return d >= weekStart && d < weekEnd
   })
 
-  function prevWeek() {
-    setWeekStart((d) => { const n = new Date(d); n.setDate(n.getDate() - 7); return n })
-  }
-
-  function nextWeek() {
-    setWeekStart((d) => { const n = new Date(d); n.setDate(n.getDate() + 7); return n })
-  }
+  function prevWeek() { setWeekStart((d) => { const n = new Date(d); n.setDate(n.getDate() - 7); return n }) }
+  function nextWeek() { setWeekStart((d) => { const n = new Date(d); n.setDate(n.getDate() + 7); return n }) }
 
   return (
     <div className="min-h-screen bg-[#080808] p-8 space-y-6">
@@ -311,35 +453,28 @@ export default function CitasPage() {
         <div className="flex items-center gap-3">
           {/* Toggle vista */}
           <div className="flex bg-[#111] border border-[#1E1E1E] rounded-xl p-1">
-            <button
-              onClick={() => setView('lista')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${view === 'lista' ? 'bg-[#1E1E1E] text-[#E8E3DC]' : 'text-[#444] hover:text-[#888]'}`}
-            >
+            <button onClick={() => setView('lista')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${view === 'lista' ? 'bg-[#1E1E1E] text-[#E8E3DC]' : 'text-[#444] hover:text-[#888]'}`}>
               Lista
             </button>
-            <button
-              onClick={() => setView('calendario')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${view === 'calendario' ? 'bg-[#1E1E1E] text-[#E8E3DC]' : 'text-[#444] hover:text-[#888]'}`}
-            >
+            <button onClick={() => setView('calendario')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${view === 'calendario' ? 'bg-[#1E1E1E] text-[#E8E3DC]' : 'text-[#444] hover:text-[#888]'}`}>
               Calendario
             </button>
           </div>
 
           {/* Nueva cita */}
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-[#C8A96E] hover:bg-[#D4B87A] text-[#080808] text-sm font-semibold px-4 py-2.5 rounded-xl transition-all"
-          >
+          <button onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 bg-[#C8A96E] hover:bg-[#D4B87A] text-[#080808] text-sm font-semibold px-4 py-2.5 rounded-xl transition-all">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
+              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
             </svg>
             Nueva cita
           </button>
         </div>
       </div>
 
-      {/* Navegación semana (solo en calendario) */}
+      {/* Navegación semana */}
       {view === 'calendario' && (
         <div className="flex items-center gap-4">
           <button onClick={prevWeek} className="text-[#555] hover:text-[#888] transition-colors p-1">
@@ -369,16 +504,27 @@ export default function CitasPage() {
           onStatusChange={load}
           filterStatus={filterStatus}
           setFilterStatus={setFilterStatus}
+          onEdit={setEditTarget}
         />
       ) : (
-        <CalendarView appointments={weekAppts} weekStart={weekStart} />
+        <CalendarView
+          appointments={weekAppts}
+          weekStart={weekStart}
+          onEdit={setEditTarget}
+        />
       )}
 
-      {/* Modal */}
+      {/* Modal nueva cita */}
       {showModal && (
-        <NuevaCitaModal
-          onClose={() => setShowModal(false)}
-          onCreated={load}
+        <NuevaCitaModal onClose={() => setShowModal(false)} onCreated={load} />
+      )}
+
+      {/* Modal editar cita */}
+      {editTarget && (
+        <EditarCitaModal
+          appt={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={() => { load(); setEditTarget(null) }}
         />
       )}
     </div>
