@@ -1,7 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
 
 const navItems = [
   {
@@ -72,10 +74,36 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    label: 'Configuración',
+    href: '/dashboard/configuracion',
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+    ),
+  },
 ]
 
 export default function Sidebar() {
-  const pathname = usePathname()
+  const pathname  = usePathname()
+  const router    = useRouter()
+  const [bizName, setBizName] = useState('Mi negocio')
+  const [userEmail, setUserEmail] = useState('')
+
+  useEffect(() => {
+    supabase.from('businesses').select('name').limit(1).single()
+      .then(({ data }) => { if (data?.name) setBizName(data.name) })
+
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => { if (session?.user?.email) setUserEmail(session.user.email) })
+  }, [])
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.replace('/login')
+  }
 
   return (
     <aside className="w-56 h-screen bg-[#0D0D0D] border-r border-[#1A1A1A] flex flex-col shrink-0">
@@ -130,16 +158,27 @@ export default function Sidebar() {
         <p className="text-[#333] text-[9px] mt-0.5 pl-3.5">Bot activo</p>
       </div>
 
-      {/* User */}
+      {/* User + Logout */}
       <div className="px-3 pb-4 border-t border-[#1A1A1A] pt-3">
         <div className="flex items-center gap-2.5 px-2 py-2">
           <div className="w-7 h-7 rounded-full bg-[#1E1E1E] border border-[#2A2A2A] flex items-center justify-center shrink-0">
             <span className="text-[#C8A96E] text-xs font-semibold">A</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[#C8C3BC] text-xs font-medium truncate">Admin</p>
-            <p className="text-[#383430] text-[10px] truncate">Mi negocio</p>
+            <p className="text-[#C8C3BC] text-xs font-medium truncate">{userEmail || 'Admin'}</p>
+            <p className="text-[#383430] text-[10px] truncate">{bizName}</p>
           </div>
+          <button
+            onClick={handleLogout}
+            title="Cerrar sesión"
+            className="shrink-0 p-1.5 text-[#333] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
         </div>
       </div>
     </aside>

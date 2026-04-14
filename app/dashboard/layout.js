@@ -1,5 +1,6 @@
 import { DM_Sans, Cormorant_Garamond } from 'next/font/google'
 import Sidebar from '@/components/dashboard/Sidebar'
+import AuthGuard from '@/components/dashboard/AuthGuard'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -21,10 +22,12 @@ export default function DashboardLayout({ children }) {
   return (
     <div className={`${dmSans.variable} ${cormorant.variable} flex h-screen bg-[#080808] overflow-hidden`}
       style={{ fontFamily: 'var(--font-body)' }}>
-      <Sidebar />
-      <main className="flex-1 overflow-auto scrollbar-hide">
-        {children}
-      </main>
+      <AuthGuard>
+        <Sidebar />
+        <main className="flex-1 overflow-auto scrollbar-hide">
+          {children}
+        </main>
+      </AuthGuard>
     </div>
   )
 }

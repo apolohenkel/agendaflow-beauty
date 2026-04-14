@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import NuevaCitaModal from '@/components/dashboard/citas/NuevaCitaModal'
 
 const STATUS_MAP = {
   pending:   { bg: 'bg-amber-500/10',   text: 'text-amber-400',   dot: 'bg-amber-400',   label: 'Pendiente'  },
@@ -82,6 +84,8 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ today: 0, clients: 0, nextTime: '—' })
   const [loading, setLoading] = useState(true)
   const [now, setNow] = useState(new Date())
+  const [showModal, setShowModal] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 30000)
@@ -90,6 +94,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function load() {
+      setLoading(true)
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
       const todayEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
 
@@ -122,7 +127,7 @@ export default function DashboardPage() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [refreshKey])
 
   const dateLabel = now.toLocaleDateString('es-GT', {
     weekday: 'long',
@@ -152,7 +157,10 @@ export default function DashboardPage() {
           </h1>
         </div>
 
-        <button className="flex items-center gap-2 bg-[#C8A96E] hover:bg-[#D4B87A] active:scale-[0.98] text-[#080808] text-sm font-semibold px-4 py-2.5 rounded-xl transition-all duration-150 shadow-lg shadow-[#C8A96E]/10">
+        <button
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 bg-[#C8A96E] hover:bg-[#D4B87A] active:scale-[0.98] text-[#080808] text-sm font-semibold px-4 py-2.5 rounded-xl transition-all duration-150 shadow-lg shadow-[#C8A96E]/10"
+        >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
@@ -199,9 +207,9 @@ export default function DashboardPage() {
               </span>
             )}
           </div>
-          <button className="text-[#383430] hover:text-[#686460] text-xs transition-colors">
+          <Link href="/dashboard/citas" className="text-[#383430] hover:text-[#686460] text-xs transition-colors">
             Ver todas →
-          </button>
+          </Link>
         </div>
 
         {/* Contenido */}
@@ -234,6 +242,13 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {showModal && (
+        <NuevaCitaModal
+          onClose={() => setShowModal(false)}
+          onCreated={() => { setShowModal(false); setRefreshKey((k) => k + 1) }}
+        />
+      )}
     </div>
   )
 }
