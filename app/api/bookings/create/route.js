@@ -55,7 +55,7 @@ export async function POST(request) {
 
   const { data: business } = await admin
     .from('businesses')
-    .select('id, name, address, timezone, organization_id, deposit_enabled, deposit_amount, deposit_currency')
+    .select('id, name, address, timezone, organization_id, deposit_enabled, deposit_currency')
     .eq('organization_id', org.id)
     .eq('active', true)
     .maybeSingle()
@@ -64,7 +64,7 @@ export async function POST(request) {
   // Cargar todos los servicios solicitados de una vez
   const { data: servicesFound } = await admin
     .from('services')
-    .select('id, name, duration_minutes, price')
+    .select('id, name, duration_minutes, price, deposit_amount')
     .in('id', requestedServiceIds)
     .eq('business_id', business.id)
   if (!servicesFound || servicesFound.length !== requestedServiceIds.length) {
@@ -98,10 +98,13 @@ export async function POST(request) {
       .is('email', null)
   }
 
-  // Si el negocio tiene seña activada, crear Checkout Session y devolver URL.
-  // El webhook de Stripe llamará a book_appointment al recibir session.completed.
-  const needsDeposit = business.deposit_enabled && business.deposit_amount > 0
-  if (needsDeposit) {
+  // La seña total es la suma de deposits de cada servicio seleccionado.
+  // Si el salón tiene deposit_enabled=false, se ignoran todos los deposits.
+  const totalDeposit = business.deposit_enabled
+    ? services.reduce((sum, s) => sum + (Number(s.deposit_amount) || 0), 0)
+    : 0
+
+  if (totalDeposit > 0) {
     try {
       const stripe = getStripe()
       const appUrl = process.env.APP_URL || 'http://localhost:3000'
@@ -114,7 +117,7 @@ export async function POST(request) {
               name: `Seña · ${business.name}`,
               description: services.map((s) => s.name).join(' + '),
             },
-            unit_amount: business.deposit_amount,
+            unit_amount: totalDeposit,
           },
           quantity: 1,
         }],

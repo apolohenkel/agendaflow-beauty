@@ -26,13 +26,14 @@ function fmtDuration(min) {
 }
 
 // ─── MODAL SERVICIO ───────────────────────────────────────────────────────────
-function ServicioModal({ servicio, businessId, onClose, onSaved }) {
+function ServicioModal({ servicio, businessId, depositCurrency, depositEnabled, onClose, onSaved }) {
   const isEdit = Boolean(servicio)
   const [form, setForm] = useState({
     name: servicio?.name || '',
     category: servicio?.category || '',
     duration_minutes: servicio?.duration_minutes || 60,
     price: servicio?.price != null ? String(servicio.price) : '',
+    deposit: servicio?.deposit_amount ? (servicio.deposit_amount / 100).toFixed(2) : '',
     description: servicio?.description || '',
     active: servicio?.active ?? true,
   })
@@ -52,6 +53,7 @@ function ServicioModal({ servicio, businessId, onClose, onSaved }) {
       category: form.category || null,
       duration_minutes: form.duration_minutes,
       price: form.price !== '' ? parseFloat(form.price) : null,
+      deposit_amount: form.deposit !== '' ? Math.round(parseFloat(form.deposit) * 100) : 0,
       description: form.description.trim() || null,
       active: form.active,
     }
@@ -146,18 +148,38 @@ function ServicioModal({ servicio, businessId, onClose, onSaved }) {
             </div>
           </div>
 
-          {/* Precio */}
-          <div className="space-y-1">
-            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Precio (Q)</p>
-            <input
-              type="number"
-              min="0"
-              step="0.50"
-              placeholder="Ej: 150.00"
-              value={form.price}
-              onChange={(e) => set('price', e.target.value)}
-              className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
-            />
+          {/* Precio y seña */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Precio</p>
+              <input
+                type="number"
+                min="0"
+                step="0.50"
+                placeholder="Ej: 150.00"
+                value={form.price}
+                onChange={(e) => set('price', e.target.value)}
+                className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+              />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">
+                Seña <span className="normal-case text-[#555]">({(depositCurrency || 'usd').toUpperCase()}, opcional)</span>
+              </p>
+              <input
+                type="number"
+                min="0"
+                step="0.50"
+                placeholder="Ej: 20.00"
+                value={form.deposit}
+                onChange={(e) => set('deposit', e.target.value)}
+                disabled={!depositEnabled}
+                className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              {!depositEnabled && (
+                <p className="text-[10px] text-[#666]">Activa la seña en <span className="text-[#C8A96E]">Configuración</span> para cobrar.</p>
+              )}
+            </div>
           </div>
 
           {/* Descripción */}
@@ -215,7 +237,9 @@ function ServicioModal({ servicio, businessId, onClose, onSaved }) {
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function ServiciosPage() {
-  const { businessId } = useOrg()
+  const { businessId, business } = useOrg()
+  const depositCurrency = business?.deposit_currency || 'usd'
+  const depositEnabled = Boolean(business?.deposit_enabled)
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -333,11 +357,16 @@ export default function ServiciosPage() {
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-[#E8E3DC] text-sm font-medium truncate">{s.name}</p>
                   {s.category && (
                     <span className="text-[#9A9A9A] text-[10px] border border-[#1E1E1E] px-2 py-0.5 rounded-full shrink-0">
                       {s.category}
+                    </span>
+                  )}
+                  {depositEnabled && s.deposit_amount > 0 && (
+                    <span className="text-[10px] text-[#C8A96E] bg-[#C8A96E]/10 border border-[#C8A96E]/30 px-2 py-0.5 rounded-full shrink-0">
+                      Seña {(s.deposit_amount / 100).toFixed(2)} {depositCurrency.toUpperCase()}
                     </span>
                   )}
                   {!s.active && (
@@ -403,6 +432,8 @@ export default function ServiciosPage() {
         <ServicioModal
           servicio={editTarget}
           businessId={businessId}
+          depositCurrency={depositCurrency}
+          depositEnabled={depositEnabled}
           onClose={() => { setShowModal(false); setEditTarget(null) }}
           onSaved={load}
         />

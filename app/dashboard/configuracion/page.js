@@ -97,7 +97,7 @@ export default function ConfiguracionPage() {
   const [savingVertical, setSavingVertical] = useState(false)
 
   // Seña
-  const [depositForm, setDepositForm] = useState({ enabled: false, amount: '', currency: 'usd' })
+  const [depositForm, setDepositForm] = useState({ enabled: false, currency: 'usd' })
   const [savingDeposit, setSavingDeposit] = useState(false)
   const [savedDeposit, setSavedDeposit] = useState(false)
 
@@ -133,7 +133,6 @@ export default function ConfiguracionPage() {
     }
     setDepositForm({
       enabled: Boolean(orgBusiness.deposit_enabled),
-      amount: orgBusiness.deposit_amount ? (orgBusiness.deposit_amount / 100).toFixed(2) : '',
       currency: orgBusiness.deposit_currency || 'usd',
     })
     const { data: org } = await supabase
@@ -262,10 +261,8 @@ export default function ConfiguracionPage() {
   async function handleSaveDeposit(e) {
     e.preventDefault()
     setSavingDeposit(true)
-    const cents = depositForm.enabled ? Math.round(Number(depositForm.amount || 0) * 100) : 0
     await supabase.from('businesses').update({
-      deposit_enabled: depositForm.enabled && cents > 0,
-      deposit_amount: cents,
+      deposit_enabled: depositForm.enabled,
       deposit_currency: depositForm.currency,
     }).eq('id', business.id)
     await refreshOrg()
@@ -526,7 +523,7 @@ export default function ConfiguracionPage() {
       </Section>
 
       {/* ── Seña (depósito) ── */}
-      <Section title="Seña / depósito" description="Cobra un monto al reservar para reducir no-shows. Requiere Stripe configurado.">
+      <Section title="Seña / depósito" description="Cobra un anticipo sólo en los servicios que elijas. Reduces no-shows sin pedirle seña al corte rápido.">
         <form onSubmit={handleSaveDeposit} className="space-y-4">
           <label className="flex items-start gap-3 px-4 py-3 bg-[#111] border border-[#1E1E1E] rounded-xl cursor-pointer hover:border-[#2A2A2A] transition-colors">
             <input
@@ -536,47 +533,32 @@ export default function ConfiguracionPage() {
               className="mt-0.5 accent-[#C8A96E]"
             />
             <span>
-              <p className="text-[#E8E3DC] text-sm font-medium">Cobrar seña al reservar</p>
-              <p className="text-[#888] text-xs mt-0.5">Los clientes pagan un monto fijo para confirmar. Si no pagan, la cita no se crea.</p>
+              <p className="text-[#E8E3DC] text-sm font-medium">Activar cobro de seña en el salón</p>
+              <p className="text-[#888] text-xs mt-0.5">El monto se define por servicio en <span className="text-[#C8A96E]">Servicios → Seña</span>. Si un servicio tiene seña 0, no se cobra al reservar.</p>
             </span>
           </label>
 
           {depositForm.enabled && (
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Monto de la seña">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    step="0.01"
-                    value={depositForm.amount}
-                    onChange={(e) => setDepositForm((f) => ({ ...f, amount: e.target.value }))}
-                    placeholder="Ej: 10.00"
-                    className="flex-1 bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm tabular-nums focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
-                  />
-                </div>
-              </Field>
-              <Field label="Moneda">
-                <select
-                  value={depositForm.currency}
-                  onChange={(e) => setDepositForm((f) => ({ ...f, currency: e.target.value }))}
-                  className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors appearance-none cursor-pointer"
-                >
-                  <option value="usd">USD · Dólar</option>
-                  <option value="mxn">MXN · Peso mexicano</option>
-                  <option value="gtq">GTQ · Quetzal</option>
-                  <option value="cop">COP · Peso colombiano</option>
-                  <option value="pen">PEN · Sol peruano</option>
-                  <option value="clp">CLP · Peso chileno</option>
-                  <option value="ars">ARS · Peso argentino</option>
-                  <option value="eur">EUR · Euro</option>
-                </select>
-              </Field>
-            </div>
+            <Field label="Moneda">
+              <select
+                value={depositForm.currency}
+                onChange={(e) => setDepositForm((f) => ({ ...f, currency: e.target.value }))}
+                className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors appearance-none cursor-pointer"
+              >
+                <option value="usd">USD · Dólar</option>
+                <option value="mxn">MXN · Peso mexicano</option>
+                <option value="gtq">GTQ · Quetzal</option>
+                <option value="cop">COP · Peso colombiano</option>
+                <option value="pen">PEN · Sol peruano</option>
+                <option value="clp">CLP · Peso chileno</option>
+                <option value="ars">ARS · Peso argentino</option>
+                <option value="eur">EUR · Euro</option>
+              </select>
+            </Field>
           )}
 
           <div className="flex justify-end pt-1">
-            <SaveButton saving={savingDeposit} saved={savedDeposit} label="Guardar seña" />
+            <SaveButton saving={savingDeposit} saved={savedDeposit} label="Guardar" />
           </div>
         </form>
       </Section>
