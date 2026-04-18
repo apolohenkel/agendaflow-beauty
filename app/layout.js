@@ -18,6 +18,12 @@ export const metadata = {
   description: 'Panel de gestión para salones de belleza',
 }
 
+// Workaround Vercel CLI 51 + Next.js 16: el adapter no encuentra lambdas
+// cuando hay rutas pre-renderizadas como Static (/legal/*, /login, /signup,
+// etc). Forzar dinámico global genera lambdas para todas las rutas y
+// desbloquea el deploy. Trade-off: sin SSG — aceptable para SaaS con auth.
+export const dynamic = 'force-dynamic'
+
 export default function RootLayout({ children }) {
   return (
     <html lang="es" className={`${dmSans.variable} ${cormorant.variable} h-full antialiased`}>

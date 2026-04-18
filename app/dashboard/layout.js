@@ -21,10 +21,6 @@ export const metadata = {
   title: 'AgendaFlow Beauty — Panel',
 }
 
-// Dashboard depende de sesión auth — forzar runtime dinámico (evita bug de
-// Vercel "Unable to find lambda" cuando Next.js 16 pre-renderiza como static).
-export const dynamic = 'force-dynamic'
-
 export default function DashboardLayout({ children }) {
   return (
     <div className={`${dmSans.variable} ${cormorant.variable} flex h-screen bg-[#080808] overflow-hidden`}
