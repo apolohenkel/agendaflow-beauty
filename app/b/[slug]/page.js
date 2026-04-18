@@ -96,6 +96,15 @@ export default function BookPage({ params }) {
   const [cancelledHere, setCancelledHere] = useState(false)
   const [error, setError] = useState(null)
 
+  // Mis citas
+  const [showMine, setShowMine] = useState(false)
+  const [minePhone, setMinePhone] = useState('')
+  const [mineLoading, setMineLoading] = useState(false)
+  const [mineList, setMineList] = useState(null) // null = not searched yet, [] = no results
+  const [mineTz, setMineTz] = useState('America/Mexico_City')
+  const [mineError, setMineError] = useState(null)
+  const [mineCancelling, setMineCancelling] = useState(null) // appointment id being cancelled
+
   useEffect(() => {
     async function load() {
       const { data: orgs } = await supabase.rpc('get_public_org', { p_slug: slug })
@@ -249,6 +258,53 @@ export default function BookPage({ params }) {
     })
     setCancelling(false)
     if (res.ok) setCancelledHere(true)
+  }
+
+  async function lookupMyAppointments(e) {
+    e?.preventDefault()
+    if (!minePhone.trim()) { setMineError('Ingresa tu teléfono'); return }
+    setMineLoading(true)
+    setMineError(null)
+    try {
+      const res = await fetch('/api/bookings/lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, phone: minePhone.trim() }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setMineError(data.error === 'rate_limited' ? 'Demasiados intentos, espera un minuto.' : 'No pudimos buscar tus citas.')
+        setMineList(null)
+      } else {
+        setMineList(data.appointments || [])
+        setMineTz(data.timezone || 'America/Mexico_City')
+      }
+    } catch {
+      setMineError('Error de red')
+    } finally {
+      setMineLoading(false)
+    }
+  }
+
+  async function cancelFromMine(appt) {
+    if (!confirm('¿Seguro que quieres cancelar esta cita?')) return
+    setMineCancelling(appt.id)
+    const res = await fetch('/api/bookings/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appointment_id: appt.id, token: appt.cancel_token }),
+    })
+    setMineCancelling(null)
+    if (res.ok) {
+      setMineList((prev) => (prev || []).filter((a) => a.id !== appt.id))
+    }
+  }
+
+  function closeMine() {
+    setShowMine(false)
+    setMineList(null)
+    setMineError(null)
+    setMinePhone('')
   }
 
   if (loading) {
@@ -409,10 +465,22 @@ export default function BookPage({ params }) {
               )}
             </div>
           </div>
-          <div className="text-right shrink-0 hidden sm:block">
-            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Reserva en línea</p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-soft)' }}>2 minutos · Sin tarjeta</p>
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowMine(true)}
+            className="shrink-0 inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-full transition-all hover:brightness-95"
+            style={{
+              color: theme.textSoft,
+              backgroundColor: theme.surfaceSoft,
+              borderWidth: 1,
+              borderStyle: 'solid',
+              borderColor: theme.border,
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+            <span className="hidden sm:inline">Mis citas</span>
+            <span className="sm:hidden">Mis citas</span>
+          </button>
         </div>
       </div>
 
@@ -766,6 +834,122 @@ export default function BookPage({ params }) {
           Reservas con <span className="font-medium" style={{ color: theme.textSoft }}>AgendaFlow Beauty</span>
         </p>
       </div>
+
+      {showMine && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6"
+          style={{ backgroundColor: `${theme.text}66`, backdropFilter: 'blur(4px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeMine() }}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 space-y-5 shadow-2xl"
+            style={{ backgroundColor: theme.bg, maxHeight: '90vh', overflowY: 'auto' }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-light" style={{ fontFamily: 'var(--font-display)', color: theme.text }}>
+                  Mis citas
+                </h3>
+                <p className="text-xs mt-0.5" style={{ color: theme.textSoft }}>
+                  {mineList === null ? 'Ingresa tu teléfono para verlas' : mineList.length === 0 ? 'No encontramos citas activas' : `${mineList.length} ${mineList.length === 1 ? 'cita activa' : 'citas activas'}`}
+                </p>
+              </div>
+              <button
+                onClick={closeMine}
+                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 hover:brightness-95 transition-all"
+                style={{ backgroundColor: theme.surface, color: theme.textSoft }}
+                aria-label="Cerrar"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
+            </div>
+
+            <form onSubmit={lookupMyAppointments} className="space-y-3">
+              <div className="space-y-1.5">
+                <label className="text-[11px] uppercase tracking-wider font-medium" style={{ color: theme.textSoft }}>
+                  Tu WhatsApp / Teléfono
+                </label>
+                <input
+                  type="tel"
+                  value={minePhone}
+                  onChange={(e) => setMinePhone(e.target.value)}
+                  placeholder="Ej: +52 55 1234 5678"
+                  required
+                  className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-all"
+                  style={{ backgroundColor: theme.surface, color: theme.text, borderWidth: 1, borderStyle: 'solid', borderColor: theme.border }}
+                  onFocus={(e) => (e.target.style.borderColor = theme.primary)}
+                  onBlur={(e) => (e.target.style.borderColor = theme.border)}
+                />
+              </div>
+              {mineError && (
+                <p className="text-xs rounded-xl px-3 py-2" style={{ color: theme.error, backgroundColor: `${theme.error}14` }}>{mineError}</p>
+              )}
+              <button
+                type="submit"
+                disabled={mineLoading}
+                className="w-full py-3 rounded-full text-sm font-semibold transition-all disabled:opacity-60 hover:brightness-110"
+                style={{ backgroundColor: theme.primary, color: theme.onPrimary }}
+              >
+                {mineLoading ? 'Buscando…' : 'Buscar mis citas'}
+              </button>
+            </form>
+
+            {mineList !== null && mineList.length === 0 && (
+              <div className="text-center py-6 space-y-2">
+                <p className="text-sm" style={{ color: theme.textSoft }}>
+                  No encontramos citas activas con ese número en <span className="font-medium" style={{ color: theme.text }}>{business?.name}</span>.
+                </p>
+                <p className="text-xs" style={{ color: theme.textMuted }}>
+                  ¿Tal vez usaste otro número? También puedes agendar una nueva abajo.
+                </p>
+              </div>
+            )}
+
+            {mineList && mineList.length > 0 && (
+              <div className="space-y-2.5">
+                {mineList.map((a) => {
+                  const when = new Date(a.starts_at).toLocaleString('es-MX', {
+                    timeZone: mineTz,
+                    weekday: 'long', day: 'numeric', month: 'long',
+                    hour: '2-digit', minute: '2-digit',
+                  })
+                  const isCancelling = mineCancelling === a.id
+                  return (
+                    <div
+                      key={a.id}
+                      className="rounded-2xl p-4 space-y-3"
+                      style={{ backgroundColor: theme.surface, borderWidth: 1, borderStyle: 'solid', borderColor: theme.border }}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold" style={{ color: theme.text }}>{a.service_name || 'Servicio'}</p>
+                          <p className="text-xs mt-1" style={{ color: theme.textSoft }}>{when}</p>
+                          {a.staff_name && (
+                            <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Con {a.staff_name}</p>
+                          )}
+                        </div>
+                        {a.service_price != null && (
+                          <p className="text-sm font-semibold shrink-0 tabular-nums" style={{ color: theme.primary }}>
+                            ${Number(a.service_price).toFixed(0)}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => cancelFromMine(a)}
+                        disabled={isCancelling}
+                        className="w-full py-2 rounded-full text-xs font-medium transition-all disabled:opacity-60 hover:brightness-95"
+                        style={{ backgroundColor: theme.surfaceSoft, color: theme.textSoft, borderWidth: 1, borderStyle: 'solid', borderColor: theme.border }}
+                      >
+                        {isCancelling ? 'Cancelando…' : 'Cancelar esta cita'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
