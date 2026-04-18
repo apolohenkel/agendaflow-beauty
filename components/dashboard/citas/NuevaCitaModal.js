@@ -132,7 +132,7 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
 
             {/* Cliente */}
             <div className="space-y-1">
-              <p className="text-[#555] text-[10px] uppercase tracking-widest">Cliente *</p>
+              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Cliente *</p>
               <input
                 type="text"
                 placeholder="Nombre completo"
@@ -152,7 +152,7 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
             {/* Servicio y Staff */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <p className="text-[#555] text-[10px] uppercase tracking-widest">Servicio</p>
+                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Servicio</p>
                 <select
                   value={form.serviceId}
                   onChange={(e) => set('serviceId', e.target.value)}
@@ -168,7 +168,7 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
                 </select>
               </div>
               <div className="space-y-1">
-                <p className="text-[#555] text-[10px] uppercase tracking-widest">Colaborador</p>
+                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Colaborador</p>
                 <select
                   value={form.staffId}
                   onChange={(e) => set('staffId', e.target.value)}
@@ -200,7 +200,7 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
             {/* Fecha y Hora */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <p className="text-[#555] text-[10px] uppercase tracking-widest">Fecha *</p>
+                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Fecha *</p>
                 <input
                   type="date"
                   value={form.date}
@@ -209,7 +209,7 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
                 />
               </div>
               <div className="space-y-1">
-                <p className="text-[#555] text-[10px] uppercase tracking-widest">Hora *</p>
+                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Hora *</p>
                 <input
                   type="time"
                   value={form.time}
@@ -221,7 +221,7 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
 
             {/* Notas */}
             <div className="space-y-1">
-              <p className="text-[#555] text-[10px] uppercase tracking-widest">Notas</p>
+              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Notas</p>
               <textarea
                 placeholder="Indicaciones especiales..."
                 value={form.notes}

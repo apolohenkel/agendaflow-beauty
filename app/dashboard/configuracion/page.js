@@ -33,7 +33,7 @@ function Section({ title, description, children }) {
         <h2 className="text-[#D4CFC8] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
           {title}
         </h2>
-        {description && <p className="text-[#383430] text-xs mt-0.5">{description}</p>}
+        {description && <p className="text-[#777] text-xs mt-0.5">{description}</p>}
       </div>
       <div className="px-6 py-5">{children}</div>
     </div>
@@ -43,7 +43,7 @@ function Section({ title, description, children }) {
 function Field({ label, children }) {
   return (
     <div className="space-y-1.5">
-      <p className="text-[#555] text-[10px] uppercase tracking-widest">{label}</p>
+      <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">{label}</p>
       {children}
     </div>
   )
@@ -274,7 +274,7 @@ export default function ConfiguracionPage() {
         <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
           Configuración
         </h1>
-        <p className="text-[#383430] text-xs mt-1">Personaliza tu negocio y preferencias</p>
+        <p className="text-[#777] text-xs mt-1">Personaliza tu negocio y preferencias</p>
       </div>
 
       {/* ── Información del negocio ── */}
@@ -350,7 +350,7 @@ export default function ConfiguracionPage() {
 
           {/* Logo */}
           <div className="space-y-2">
-            <p className="text-[#555] text-[10px] uppercase tracking-widest">Logo</p>
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Logo</p>
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 rounded-2xl bg-[#111] border border-[#1E1E1E] flex items-center justify-center overflow-hidden shrink-0">
                 {brandForm.logo_url ? (
@@ -376,7 +376,7 @@ export default function ConfiguracionPage() {
                     Eliminar logo
                   </button>
                 )}
-                <p className="text-[#444] text-[10px]">PNG, JPG, WEBP o SVG · máx 2 MB</p>
+                <p className="text-[#888] text-[10px]">PNG, JPG, WEBP o SVG · máx 2 MB</p>
               </div>
             </div>
           </div>
@@ -537,7 +537,7 @@ export default function ConfiguracionPage() {
               </div>
               <div>
                 <p className="text-[#C8C3BC] text-sm font-medium">WhatsApp Business</p>
-                <p className="text-[#444] text-xs mt-0.5">
+                <p className="text-[#888] text-xs mt-0.5">
                   {infoForm.whatsapp_number || 'Sin número configurado'}
                 </p>
               </div>
@@ -559,7 +559,7 @@ export default function ConfiguracionPage() {
               </div>
               <div>
                 <p className="text-[#C8C3BC] text-sm font-medium">Recordatorios automáticos</p>
-                <p className="text-[#444] text-xs mt-0.5">24h y 1h antes de cada cita</p>
+                <p className="text-[#888] text-xs mt-0.5">24h y 1h antes de cada cita</p>
               </div>
             </div>
             <div className="flex items-center gap-2">

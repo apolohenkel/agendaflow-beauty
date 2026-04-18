@@ -94,7 +94,7 @@ function ServicioModal({ servicio, businessId, onClose, onSaved }) {
 
           {/* Nombre */}
           <div className="space-y-1">
-            <p className="text-[#555] text-[10px] uppercase tracking-widest">Nombre *</p>
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Nombre *</p>
             <input
               type="text"
               placeholder="Ej: Corte de cabello"
@@ -106,7 +106,7 @@ function ServicioModal({ servicio, businessId, onClose, onSaved }) {
 
           {/* Categoría */}
           <div className="space-y-1">
-            <p className="text-[#555] text-[10px] uppercase tracking-widest">Categoría</p>
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Categoría</p>
             <div className="flex gap-2 flex-wrap">
               {CATEGORIAS.map((cat) => (
                 <button
@@ -127,7 +127,7 @@ function ServicioModal({ servicio, businessId, onClose, onSaved }) {
 
           {/* Duración */}
           <div className="space-y-1">
-            <p className="text-[#555] text-[10px] uppercase tracking-widest">Duración</p>
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Duración</p>
             <div className="flex gap-2 flex-wrap">
               {DURACIONES.map((d) => (
                 <button
@@ -148,7 +148,7 @@ function ServicioModal({ servicio, businessId, onClose, onSaved }) {
 
           {/* Precio */}
           <div className="space-y-1">
-            <p className="text-[#555] text-[10px] uppercase tracking-widest">Precio (Q)</p>
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Precio (Q)</p>
             <input
               type="number"
               min="0"
@@ -162,7 +162,7 @@ function ServicioModal({ servicio, businessId, onClose, onSaved }) {
 
           {/* Descripción */}
           <div className="space-y-1">
-            <p className="text-[#555] text-[10px] uppercase tracking-widest">Descripción</p>
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Descripción</p>
             <textarea
               placeholder="Descripción del servicio..."
               value={form.description}
@@ -176,7 +176,7 @@ function ServicioModal({ servicio, businessId, onClose, onSaved }) {
           <div className="flex items-center justify-between py-1">
             <div>
               <p className="text-[#C8C3BC] text-sm">Servicio activo</p>
-              <p className="text-[#444] text-xs mt-0.5">Aparece disponible para agendar</p>
+              <p className="text-[#888] text-xs mt-0.5">Aparece disponible para agendar</p>
             </div>
             <button
               type="button"
@@ -262,7 +262,7 @@ export default function ServiciosPage() {
           <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
             Servicios
           </h1>
-          <p className="text-[#383430] text-xs mt-1">
+          <p className="text-[#777] text-xs mt-1">
             {loading ? '...' : `${services.length} servicios · ${activeCount} activos`}
           </p>
         </div>
@@ -307,7 +307,7 @@ export default function ServiciosPage() {
             </svg>
           </div>
           <div className="text-center">
-            <p className="text-[#383430] text-sm">Sin servicios aún</p>
+            <p className="text-[#777] text-sm">Sin servicios aún</p>
             <p className="text-[#222] text-xs mt-1">Agrega los servicios que ofrece tu negocio</p>
           </div>
           <button
@@ -336,25 +336,25 @@ export default function ServiciosPage() {
                 <div className="flex items-center gap-2">
                   <p className="text-[#E8E3DC] text-sm font-medium truncate">{s.name}</p>
                   {s.category && (
-                    <span className="text-[#555] text-[10px] border border-[#1E1E1E] px-2 py-0.5 rounded-full shrink-0">
+                    <span className="text-[#9A9A9A] text-[10px] border border-[#1E1E1E] px-2 py-0.5 rounded-full shrink-0">
                       {s.category}
                     </span>
                   )}
                   {!s.active && (
-                    <span className="text-[#444] text-[10px] bg-[#111] border border-[#1E1E1E] px-2 py-0.5 rounded-full shrink-0">
+                    <span className="text-[#888] text-[10px] bg-[#111] border border-[#1E1E1E] px-2 py-0.5 rounded-full shrink-0">
                       Inactivo
                     </span>
                   )}
                 </div>
                 {s.description && (
-                  <p className="text-[#444] text-xs mt-0.5 truncate">{s.description}</p>
+                  <p className="text-[#888] text-xs mt-0.5 truncate">{s.description}</p>
                 )}
               </div>
 
               {/* Duración */}
               <div className="text-center shrink-0">
                 <p className="text-[#888] text-xs tabular-nums">{fmtDuration(s.duration_minutes)}</p>
-                <p className="text-[#333] text-[10px] mt-0.5">duración</p>
+                <p className="text-[#666] text-[10px] mt-0.5">duración</p>
               </div>
 
               {/* Precio */}

@@ -107,7 +107,7 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
             <h2 className="text-[#F0EBE3] text-lg font-light" style={{ fontFamily: 'var(--font-display)' }}>
               Editar cita
             </h2>
-            <p className="text-[#444] text-xs mt-0.5">{appt.clients?.name || 'Cliente'}</p>
+            <p className="text-[#888] text-xs mt-0.5">{appt.clients?.name || 'Cliente'}</p>
           </div>
           <button onClick={onClose} className="text-[#444] hover:text-[#888] transition-colors">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -126,12 +126,12 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
             {/* Fecha y Hora */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <p className="text-[#555] text-[10px] uppercase tracking-widest">Fecha *</p>
+                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Fecha *</p>
                 <input type="date" value={form.date} onChange={(e) => set('date', e.target.value)}
                   className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
               </div>
               <div className="space-y-1">
-                <p className="text-[#555] text-[10px] uppercase tracking-widest">Hora *</p>
+                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Hora *</p>
                 <input type="time" value={form.time} onChange={(e) => set('time', e.target.value)}
                   className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
               </div>
@@ -140,7 +140,7 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
             {/* Servicio y Staff */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <p className="text-[#555] text-[10px] uppercase tracking-widest">Servicio</p>
+                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Servicio</p>
                 <select value={form.serviceId} onChange={(e) => set('serviceId', e.target.value)}
                   className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors appearance-none"
                   style={{ color: form.serviceId ? '#E8E3DC' : '#333' }}>
@@ -153,7 +153,7 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
                 </select>
               </div>
               <div className="space-y-1">
-                <p className="text-[#555] text-[10px] uppercase tracking-widest">Colaborador</p>
+                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Colaborador</p>
                 <select value={form.staffId} onChange={(e) => set('staffId', e.target.value)}
                   className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors appearance-none"
                   style={{ color: form.staffId ? '#E8E3DC' : '#333' }}>
@@ -169,7 +169,7 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
 
             {/* Estado */}
             <div className="space-y-1">
-              <p className="text-[#555] text-[10px] uppercase tracking-widest">Estado</p>
+              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Estado</p>
               <div className="flex gap-2 flex-wrap">
                 {STATUS_OPTIONS.map((st) => {
                   const s = STATUS_MAP[st]
@@ -188,7 +188,7 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
 
             {/* Notas */}
             <div className="space-y-1">
-              <p className="text-[#555] text-[10px] uppercase tracking-widest">Notas</p>
+              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Notas</p>
               <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={2}
                 placeholder="Indicaciones especiales..."
                 className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors resize-none" />
@@ -258,7 +258,7 @@ function ListView({ appointments, onStatusChange, filterStatus, setFilterStatus,
               <line x1="3" y1="9" x2="21" y2="9" />
             </svg>
           </div>
-          <p className="text-[#383430] text-sm">Sin citas para este filtro</p>
+          <p className="text-[#777] text-sm">Sin citas para este filtro</p>
         </div>
       ) : (
         <div className="divide-y divide-[#111]">
@@ -270,13 +270,13 @@ function ListView({ appointments, onStatusChange, filterStatus, setFilterStatus,
                   {new Date(appt.starts_at).toLocaleDateString('es-GT', { day: 'numeric', month: 'short' })}
                 </p>
                 <p className="text-[#E8E3DC] text-sm font-medium tabular-nums">{fmt(appt.starts_at)}</p>
-                <p className="text-[#333] text-xs tabular-nums">{fmt(appt.ends_at)}</p>
+                <p className="text-[#666] text-xs tabular-nums">{fmt(appt.ends_at)}</p>
               </div>
 
               {/* Cliente */}
               <div className="flex-1 min-w-0">
                 <p className="text-[#E8E3DC] text-sm font-medium truncate">{appt.clients?.name || '—'}</p>
-                <p className="text-[#444] text-xs truncate mt-0.5">
+                <p className="text-[#888] text-xs truncate mt-0.5">
                   {appt.clients?.phone || ''}
                   {appt.services?.name ? ` · ${appt.services.name}` : ''}
                   {appt.staff?.name    ? ` · ${appt.staff.name}`    : ''}
@@ -361,7 +361,7 @@ function CalendarView({ appointments, weekStart, onEdit }) {
         {HOURS.map((hour) => (
           <div key={hour} className="grid grid-cols-8 border-b border-[#111] min-h-[56px]">
             <div className="px-3 py-2 border-r border-[#161616] flex items-start justify-end">
-              <span className="text-[#333] text-[10px] tabular-nums">{hour.toString().padStart(2, '0')}:00</span>
+              <span className="text-[#666] text-[10px] tabular-nums">{hour.toString().padStart(2, '0')}:00</span>
             </div>
             {days.map((day, di) => {
               const dayAppts = getAppts(day).filter((a) => new Date(a.starts_at).getHours() === hour)
@@ -445,7 +445,7 @@ export default function CitasPage() {
           <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
             Citas
           </h1>
-          <p className="text-[#383430] text-xs mt-1">
+          <p className="text-[#777] text-xs mt-1">
             {loading ? '...' : `${appointments.length} citas en total`}
           </p>
         </div>

@@ -42,57 +42,63 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080808] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#FAF6F0] flex items-center justify-center p-5" style={{ fontFamily: 'var(--font-body)' }}>
       <div className="w-full max-w-sm space-y-8">
 
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 bg-[#C8A96E] rounded-2xl flex items-center justify-center shadow-lg shadow-[#C8A96E]/20">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#080808" strokeWidth="2.5" strokeLinecap="round">
+          <div className="w-14 h-14 bg-gradient-to-br from-[#B8824B] to-[#8C5E35] rounded-2xl flex items-center justify-center shadow-xl shadow-[#B8824B]/25">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">
               <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
             </svg>
           </div>
           <div className="text-center">
-            <h1 className="text-[#F0EBE3] text-2xl font-light tracking-wide" style={{ fontFamily: 'var(--font-display)' }}>
+            <h1 className="text-[#2B1810] text-3xl font-light tracking-wide" style={{ fontFamily: 'var(--font-display)' }}>
               AgendaFlow
             </h1>
-            <p className="text-[#5A5550] text-[11px] tracking-[0.25em] uppercase mt-0.5">Beauty</p>
+            <p className="text-[#B8824B] text-[10px] tracking-[0.3em] uppercase mt-1 font-medium">Beauty</p>
           </div>
         </div>
 
-        <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-8 space-y-5 shadow-2xl shadow-black/50">
+        <div className="bg-white border border-[#EDE5DB] rounded-3xl p-8 space-y-5 shadow-xl shadow-[#2B1810]/5">
           {sent ? (
-            <div className="space-y-3 text-center">
-              <h2 className="text-[#E8E3DC] text-base font-medium">Revisa tu correo</h2>
-              <p className="text-[#888] text-xs leading-relaxed">
-                Te enviamos un enlace a <span className="text-[#C8A96E]">{email}</span>. Ábrelo para activar tu cuenta.
+            <div className="space-y-4 text-center">
+              <div className="w-12 h-12 mx-auto rounded-full bg-[#E8C5B8]/40 flex items-center justify-center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B8824B" strokeWidth="2" strokeLinecap="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+              </div>
+              <h2 className="text-[#2B1810] text-xl font-medium" style={{ fontFamily: 'var(--font-display)' }}>Revisa tu correo</h2>
+              <p className="text-[#6B5A4F] text-sm leading-relaxed">
+                Te enviamos un enlace a <span className="text-[#B8824B] font-medium">{email}</span>. Ábrelo para activar tu cuenta.
               </p>
-              <Link href="/login" className="inline-block text-[#C8A96E] hover:text-[#D4B87A] text-xs font-medium mt-2">
-                Volver al inicio de sesión
+              <Link href="/login" className="inline-block text-[#B8824B] hover:text-[#8C5E35] text-sm font-medium mt-2 transition-colors">
+                Volver al inicio de sesión →
               </Link>
             </div>
           ) : (
             <>
               <div className="space-y-1 mb-2">
-                <h2 className="text-[#E8E3DC] text-base font-medium">Crea tu cuenta</h2>
-                <p className="text-[#444] text-xs">14 días gratis, sin tarjeta.</p>
+                <h2 className="text-[#2B1810] text-xl font-medium">Crea tu cuenta</h2>
+                <p className="text-[#6B5A4F] text-sm">14 días gratis · Sin tarjeta · Cancela cuando quieras</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <p className="text-[#555] text-[10px] uppercase tracking-widest">Correo electrónico</p>
+                  <p className="text-[#6B5A4F] text-[11px] uppercase tracking-wider font-medium">Tu correo</p>
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="tu@correo.com"
+                    placeholder="sofia@tusalon.com"
                     autoComplete="email"
-                    className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-3 text-[#E8E3DC] text-sm placeholder-[#2E2E2E] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+                    className="w-full bg-[#FDFBF7] border border-[#EDE5DB] rounded-xl px-4 py-3 text-[#2B1810] text-sm placeholder-[#A89582] focus:outline-none focus:border-[#B8824B] focus:bg-white transition-all"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <p className="text-[#555] text-[10px] uppercase tracking-widest">Contraseña</p>
+                  <p className="text-[#6B5A4F] text-[11px] uppercase tracking-wider font-medium">Contraseña</p>
                   <input
                     type="password"
                     required
@@ -101,31 +107,36 @@ export default function SignupPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Mínimo 8 caracteres"
                     autoComplete="new-password"
-                    className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-3 text-[#E8E3DC] text-sm placeholder-[#2E2E2E] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+                    className="w-full bg-[#FDFBF7] border border-[#EDE5DB] rounded-xl px-4 py-3 text-[#2B1810] text-sm placeholder-[#A89582] focus:outline-none focus:border-[#B8824B] focus:bg-white transition-all"
                   />
                 </div>
 
                 {error && (
-                  <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 px-4 py-2.5 rounded-xl">{error}</p>
+                  <div className="flex items-center gap-2.5 bg-[#FBE9E7] border border-[#E6A494] rounded-xl px-4 py-3">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C44646" strokeWidth="2" strokeLinecap="round" className="shrink-0">
+                      <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <p className="text-[#C44646] text-xs">{error}</p>
+                  </div>
                 )}
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 bg-[#C8A96E] hover:bg-[#D4B87A] active:scale-[0.99] text-[#080808] text-sm font-semibold py-3 rounded-xl transition-all disabled:opacity-60 mt-2"
+                  className="w-full flex items-center justify-center gap-2 bg-[#2B1810] hover:bg-[#3D241A] active:scale-[0.99] text-[#FAF6F0] text-sm font-medium py-3.5 rounded-full transition-all disabled:opacity-60 mt-2 shadow-lg shadow-[#2B1810]/15"
                 >
                   {loading ? (
                     <>
-                      <span className="w-4 h-4 border border-[#080808]/20 border-t-[#080808]/70 rounded-full animate-spin" />
-                      Creando...
+                      <span className="w-4 h-4 border border-[#FAF6F0]/30 border-t-[#FAF6F0] rounded-full animate-spin" />
+                      Creando…
                     </>
-                  ) : 'Crear cuenta'}
+                  ) : 'Empezar ahora'}
                 </button>
               </form>
 
-              <p className="text-center text-[#666] text-xs pt-2 border-t border-[#161616]">
+              <p className="text-center text-[#6B5A4F] text-sm pt-4 border-t border-[#EDE5DB]">
                 ¿Ya tienes cuenta?{' '}
-                <Link href="/login" className="text-[#C8A96E] hover:text-[#D4B87A] font-medium">
+                <Link href="/login" className="text-[#B8824B] hover:text-[#8C5E35] font-semibold transition-colors">
                   Inicia sesión
                 </Link>
               </p>
@@ -133,8 +144,8 @@ export default function SignupPage() {
           )}
         </div>
 
-        <p className="text-center text-[#2A2A2A] text-[10px] tracking-wider uppercase">
-          AgendaFlow Beauty
+        <p className="text-center text-[#A89582] text-[10px] tracking-widest uppercase">
+          Para salones, barberías y spas
         </p>
       </div>
     </div>

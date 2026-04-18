@@ -108,7 +108,7 @@ function PersonalModal({ miembro, businessId, onClose, onSaved }) {
           {/* Nombre y teléfono */}
           <div className="space-y-3">
             <div className="space-y-1">
-              <p className="text-[#555] text-[10px] uppercase tracking-widest">Nombre *</p>
+              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Nombre *</p>
               <input
                 type="text"
                 placeholder="Ej: María García"
@@ -118,7 +118,7 @@ function PersonalModal({ miembro, businessId, onClose, onSaved }) {
               />
             </div>
             <div className="space-y-1">
-              <p className="text-[#555] text-[10px] uppercase tracking-widest">Teléfono</p>
+              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Teléfono</p>
               <input
                 type="text"
                 placeholder="Ej: +502 5555-1234"
@@ -131,7 +131,7 @@ function PersonalModal({ miembro, businessId, onClose, onSaved }) {
 
           {/* Rol */}
           <div className="space-y-1">
-            <p className="text-[#555] text-[10px] uppercase tracking-widest">Rol</p>
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Rol</p>
             <div className="flex gap-2 flex-wrap">
               {ROLES.map((rol) => (
                 <button
@@ -152,7 +152,7 @@ function PersonalModal({ miembro, businessId, onClose, onSaved }) {
 
           {/* Horario semanal */}
           <div className="space-y-3">
-            <p className="text-[#555] text-[10px] uppercase tracking-widest">Horario semanal</p>
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Horario semanal</p>
             <div className="space-y-2">
               {DIAS.map(({ key, label }) => {
                 const active = Boolean(schedule[key])
@@ -175,7 +175,7 @@ function PersonalModal({ miembro, businessId, onClose, onSaved }) {
                             onChange={(e) => setHorario(key, 'start', e.target.value)}
                             className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg px-2 py-1 text-[#E8E3DC] text-xs focus:outline-none focus:border-[#C8A96E]/50 w-24"
                           />
-                          <span className="text-[#333] text-xs">—</span>
+                          <span className="text-[#666] text-xs">—</span>
                           <input
                             type="time"
                             value={schedule[key]?.end || '18:00'}
@@ -195,7 +195,7 @@ function PersonalModal({ miembro, businessId, onClose, onSaved }) {
           <div className="flex items-center justify-between py-1">
             <div>
               <p className="text-[#C8C3BC] text-sm">Colaborador activo</p>
-              <p className="text-[#444] text-xs mt-0.5">Aparece disponible para asignar citas</p>
+              <p className="text-[#888] text-xs mt-0.5">Aparece disponible para asignar citas</p>
             </div>
             <button
               type="button"
@@ -242,7 +242,7 @@ function Avatar({ name }) {
 function HorarioChips({ schedule }) {
   if (!schedule) return null
   const activos = DIAS.filter((d) => schedule[d.key])
-  if (activos.length === 0) return <p className="text-[#333] text-xs">Sin horario</p>
+  if (activos.length === 0) return <p className="text-[#666] text-xs">Sin horario</p>
   return (
     <div className="flex gap-1 flex-wrap">
       {activos.map(({ key, label }) => (
@@ -297,7 +297,7 @@ export default function PersonalPage() {
           <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
             Personal
           </h1>
-          <p className="text-[#383430] text-xs mt-1">
+          <p className="text-[#777] text-xs mt-1">
             {loading ? '...' : `${staff.length} colaboradores · ${activeCount} activos`}
           </p>
         </div>
@@ -326,7 +326,7 @@ export default function PersonalPage() {
             </svg>
           </div>
           <div className="text-center">
-            <p className="text-[#383430] text-sm">Sin colaboradores aún</p>
+            <p className="text-[#777] text-sm">Sin colaboradores aún</p>
             <p className="text-[#222] text-xs mt-1">Agrega a tu equipo de trabajo</p>
           </div>
           <button
@@ -349,18 +349,18 @@ export default function PersonalPage() {
                 <div className="flex items-center gap-2">
                   <p className="text-[#E8E3DC] text-sm font-medium truncate">{m.name}</p>
                   {m.role && (
-                    <span className="text-[#555] text-[10px] border border-[#1E1E1E] px-2 py-0.5 rounded-full shrink-0">
+                    <span className="text-[#9A9A9A] text-[10px] border border-[#1E1E1E] px-2 py-0.5 rounded-full shrink-0">
                       {m.role}
                     </span>
                   )}
                   {!m.active && (
-                    <span className="text-[#444] text-[10px] bg-[#111] border border-[#1E1E1E] px-2 py-0.5 rounded-full shrink-0">
+                    <span className="text-[#888] text-[10px] bg-[#111] border border-[#1E1E1E] px-2 py-0.5 rounded-full shrink-0">
                       Inactivo
                     </span>
                   )}
                 </div>
                 {m.phone && (
-                  <p className="text-[#444] text-xs">{m.phone}</p>
+                  <p className="text-[#888] text-xs">{m.phone}</p>
                 )}
                 <HorarioChips schedule={m.schedule_config} />
               </div>

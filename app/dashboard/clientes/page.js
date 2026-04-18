@@ -69,23 +69,23 @@ function ClienteModal({ cliente, onClose, onSaved }) {
         </div>
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           <div className="space-y-1">
-            <p className="text-[#555] text-[10px] uppercase tracking-widest">Nombre *</p>
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Nombre *</p>
             <input type="text" value={form.name} onChange={(e) => set('name', e.target.value)}
               className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
           </div>
           <div className="space-y-1">
-            <p className="text-[#555] text-[10px] uppercase tracking-widest">Teléfono / WhatsApp</p>
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Teléfono / WhatsApp</p>
             <input type="text" value={form.phone} onChange={(e) => set('phone', e.target.value)}
               className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
           </div>
           <div className="space-y-1">
-            <p className="text-[#555] text-[10px] uppercase tracking-widest">Correo (opcional)</p>
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Correo (opcional)</p>
             <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)}
               placeholder="cliente@correo.com"
               className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
           </div>
           <div className="space-y-1">
-            <p className="text-[#555] text-[10px] uppercase tracking-widest">Notas internas</p>
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Notas internas</p>
             <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={2}
               placeholder="Preferencias, alergias, etc."
               className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors resize-none" />
@@ -147,8 +147,8 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
             </div>
             <div>
               <p className="text-[#E8E3DC] text-sm font-medium">{cliente.name}</p>
-              <p className="text-[#444] text-xs">{cliente.phone || 'Sin teléfono'}</p>
-              {cliente.email && <p className="text-[#444] text-xs">{cliente.email}</p>}
+              <p className="text-[#888] text-xs">{cliente.phone || 'Sin teléfono'}</p>
+              {cliente.email && <p className="text-[#888] text-xs">{cliente.email}</p>}
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -177,7 +177,7 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
           ].map((s) => (
             <div key={s.label} className="bg-[#0D0D0D] px-4 py-4 text-center">
               <p className="text-[#C8A96E] text-lg font-light tabular-nums">{s.value}</p>
-              <p className="text-[#383430] text-[10px] uppercase tracking-wider mt-0.5">{s.label}</p>
+              <p className="text-[#777] text-[10px] uppercase tracking-wider mt-0.5">{s.label}</p>
             </div>
           ))}
         </div>
@@ -185,14 +185,14 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
         {/* Notas */}
         {cliente.notes && (
           <div className="px-6 py-4 border-b border-[#161616]">
-            <p className="text-[#444] text-[10px] uppercase tracking-widest mb-1">Notas</p>
+            <p className="text-[#888] text-[10px] uppercase tracking-widest mb-1">Notas</p>
             <p className="text-[#888] text-xs">{cliente.notes}</p>
           </div>
         )}
 
         {/* Historial de citas */}
         <div className="flex-1 overflow-y-auto">
-          <p className="text-[#444] text-[10px] uppercase tracking-widest px-6 py-4">Historial de citas</p>
+          <p className="text-[#888] text-[10px] uppercase tracking-widest px-6 py-4">Historial de citas</p>
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-4 h-4 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
@@ -209,7 +209,7 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
                       <div className="min-w-0">
                         <p className="text-[#C8C3BC] text-xs font-medium">{fmtDate(a.starts_at)} · {fmtTime(a.starts_at)}</p>
                         <p className="text-[#E8E3DC] text-sm mt-0.5 truncate">{a.services?.name || 'Servicio'}</p>
-                        {a.staff?.name && <p className="text-[#444] text-xs mt-0.5">{a.staff.name}</p>}
+                        {a.staff?.name && <p className="text-[#888] text-xs mt-0.5">{a.staff.name}</p>}
                       </div>
                       <div className="text-right shrink-0">
                         {a.services?.price != null && (
@@ -217,7 +217,7 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
                         )}
                         <div className="flex items-center gap-1 mt-1 justify-end">
                           <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-                          <span className="text-[#555] text-[10px]">{st.label}</span>
+                          <span className="text-[#9A9A9A] text-[10px]">{st.label}</span>
                         </div>
                       </div>
                     </div>
@@ -272,7 +272,7 @@ export default function ClientesPage() {
           <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
             Clientes
           </h1>
-          <p className="text-[#383430] text-xs mt-1">
+          <p className="text-[#777] text-xs mt-1">
             {loading ? '...' : `${clients.length} clientes registrados`}
           </p>
         </div>
@@ -306,7 +306,7 @@ export default function ClientesPage() {
             </svg>
           </div>
           <div className="text-center">
-            <p className="text-[#383430] text-sm">
+            <p className="text-[#777] text-sm">
               {search ? 'Sin resultados' : 'Sin clientes aún'}
             </p>
             <p className="text-[#222] text-xs mt-1">
@@ -333,7 +333,7 @@ export default function ClientesPage() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className="text-[#E8E3DC] text-sm font-medium truncate">{c.name || '—'}</p>
-                  <p className="text-[#444] text-xs mt-0.5 truncate">{c.phone || 'Sin teléfono'}</p>
+                  <p className="text-[#888] text-xs mt-0.5 truncate">{c.phone || 'Sin teléfono'}</p>
                 </div>
 
                 {/* Última visita */}
@@ -341,15 +341,15 @@ export default function ClientesPage() {
                   {c.last_visit ? (
                     <>
                       <p className="text-[#888] text-xs">{fmtDate(c.last_visit)}</p>
-                      <p className="text-[#333] text-[10px] mt-0.5">última visita</p>
+                      <p className="text-[#666] text-[10px] mt-0.5">última visita</p>
                     </>
                   ) : (
-                    <p className="text-[#333] text-xs">Sin visitas</p>
+                    <p className="text-[#666] text-xs">Sin visitas</p>
                   )}
                 </div>
 
                 {/* Flecha */}
-                <svg className="text-[#2A2A2A] group-hover:text-[#444] transition-colors shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <svg className="text-[#555] group-hover:text-[#444] transition-colors shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </button>

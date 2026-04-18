@@ -87,7 +87,7 @@ export default function WhatsAppPage() {
         <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
           WhatsApp Bot
         </h1>
-        <p className="text-[#383430] text-xs mt-1">Conecta tu número de WhatsApp Business para que el bot agende por ti.</p>
+        <p className="text-[#777] text-xs mt-1">Conecta tu número de WhatsApp Business para que el bot agende por ti.</p>
       </div>
 
       {!canUseWhatsApp && (
@@ -122,7 +122,7 @@ export default function WhatsAppPage() {
           <h2 className="text-[#D4CFC8] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
             Configuración
           </h2>
-          <p className="text-[#555] text-xs mt-1">Ingresa los datos de tu WhatsApp Business Cloud API (Meta).</p>
+          <p className="text-[#A0A0A0] text-xs mt-1">Ingresa los datos de tu WhatsApp Business Cloud API (Meta).</p>
         </div>
 
         <details className="bg-[#111] border border-[#1A1A1A] rounded-xl p-4 group">
@@ -137,7 +137,7 @@ export default function WhatsAppPage() {
 
         <form onSubmit={handleSave} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-[#555] text-[10px] uppercase tracking-widest block">Phone Number ID *</label>
+            <label className="text-[#9A9A9A] text-[10px] uppercase tracking-widest block">Phone Number ID *</label>
             <input
               type="text"
               value={form.phone_number_id}
@@ -148,7 +148,7 @@ export default function WhatsAppPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[#555] text-[10px] uppercase tracking-widest block">Access Token (permanente) *</label>
+            <label className="text-[#9A9A9A] text-[10px] uppercase tracking-widest block">Access Token (permanente) *</label>
             <input
               type="text"
               value={form.access_token}
@@ -159,7 +159,7 @@ export default function WhatsAppPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[#555] text-[10px] uppercase tracking-widest block">Número visible (opcional)</label>
+            <label className="text-[#9A9A9A] text-[10px] uppercase tracking-widest block">Número visible (opcional)</label>
             <input
               type="text"
               value={form.display_phone}
@@ -170,7 +170,7 @@ export default function WhatsAppPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[#555] text-[10px] uppercase tracking-widest block">Verify Token (úsalo en Meta) *</label>
+            <label className="text-[#9A9A9A] text-[10px] uppercase tracking-widest block">Verify Token (úsalo en Meta) *</label>
             <input
               type="text"
               value={form.verify_token}
@@ -200,15 +200,15 @@ export default function WhatsAppPage() {
         </h2>
         <div className="space-y-2">
           <div>
-            <p className="text-[#555] text-[10px] uppercase tracking-widest mb-1">Webhook URL</p>
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest mb-1">Webhook URL</p>
             <code className="block bg-[#111] border border-[#1E1E1E] rounded-xl px-3 py-2 text-[#C8C3BC] text-xs font-mono break-all">{webhookUrl}</code>
           </div>
           <div>
-            <p className="text-[#555] text-[10px] uppercase tracking-widest mb-1">Verify Token</p>
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest mb-1">Verify Token</p>
             <code className="block bg-[#111] border border-[#1E1E1E] rounded-xl px-3 py-2 text-[#C8C3BC] text-xs font-mono break-all">{form.verify_token || '(genera uno arriba)'}</code>
           </div>
           <div>
-            <p className="text-[#555] text-[10px] uppercase tracking-widest mb-1">Eventos a suscribir</p>
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest mb-1">Eventos a suscribir</p>
             <code className="block bg-[#111] border border-[#1E1E1E] rounded-xl px-3 py-2 text-[#C8C3BC] text-xs font-mono">messages</code>
           </div>
         </div>

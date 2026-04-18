@@ -24,7 +24,7 @@ function startOf(date, unit) {
 function StatCard({ label, value, sub, gold, trend }) {
   return (
     <div className="bg-[#0F0F0F] border border-[#1C1C1C] rounded-2xl p-6 flex flex-col gap-2 hover:border-[#2A2A2A] transition-colors">
-      <p className="text-[#444] text-[10px] uppercase tracking-[0.18em] font-medium">{label}</p>
+      <p className="text-[#888] text-[10px] uppercase tracking-[0.18em] font-medium">{label}</p>
       <p
         className={`text-4xl font-light leading-none ${gold ? 'text-[#C8A96E]' : 'text-[#F0EBE3]'}`}
         style={{ fontFamily: 'var(--font-display)' }}
@@ -33,7 +33,7 @@ function StatCard({ label, value, sub, gold, trend }) {
       </p>
       {(sub || trend != null) && (
         <div className="flex items-center gap-2 mt-1">
-          {sub && <p className="text-[#383430] text-xs">{sub}</p>}
+          {sub && <p className="text-[#777] text-xs">{sub}</p>}
           {trend != null && (
             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md ${trend >= 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'}`}>
               {trend >= 0 ? '+' : ''}{trend}%
@@ -53,7 +53,7 @@ function BarRow({ label, value, max, sub, color = '#C8A96E' }) {
       <div className="flex items-center justify-between">
         <p className="text-[#C8C3BC] text-sm truncate max-w-[60%]">{label}</p>
         <div className="flex items-center gap-2">
-          {sub && <p className="text-[#555] text-xs">{sub}</p>}
+          {sub && <p className="text-[#A0A0A0] text-xs">{sub}</p>}
           <p className="text-[#E8E3DC] text-sm font-medium tabular-nums w-8 text-right">{value}</p>
         </div>
       </div>
@@ -224,7 +224,7 @@ export default function ReportesPage() {
           <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
             Reportes
           </h1>
-          <p className="text-[#383430] text-xs mt-1">Métricas de tu negocio</p>
+          <p className="text-[#777] text-xs mt-1">Métricas de tu negocio</p>
         </div>
 
         {/* Selector período */}
@@ -270,11 +270,11 @@ export default function ReportesPage() {
             />
             {/* Tarjeta de ingresos con realizados y proyectados */}
             <div className="bg-[#0F0F0F] border border-[#1C1C1C] rounded-2xl p-6 flex flex-col gap-2 hover:border-[#2A2A2A] transition-colors">
-              <p className="text-[#444] text-[10px] uppercase tracking-[0.18em] font-medium">Ingresos</p>
+              <p className="text-[#888] text-[10px] uppercase tracking-[0.18em] font-medium">Ingresos</p>
               <p className="text-[#C8A96E] text-4xl font-light leading-none" style={{ fontFamily: 'var(--font-display)' }}>
                 {fmtCurrency(data.revenue)}
               </p>
-              <p className="text-[#383430] text-xs">realizados ({data.completed} completadas)</p>
+              <p className="text-[#777] text-xs">realizados ({data.completed} completadas)</p>
               {data.revenueProjected > 0 && (
                 <div className="mt-1 pt-2 border-t border-[#1C1C1C]">
                   <p className="text-[#686460] text-sm font-light tabular-nums">{fmtCurrency(data.revenueProjected)}</p>
@@ -293,7 +293,7 @@ export default function ReportesPage() {
                 <h2 className="text-[#D4CFC8] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
                   Citas por día
                 </h2>
-                <p className="text-[#333] text-xs">últimos 14 días</p>
+                <p className="text-[#666] text-xs">últimos 14 días</p>
               </div>
               <DailyBars data={data.dailyData} />
             </div>
@@ -359,7 +359,7 @@ export default function ReportesPage() {
               ].map((s) => (
                 <div key={s.label} className="bg-[#0D0D0D] px-6 py-5 text-center">
                   <p className="text-[#E8E3DC] text-2xl font-light tabular-nums">{s.value}</p>
-                  <p className="text-[#383430] text-xs mt-1">{s.label}</p>
+                  <p className="text-[#777] text-xs mt-1">{s.label}</p>
                   <p className="text-[#C8A96E] text-[10px] mt-1">{s.pct}%</p>
                 </div>
               ))}

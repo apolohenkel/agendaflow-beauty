@@ -16,14 +16,14 @@ const STATUS_MAP = {
 function StatCard({ label, value, sub, gold = false }) {
   return (
     <div className="bg-[#0F0F0F] border border-[#1C1C1C] rounded-2xl p-6 flex flex-col gap-2 hover:border-[#2A2A2A] transition-colors">
-      <p className="text-[#444] text-[10px] uppercase tracking-[0.18em] font-medium">{label}</p>
+      <p className="text-[#888] text-[10px] uppercase tracking-[0.18em] font-medium">{label}</p>
       <p
         className={`text-4xl font-light leading-none ${gold ? 'text-[#C8A96E]' : 'text-[#F0EBE3]'}`}
         style={{ fontFamily: 'var(--font-display)' }}
       >
         {value}
       </p>
-      {sub && <p className="text-[#383430] text-xs mt-1">{sub}</p>}
+      {sub && <p className="text-[#777] text-xs mt-1">{sub}</p>}
     </div>
   )
 }
@@ -42,7 +42,7 @@ function AppointmentRow({ appt, isActive }) {
       {/* Hora */}
       <div className="w-16 shrink-0 text-right">
         <p className="text-[#E8E3DC] text-sm font-medium tabular-nums">{fmt(appt.starts_at)}</p>
-        <p className="text-[#2E2E2E] text-xs tabular-nums">{fmt(appt.ends_at)}</p>
+        <p className="text-[#666] text-xs tabular-nums">{fmt(appt.ends_at)}</p>
       </div>
 
       {/* Línea de tiempo */}
@@ -57,7 +57,7 @@ function AppointmentRow({ appt, isActive }) {
         <p className="text-[#E8E3DC] text-sm font-medium truncate">
           {appt.clients?.name || 'Cliente sin nombre'}
         </p>
-        <p className="text-[#444] text-xs truncate mt-0.5">
+        <p className="text-[#888] text-xs truncate mt-0.5">
           {appt.services?.name || 'Servicio'}
           {appt.staff?.name ? ` · ${appt.staff.name}` : ''}
         </p>
@@ -149,7 +149,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[#383430] text-[10px] uppercase tracking-[0.2em] mb-2" suppressHydrationWarning>
+          <p className="text-[#777] text-[10px] uppercase tracking-[0.2em] mb-2" suppressHydrationWarning>
             {dateLabel} · {hourLabel}
           </p>
           <h1
@@ -211,7 +211,7 @@ export default function DashboardPage() {
               </span>
             )}
           </div>
-          <Link href="/dashboard/citas" className="text-[#383430] hover:text-[#686460] text-xs transition-colors">
+          <Link href="/dashboard/citas" className="text-[#777] hover:text-[#686460] text-xs transition-colors">
             Ver todas →
           </Link>
         </div>
@@ -232,7 +232,7 @@ export default function DashboardPage() {
               </svg>
             </div>
             <div className="text-center">
-              <p className="text-[#383430] text-sm">Sin citas para hoy</p>
+              <p className="text-[#777] text-sm">Sin citas para hoy</p>
               <p className="text-[#222] text-xs mt-1">Las citas agendadas aparecerán aquí</p>
             </div>
           </div>

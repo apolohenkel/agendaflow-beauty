@@ -138,7 +138,7 @@ export default function BillingPage() {
         <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
           Facturación
         </h1>
-        <p className="text-[#383430] text-xs mt-1">Tu plan y suscripción</p>
+        <p className="text-[#777] text-xs mt-1">Tu plan y suscripción</p>
       </div>
 
       {notice && (
@@ -155,7 +155,7 @@ export default function BillingPage() {
       <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-6 space-y-4">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-[#444] text-[10px] uppercase tracking-widest font-medium">Plan actual</p>
+            <p className="text-[#888] text-[10px] uppercase tracking-widest font-medium">Plan actual</p>
             <div className="flex items-center gap-3 mt-1">
               <h2 className="text-[#F0EBE3] text-2xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
                 {currentPlan?.name || 'Sin plan'}
@@ -163,14 +163,14 @@ export default function BillingPage() {
               <StatusBadge status={status} trialActive={trialActive} />
             </div>
             {periodEnd && (
-              <p className="text-[#555] text-xs mt-2">
+              <p className="text-[#A0A0A0] text-xs mt-2">
                 {sub?.cancel_at_period_end ? 'Termina el ' : (status === 'trialing' || trialActive ? 'Prueba termina el ' : 'Próxima factura el ')}
                 <span className="text-[#888]">{fmtDate(periodEnd)}</span>
               </p>
             )}
           </div>
           {currentPlan && currentPlan.price > 0 && (
-            <p className="text-[#C8A96E] text-2xl font-light tabular-nums">${currentPlan.price}<span className="text-[#444] text-sm">/mes</span></p>
+            <p className="text-[#C8A96E] text-2xl font-light tabular-nums">${currentPlan.price}<span className="text-[#A0A0A0] text-sm">/mes</span></p>
           )}
         </div>
 
@@ -230,7 +230,7 @@ export default function BillingPage() {
                 <div>
                   <p className="text-[#E8E3DC] text-lg font-medium">{p.name}</p>
                   <p className="text-[#C8A96E] text-3xl font-light mt-2 tabular-nums" style={{ fontFamily: 'var(--font-display)' }}>
-                    ${p.price}<span className="text-[#444] text-sm">/mes</span>
+                    ${p.price}<span className="text-[#A0A0A0] text-sm">/mes</span>
                   </p>
                 </div>
 

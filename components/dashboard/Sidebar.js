@@ -132,7 +132,7 @@ export default function Sidebar() {
           </div>
           <div>
             <p className="text-[#F5F0E8] text-sm font-semibold tracking-wide leading-none">AgendaFlow</p>
-            <p className="text-[#5A5550] text-[9px] tracking-[0.2em] uppercase mt-0.5">Beauty</p>
+            <p className="text-[#888] text-[9px] tracking-[0.2em] uppercase mt-0.5">Beauty</p>
           </div>
         </div>
       </div>
@@ -148,10 +148,10 @@ export default function Sidebar() {
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 group ${
                 isActive
                   ? 'bg-[#C8A96E]/10 text-[#C8A96E]'
-                  : 'text-[#525252] hover:text-[#D4CFC8] hover:bg-[#161616]'
+                  : 'text-[#A0A0A0] hover:text-[#F0EBE3] hover:bg-[#161616]'
               }`}
             >
-              <span className={`transition-colors ${isActive ? 'text-[#C8A96E]' : 'text-[#383838] group-hover:text-[#686460]'}`}>
+              <span className={`transition-colors ${isActive ? 'text-[#C8A96E]' : 'text-[#666] group-hover:text-[#A0A0A0]'}`}>
                 {item.icon}
               </span>
               <span className="font-medium">{item.label}</span>
@@ -171,12 +171,12 @@ export default function Sidebar() {
       {/* WhatsApp status indicator */}
       <Link href="/dashboard/whatsapp" className="block px-3 py-3 mx-3 mb-3 bg-[#111] rounded-xl border border-[#1A1A1A] hover:border-[#2A2A2A] transition-colors">
         <div className="flex items-center gap-2">
-          <div className={`w-1.5 h-1.5 rounded-full ${whatsappConnected ? 'bg-[#3DBA6E] animate-pulse' : 'bg-[#444]'}`} />
-          <p className={`text-[10px] font-medium tracking-wide ${whatsappConnected ? 'text-[#3DBA6E]' : 'text-[#666]'}`}>
+          <div className={`w-1.5 h-1.5 rounded-full ${whatsappConnected ? 'bg-[#3DBA6E] animate-pulse' : 'bg-[#666]'}`} />
+          <p className={`text-[10px] font-medium tracking-wide ${whatsappConnected ? 'text-[#3DBA6E]' : 'text-[#A0A0A0]'}`}>
             {whatsappConnected ? 'WhatsApp conectado' : 'WhatsApp desconectado'}
           </p>
         </div>
-        <p className="text-[#333] text-[9px] mt-0.5 pl-3.5">
+        <p className="text-[#777] text-[9px] mt-0.5 pl-3.5">
           {whatsappConnected ? 'Bot activo' : 'Configura para activar el bot'}
         </p>
       </Link>
@@ -188,13 +188,13 @@ export default function Sidebar() {
             <span className="text-[#C8A96E] text-xs font-semibold">A</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[#C8C3BC] text-xs font-medium truncate">{userEmail || 'Admin'}</p>
-            <p className="text-[#383430] text-[10px] truncate">{bizName}</p>
+            <p className="text-[#E8E3DC] text-xs font-medium truncate">{userEmail || 'Admin'}</p>
+            <p className="text-[#888] text-[10px] truncate">{bizName}</p>
           </div>
           <button
             onClick={handleLogout}
             title="Cerrar sesión"
-            className="shrink-0 p-1.5 text-[#333] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+            className="shrink-0 p-1.5 text-[#666] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
