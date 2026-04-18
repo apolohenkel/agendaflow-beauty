@@ -41,7 +41,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center gap-4">
           <div className="w-14 h-14 bg-gradient-to-br from-[#B8824B] to-[#8C5E35] rounded-2xl flex items-center justify-center shadow-xl shadow-[#B8824B]/25">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">
-              <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+              <path d="M4.5 20 L12 4 L19.5 20" /><path d="M7.8 13.8 C12 13 15 13.3 21 18.2" />
             </svg>
           </div>
           <div className="text-center">

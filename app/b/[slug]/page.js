@@ -285,7 +285,7 @@ export default function BookPage({ params }) {
                 style={{ backgroundColor: theme.primary, boxShadow: `0 4px 14px ${theme.primary}33` }}
               >
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={theme.onPrimary} strokeWidth="2.2" strokeLinecap="round">
-                  <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+                  <path d="M4.5 20 L12 4 L19.5 20" /><path d="M7.8 13.8 C12 13 15 13.3 21 18.2" />
                 </svg>
               </div>
             )}
