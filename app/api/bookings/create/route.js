@@ -24,7 +24,11 @@ export async function POST(request) {
     client_name,
     client_phone,
     client_email,
+    notes,
   } = body
+
+  const trimmedNotes = typeof notes === 'string' ? notes.trim().slice(0, 500) : null
+  const finalNotes = trimmedNotes || null
 
   // Normalizar a array de IDs preservando orden. Soporta legacy single service_id.
   const requestedServiceIds = Array.isArray(service_ids) && service_ids.length > 0
@@ -109,7 +113,7 @@ export async function POST(request) {
       p_ends_at: sEnd.toISOString(),
       p_status: 'pending',
       p_source: 'web',
-      p_notes: null,
+      p_notes: finalNotes,
     })
 
     if (bookErr) {

@@ -99,7 +99,8 @@ export default function BookPage({ params }) {
       return { ...s, services: exists ? s.services.filter((x) => x.id !== svc.id) : [...s.services, svc], time: '' }
     })
   }
-  const [form, setForm] = useState({ name: '', phone: '', email: '' })
+  const [form, setForm] = useState({ name: '', phone: '', email: '', notes: '' })
+  const [rememberedClient, setRememberedClient] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
   const [confirmation, setConfirmation] = useState(null)
@@ -112,9 +113,28 @@ export default function BookPage({ params }) {
   const [minePhone, setMinePhone] = useState('')
   const [mineLoading, setMineLoading] = useState(false)
   const [mineList, setMineList] = useState(null) // null = not searched yet, [] = no results
+  const [minePast, setMinePast] = useState([])
   const [mineTz, setMineTz] = useState('America/Mexico_City')
   const [mineError, setMineError] = useState(null)
-  const [mineCancelling, setMineCancelling] = useState(null) // appointment id being cancelled
+  const [mineCancelling, setMineCancelling] = useState(null)
+  const [rescheduling, setRescheduling] = useState(null) // appointment siendo reprogramada
+
+  // Pre-llena el form con datos del cliente recurrente al montar
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(`af:client:${slug}`) || 'null')
+      if (saved?.phone) {
+        setForm((f) => ({
+          ...f,
+          name: saved.name || '',
+          phone: saved.phone || '',
+          email: saved.email || '',
+        }))
+        setRememberedClient(true)
+      }
+    } catch {}
+  }, [slug])
 
   useEffect(() => {
     async function load() {
@@ -193,6 +213,7 @@ export default function BookPage({ params }) {
           client_name: form.name.trim(),
           client_phone: form.phone.trim(),
           client_email: form.email.trim() || null,
+          notes: form.notes.trim() || null,
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -215,6 +236,16 @@ export default function BookPage({ params }) {
         token: data.cancel_token,
         appointments: data.appointments || [{ id: data.appointment_id, cancel_token: data.cancel_token }],
       })
+      // Recordar cliente para próxima visita
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(`af:client:${slug}`, JSON.stringify({
+            name: form.name.trim(),
+            phone: form.phone.trim(),
+            email: form.email.trim() || null,
+          }))
+        }
+      } catch {}
       setDone(true)
     } catch {
       setError('Ocurrió un error. Por favor intenta de nuevo.')
@@ -290,14 +321,15 @@ export default function BookPage({ params }) {
       const res = await fetch('/api/bookings/lookup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, phone: minePhone.trim() }),
+        body: JSON.stringify({ slug, phone: minePhone.trim(), include_past: true }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         setMineError(data.error === 'rate_limited' ? 'Demasiados intentos, espera un minuto.' : 'No pudimos buscar tus citas.')
         setMineList(null)
       } else {
-        setMineList(data.appointments || [])
+        setMineList(data.upcoming || data.appointments || [])
+        setMinePast(data.past || [])
         setMineTz(data.timezone || 'America/Mexico_City')
       }
     } catch {
@@ -305,6 +337,75 @@ export default function BookPage({ params }) {
     } finally {
       setMineLoading(false)
     }
+  }
+
+  function startReschedule(appt) {
+    // Carga el servicio en el wizard y salta a paso fecha/hora
+    const svc = services.find((s) => s.id === appt.service_id)
+    if (!svc) {
+      alert('No pudimos cargar el servicio original. Haz una nueva reserva.')
+      return
+    }
+    setSelected({
+      services: [svc],
+      staffId: appt.staff_id || '',
+      date: null,
+      time: '',
+    })
+    setRescheduling({ appointment_id: appt.id, token: appt.cancel_token })
+    setStep(1)
+    closeMine()
+  }
+
+  function repeatBooking(appt) {
+    const svc = services.find((s) => s.id === appt.service_id)
+    if (!svc) {
+      alert('Ese servicio ya no está disponible en este salón.')
+      return
+    }
+    setSelected({
+      services: [svc],
+      staffId: appt.staff_id || '',
+      date: null,
+      time: '',
+    })
+    setStep(1)
+    closeMine()
+  }
+
+  async function doReschedule() {
+    if (!rescheduling) return
+    const [h, m] = selected.time.split(':').map(Number)
+    const startsAt = new Date(selected.date)
+    startsAt.setHours(h, m, 0, 0)
+
+    setSubmitting(true)
+    setError(null)
+    const res = await fetch('/api/bookings/reschedule', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        appointment_id: rescheduling.appointment_id,
+        token: rescheduling.token,
+        starts_at: startsAt.toISOString(),
+      }),
+    })
+    const data = await res.json().catch(() => ({}))
+    setSubmitting(false)
+
+    if (!res.ok) {
+      if (data.error === 'slot_unavailable') setError('Ese horario acaba de ocuparse. Elige otro.')
+      else setError('No pudimos reprogramar. Intenta de nuevo.')
+      return
+    }
+
+    setConfirmation({
+      id: data.appointment_id,
+      token: data.cancel_token,
+      appointments: [{ id: data.appointment_id, cancel_token: data.cancel_token }],
+    })
+    setRescheduling(null)
+    setDone(true)
   }
 
   async function cancelFromMine(appt) {
@@ -324,8 +425,19 @@ export default function BookPage({ params }) {
   function closeMine() {
     setShowMine(false)
     setMineList(null)
+    setMinePast([])
     setMineError(null)
     setMinePhone('')
+  }
+
+  function clearRemembered() {
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem(`af:client:${slug}`)
+      }
+    } catch {}
+    setForm({ name: '', phone: '', email: '', notes: '' })
+    setRememberedClient(false)
   }
 
   if (loading) {
@@ -663,10 +775,33 @@ export default function BookPage({ params }) {
           <div className="space-y-6">
             <div className="space-y-1">
               <h2 className="text-3xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
-                ¿Cuándo te viene bien?
+                {rescheduling ? 'Elige nuevo horario' : '¿Cuándo te viene bien?'}
               </h2>
-              <p className="text-sm" style={{ color: 'var(--text-soft)' }}>Elige el día y la hora que prefieras</p>
+              <p className="text-sm" style={{ color: 'var(--text-soft)' }}>
+                {rescheduling ? 'Selecciona la nueva fecha y hora para tu cita' : 'Elige el día y la hora que prefieras'}
+              </p>
             </div>
+
+            {rescheduling && (
+              <div
+                className="flex items-center gap-3 rounded-2xl px-4 py-3"
+                style={{ backgroundColor: `${theme.primary}0F`, borderWidth: 1, borderStyle: 'solid', borderColor: `${theme.primary}33` }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={theme.primary} strokeWidth="2" strokeLinecap="round" className="shrink-0">
+                  <polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-xs" style={{ color: theme.text }}>Estás reprogramando tu cita</p>
+                  <button
+                    onClick={() => { setRescheduling(null); setStep(0) }}
+                    className="text-[11px] underline-offset-2 hover:underline"
+                    style={{ color: theme.textMuted }}
+                  >
+                    Cancelar reprogramación
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2.5">
               <p className="text-[11px] uppercase tracking-wider font-medium" style={{ color: 'var(--text-soft)' }}>Fecha</p>
@@ -745,8 +880,8 @@ export default function BookPage({ params }) {
                 ← Atrás
               </button>
               <button
-                onClick={() => setStep(2)}
-                disabled={!selected.date || !selected.time}
+                onClick={() => rescheduling ? doReschedule() : setStep(2)}
+                disabled={!selected.date || !selected.time || submitting}
                 style={{
                   backgroundColor: selected.date && selected.time ? theme.primary : theme.borderSoft,
                   color: selected.date && selected.time ? theme.onPrimary : theme.textMuted,
@@ -754,7 +889,7 @@ export default function BookPage({ params }) {
                 }}
                 className="flex-1 py-3.5 rounded-full text-sm font-semibold transition-all disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.99]"
               >
-                Continuar
+                {rescheduling ? (submitting ? 'Reprogramando…' : 'Confirmar nuevo horario') : 'Continuar'}
               </button>
             </div>
           </div>
@@ -768,6 +903,28 @@ export default function BookPage({ params }) {
               </h2>
               <p className="text-sm" style={{ color: 'var(--text-soft)' }}>Solo lo básico, para confirmar tu cita</p>
             </div>
+
+            {rememberedClient && (
+              <div
+                className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3"
+                style={{ backgroundColor: `${theme.primary}0F`, borderWidth: 1, borderStyle: 'solid', borderColor: `${theme.primary}33` }}
+              >
+                <div className="flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.primary} strokeWidth="2" strokeLinecap="round" className="shrink-0">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <p className="text-xs" style={{ color: theme.text }}>Recordamos tus datos de la última vez</p>
+                </div>
+                <button
+                  onClick={clearRemembered}
+                  className="text-[11px] underline-offset-2 hover:underline shrink-0"
+                  style={{ color: theme.textMuted }}
+                >
+                  Limpiar
+                </button>
+              </div>
+            )}
+
             <div className="space-y-4">
               {[
                 { key: 'name', label: 'Nombre completo *', placeholder: 'Ej: María García', type: 'text' },
@@ -797,6 +954,34 @@ export default function BookPage({ params }) {
                   />
                 </div>
               ))}
+
+              {/* Notas */}
+              <div className="space-y-1.5">
+                <p className="text-[11px] uppercase tracking-wider font-medium" style={{ color: 'var(--text-soft)' }}>
+                  Notas para el equipo
+                  <span className="normal-case font-normal ml-1" style={{ color: 'var(--text-muted)' }}>(opcional)</span>
+                </p>
+                <textarea
+                  value={form.notes}
+                  onChange={(e) => setForm((s) => ({ ...s, notes: e.target.value.slice(0, 500) }))}
+                  placeholder="Alergias, preferencias, referencia de color, 'como la última vez'…"
+                  rows={3}
+                  maxLength={500}
+                  className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-all resize-none"
+                  style={{
+                    backgroundColor: theme.surface,
+                    color: theme.text,
+                    borderWidth: 1,
+                    borderStyle: 'solid',
+                    borderColor: theme.border,
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = theme.primary)}
+                  onBlur={(e) => (e.target.style.borderColor = theme.border)}
+                />
+                <p className="text-[11px] text-right tabular-nums" style={{ color: theme.textMuted }}>
+                  {form.notes.length}/500
+                </p>
+              </div>
             </div>
             <div className="flex gap-3 pt-2">
               <button
@@ -1023,13 +1208,71 @@ export default function BookPage({ params }) {
                           </p>
                         )}
                       </div>
+                      {a.notes && (
+                        <p className="text-xs italic rounded-lg px-3 py-2" style={{ color: theme.textSoft, backgroundColor: theme.surfaceSoft }}>
+                          &ldquo;{a.notes}&rdquo;
+                        </p>
+                      )}
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => startReschedule(a)}
+                          className="py-2 rounded-full text-xs font-medium transition-all hover:brightness-95"
+                          style={{ backgroundColor: theme.primary, color: theme.onPrimary }}
+                        >
+                          Reprogramar
+                        </button>
+                        <button
+                          onClick={() => cancelFromMine(a)}
+                          disabled={isCancelling}
+                          className="py-2 rounded-full text-xs font-medium transition-all disabled:opacity-60 hover:brightness-95"
+                          style={{ backgroundColor: theme.surfaceSoft, color: theme.textSoft, borderWidth: 1, borderStyle: 'solid', borderColor: theme.border }}
+                        >
+                          {isCancelling ? 'Cancelando…' : 'Cancelar'}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Pasadas */}
+            {minePast.length > 0 && (
+              <div className="space-y-2.5 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
+                <p className="text-[11px] uppercase tracking-wider font-medium pt-2" style={{ color: theme.textSoft }}>
+                  Visitas anteriores
+                </p>
+                {minePast.map((a) => {
+                  const when = new Date(a.starts_at).toLocaleString('es-MX', {
+                    timeZone: mineTz,
+                    day: 'numeric', month: 'long', year: 'numeric',
+                  })
+                  return (
+                    <div
+                      key={a.id}
+                      className="rounded-2xl p-4 space-y-2.5"
+                      style={{ backgroundColor: theme.surfaceSoft, borderWidth: 1, borderStyle: 'solid', borderColor: theme.border }}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium" style={{ color: theme.text }}>{a.service_name || 'Servicio'}</p>
+                          <p className="text-xs mt-1" style={{ color: theme.textSoft }}>{when}</p>
+                          {a.staff_name && (
+                            <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Con {a.staff_name}</p>
+                          )}
+                        </div>
+                        {a.service_price != null && (
+                          <p className="text-sm shrink-0 tabular-nums" style={{ color: theme.textSoft }}>
+                            ${Number(a.service_price).toFixed(0)}
+                          </p>
+                        )}
+                      </div>
                       <button
-                        onClick={() => cancelFromMine(a)}
-                        disabled={isCancelling}
-                        className="w-full py-2 rounded-full text-xs font-medium transition-all disabled:opacity-60 hover:brightness-95"
-                        style={{ backgroundColor: theme.surfaceSoft, color: theme.textSoft, borderWidth: 1, borderStyle: 'solid', borderColor: theme.border }}
+                        onClick={() => repeatBooking(a)}
+                        className="w-full py-2 rounded-full text-xs font-medium transition-all hover:brightness-95"
+                        style={{ backgroundColor: theme.surface, color: theme.primary, borderWidth: 1, borderStyle: 'solid', borderColor: `${theme.primary}66` }}
                       >
-                        {isCancelling ? 'Cancelando…' : 'Cancelar esta cita'}
+                        Reservar otra vez
                       </button>
                     </div>
                   )

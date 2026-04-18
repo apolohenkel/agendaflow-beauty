@@ -20,7 +20,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'rate_limited' }, { status: 429 })
   }
 
-  const { slug, phone } = await request.json().catch(() => ({}))
+  const { slug, phone, include_past } = await request.json().catch(() => ({}))
   if (!slug || !phone) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 })
   }
@@ -58,12 +58,13 @@ export async function POST(request) {
   const clientIds = clients.map((c) => c.id)
   const nowIso = new Date().toISOString()
 
-  const { data: appts, error } = await admin
+  // Futuras activas
+  const { data: upcoming, error: upErr } = await admin
     .from('appointments')
     .select(`
-      id, starts_at, ends_at, status,
-      services(name, duration_minutes, price),
-      staff(name)
+      id, starts_at, ends_at, status, notes, service_id, staff_id,
+      services(id, name, duration_minutes, price),
+      staff(id, name)
     `)
     .in('client_id', clientIds)
     .in('status', ['pending', 'confirmed'])
@@ -71,22 +72,49 @@ export async function POST(request) {
     .order('starts_at', { ascending: true })
     .limit(20)
 
-  if (error) {
-    logger.error('bookings_lookup', error, { slug })
+  if (upErr) {
+    logger.error('bookings_lookup', upErr, { slug })
     return NextResponse.json({ error: 'lookup_failed' }, { status: 500 })
   }
 
-  const result = (appts || []).map((a) => ({
+  const mapAppt = (a) => ({
     id: a.id,
     starts_at: a.starts_at,
     ends_at: a.ends_at,
     status: a.status,
+    notes: a.notes || null,
+    service_id: a.service_id || a.services?.id || null,
     service_name: a.services?.name || null,
     service_price: a.services?.price ?? null,
     duration: a.services?.duration_minutes || null,
+    staff_id: a.staff_id || null,
     staff_name: a.staff?.name || null,
     cancel_token: signCancelToken(a.id),
-  }))
+  })
 
-  return NextResponse.json({ ok: true, timezone: business.timezone || 'America/Mexico_City', appointments: result })
+  const result = { upcoming: (upcoming || []).map(mapAppt), past: [] }
+
+  if (include_past) {
+    const { data: past } = await admin
+      .from('appointments')
+      .select(`
+        id, starts_at, ends_at, status, notes, service_id, staff_id,
+        services(id, name, duration_minutes, price),
+        staff(id, name)
+      `)
+      .in('client_id', clientIds)
+      .in('status', ['completed', 'confirmed', 'pending'])
+      .lt('starts_at', nowIso)
+      .order('starts_at', { ascending: false })
+      .limit(10)
+    result.past = (past || []).map(mapAppt)
+  }
+
+  return NextResponse.json({
+    ok: true,
+    timezone: business.timezone || 'America/Mexico_City',
+    appointments: result.upcoming,
+    upcoming: result.upcoming,
+    past: result.past,
+  })
 }
