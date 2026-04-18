@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useOrg } from '@/lib/org-context'
+import { VERTICALS, VERTICAL_KEYS, DEFAULT_VERTICAL } from '@/lib/verticals'
 
 const DIAS = [
   { key: 0, label: 'Domingo' },
@@ -91,6 +92,9 @@ export default function ConfiguracionPage() {
   const [savedBrand, setSavedBrand] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [brandError, setBrandError] = useState(null)
+  const [vertical, setVertical] = useState(DEFAULT_VERTICAL)
+  const [savedVertical, setSavedVertical] = useState(false)
+  const [savingVertical, setSavingVertical] = useState(false)
 
   const [infoForm, setInfoForm] = useState({
     name:             '',
@@ -124,7 +128,7 @@ export default function ConfiguracionPage() {
     }
     const { data: org } = await supabase
       .from('organizations')
-      .select('primary_color, logo_url')
+      .select('primary_color, logo_url, vertical')
       .eq('id', orgId)
       .maybeSingle()
     if (org) {
@@ -132,6 +136,7 @@ export default function ConfiguracionPage() {
         primary_color: org.primary_color || '#C8A96E',
         logo_url: org.logo_url,
       })
+      if (VERTICAL_KEYS.includes(org.vertical)) setVertical(org.vertical)
     }
     setLoading(false)
   }, [orgBusiness, orgId])
@@ -244,6 +249,17 @@ export default function ConfiguracionPage() {
     setUploadingLogo(false)
   }
 
+  async function handleSaveVertical(newVertical) {
+    if (!orgId || newVertical === vertical) return
+    setSavingVertical(true)
+    await supabase.from('organizations').update({ vertical: newVertical }).eq('id', orgId)
+    setVertical(newVertical)
+    await refreshOrg()
+    setSavingVertical(false)
+    setSavedVertical(true)
+    setTimeout(() => setSavedVertical(false), 2500)
+  }
+
   async function handleSavePassword(e) {
     e.preventDefault()
     setErrorPw(null)
@@ -342,6 +358,70 @@ export default function ConfiguracionPage() {
             <SaveButton saving={savingInfo} saved={savedInfo} />
           </div>
         </form>
+      </Section>
+
+      {/* ── Tipo de negocio ── */}
+      <Section title="Tipo de negocio" description="Define la paleta, copy y servicios sugeridos que verán tus clientes">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {VERTICAL_KEYS.map((key) => {
+              const v = VERTICALS[key]
+              const active = vertical === key
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => handleSaveVertical(key)}
+                  disabled={savingVertical}
+                  className="flex flex-col items-center gap-2 rounded-2xl py-5 px-3 transition-all disabled:opacity-60"
+                  style={{
+                    backgroundColor: active ? `${v.theme.primary}15` : '#111',
+                    borderWidth: active ? 2 : 1,
+                    borderStyle: 'solid',
+                    borderColor: active ? v.theme.primary : '#1E1E1E',
+                  }}
+                >
+                  <span className="text-3xl">{v.emoji}</span>
+                  <span
+                    className="text-xs font-medium"
+                    style={{ color: active ? v.theme.primary : '#9A9A9A' }}
+                  >
+                    {v.name}
+                  </span>
+                  {active && (
+                    <div className="flex gap-1 mt-1">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: v.theme.primary }} />
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: v.theme.accent }} />
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: v.theme.success }} />
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="flex items-center justify-between px-4 py-3 bg-[#111] border border-[#1C1C1C] rounded-xl">
+            <div className="flex items-center gap-2 text-xs">
+              {savingVertical ? (
+                <>
+                  <span className="w-3 h-3 border border-[#C8A96E]/30 border-t-[#C8A96E] rounded-full animate-spin" />
+                  <span className="text-[#888]">Aplicando cambio…</span>
+                </>
+              ) : savedVertical ? (
+                <>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3DBA6E" strokeWidth="2.5" strokeLinecap="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-[#3DBA6E]">Guardado · el booking y emails ya usan el nuevo tema</span>
+                </>
+              ) : (
+                <span className="text-[#888]">
+                  Actualmente: <span className="text-[#E8E3DC] font-medium">{VERTICALS[vertical].emoji} {VERTICALS[vertical].name}</span>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
       </Section>
 
       {/* ── Marca ── */}

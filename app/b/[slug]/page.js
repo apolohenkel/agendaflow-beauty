@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { composeTheme, themeCssVars, DEFAULT_VERTICAL } from '@/lib/verticals'
 
 function fmtDuration(min) {
   if (!min) return ''
@@ -32,20 +33,19 @@ function generateSlots(openingHours, date, duration) {
   return slots
 }
 
-function StepDot({ n, current, label, brand }) {
+function StepDot({ n, current, label, theme }) {
   const done = n < current
   const active = n === current
   return (
     <div className="flex flex-col items-center gap-1.5">
       <div
-        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-          done ? 'text-white' : active ? 'text-[#2B1810] bg-white' : 'bg-[#F4EADB] text-[#A89582]'
-        }`}
+        className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all"
         style={{
-          backgroundColor: done ? brand : undefined,
+          backgroundColor: done ? theme.primary : active ? theme.surface : theme.borderSoft,
+          color: done ? theme.onPrimary : active ? theme.text : theme.textMuted,
           borderWidth: active ? 2 : done ? 0 : 1,
           borderStyle: 'solid',
-          borderColor: active ? brand : '#EDE5DB',
+          borderColor: active ? theme.primary : theme.border,
         }}
       >
         {done ? (
@@ -56,7 +56,7 @@ function StepDot({ n, current, label, brand }) {
       </div>
       <p
         className="text-[10px] uppercase tracking-wider hidden sm:block font-medium"
-        style={{ color: active ? brand : done ? '#6B5A4F' : '#A89582' }}
+        style={{ color: active ? theme.primary : done ? theme.textSoft : theme.textMuted }}
       >
         {label}
       </p>
@@ -64,11 +64,11 @@ function StepDot({ n, current, label, brand }) {
   )
 }
 
-function Row({ label, value, accentColor }) {
+function Row({ label, value, accent, theme }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <p className="text-[#6B5A4F] text-xs">{label}</p>
-      <p className="text-sm font-medium text-right" style={accentColor ? { color: accentColor } : { color: '#2B1810' }}>
+      <p className="text-xs" style={{ color: theme.textSoft }}>{label}</p>
+      <p className="text-sm font-medium text-right" style={{ color: accent || theme.text }}>
         {value}
       </p>
     </div>
@@ -123,6 +123,12 @@ export default function BookPage({ params }) {
     }
     load()
   }, [slug])
+
+  const verticalKey = org?.vertical || DEFAULT_VERTICAL
+  const baseTheme = composeTheme(verticalKey, org?.theme)
+  // Si el org tiene primary_color custom, override al theme.
+  const theme = org?.primary_color ? { ...baseTheme, primary: org.primary_color } : baseTheme
+  const cssVars = themeCssVars(theme)
 
   const availableDays = (() => {
     if (!business?.opening_hours) return []
@@ -190,95 +196,111 @@ export default function BookPage({ params }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF6F0] flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-[#EDE5DB] border-t-[#B8824B] rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}>
+        <div
+          className="w-6 h-6 border-2 rounded-full animate-spin"
+          style={{ borderColor: theme.border, borderTopColor: theme.primary }}
+        />
       </div>
     )
   }
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-[#FAF6F0] flex items-center justify-center p-6" style={{ fontFamily: 'var(--font-body)' }}>
+      <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: theme.bg, color: theme.text, fontFamily: 'var(--font-body)' }}>
         <div className="text-center max-w-sm space-y-4">
-          <h1 className="text-[#2B1810] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
+          <h1 className="text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
             Negocio no encontrado
           </h1>
-          <p className="text-[#6B5A4F] text-sm">El enlace que abriste no corresponde a ningún negocio activo.</p>
+          <p className="text-sm" style={{ color: theme.textSoft }}>El enlace que abriste no corresponde a ningún negocio activo.</p>
         </div>
       </div>
     )
   }
 
-  const brand = org?.primary_color || '#B8824B'
-
   if (done) {
     return (
-      <div className="min-h-screen bg-[#FAF6F0] flex items-center justify-center p-6" style={{ fontFamily: 'var(--font-body)' }}>
+      <div
+        className="min-h-screen flex items-center justify-center p-6"
+        style={{ ...cssVars, backgroundColor: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--font-body)' }}
+      >
         <div className="text-center max-w-sm w-full space-y-6">
           <div
-            className="w-20 h-20 rounded-full border flex items-center justify-center mx-auto"
-            style={{ backgroundColor: `${brand}1A`, borderColor: `${brand}4D` }}
+            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto"
+            style={{ backgroundColor: `${theme.primary}1A`, borderWidth: 1, borderStyle: 'solid', borderColor: `${theme.primary}4D` }}
           >
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke={brand} strokeWidth="1.8" strokeLinecap="round">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke={theme.primary} strokeWidth="1.8" strokeLinecap="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
           <div className="space-y-2">
-            <h2 className="text-[#2B1810] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
+            <h2 className="text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
               ¡Cita agendada!
             </h2>
-            <p className="text-[#6B5A4F] text-sm">
-              Tu cita en <span className="text-[#2B1810] font-medium">{business?.name}</span> quedó registrada.
+            <p className="text-sm" style={{ color: 'var(--text-soft)' }}>
+              Tu cita en <span className="font-medium" style={{ color: 'var(--text)' }}>{business?.name}</span> quedó registrada.
             </p>
           </div>
-          <div className="bg-white border border-[#EDE5DB] rounded-3xl p-6 text-left space-y-3 shadow-sm">
-            <Row label="Servicio" value={selected.service?.name} />
-            <Row label="Fecha" value={fmtDate(selected.date)} />
-            <Row label="Hora" value={selected.time} />
+          <div
+            className="rounded-3xl p-6 text-left space-y-3 shadow-sm"
+            style={{ backgroundColor: 'var(--surface)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border)' }}
+          >
+            <Row label="Servicio" value={selected.service?.name} theme={theme} />
+            <Row label="Fecha" value={fmtDate(selected.date)} theme={theme} />
+            <Row label="Hora" value={selected.time} theme={theme} />
             {selected.staffId && (
-              <Row label="Con" value={staff.find(s => s.id === selected.staffId)?.name} />
+              <Row label="Con" value={staff.find(s => s.id === selected.staffId)?.name} theme={theme} />
             )}
           </div>
-          <p className="text-[#A89582] text-xs">Te contactaremos por WhatsApp para confirmar.</p>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Te contactaremos por WhatsApp para confirmar.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF6F0]" style={{ fontFamily: 'var(--font-body)', '--brand': brand }}>
-
-      <style>{`:root { --brand: ${brand}; }`}</style>
+    <div
+      className="min-h-screen"
+      style={{ ...cssVars, backgroundColor: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--font-body)' }}
+    >
 
       {/* Header del negocio */}
-      <div className="bg-white border-b border-[#EDE5DB] px-5 sm:px-6 py-5">
+      <div
+        className="px-5 sm:px-6 py-5"
+        style={{ backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)' }}
+      >
         <div className="max-w-xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             {org?.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={org.logo_url} alt={business?.name} className="w-11 h-11 rounded-2xl object-contain bg-[#FAF6F0] border border-[#EDE5DB] shrink-0" />
+              <img
+                src={org.logo_url}
+                alt={business?.name}
+                className="w-11 h-11 rounded-2xl object-contain shrink-0"
+                style={{ backgroundColor: theme.bg, borderWidth: 1, borderStyle: 'solid', borderColor: theme.border }}
+              />
             ) : (
               <div
                 className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-md"
-                style={{ backgroundColor: brand, boxShadow: `0 4px 14px ${brand}33` }}
+                style={{ backgroundColor: theme.primary, boxShadow: `0 4px 14px ${theme.primary}33` }}
               >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={theme.onPrimary} strokeWidth="2.2" strokeLinecap="round">
                   <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
                 </svg>
               </div>
             )}
             <div className="min-w-0">
-              <h1 className="text-[#2B1810] text-xl font-medium truncate" style={{ fontFamily: 'var(--font-display)' }}>
+              <h1 className="text-xl font-medium truncate" style={{ fontFamily: 'var(--font-display)' }}>
                 {business?.name}
               </h1>
               {business?.address && (
-                <p className="text-[#6B5A4F] text-xs mt-0.5 truncate">{business.address}</p>
+                <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-soft)' }}>{business.address}</p>
               )}
             </div>
           </div>
           <div className="text-right shrink-0 hidden sm:block">
-            <p className="text-[#A89582] text-[10px] uppercase tracking-wider">Reserva en línea</p>
-            <p className="text-[#6B5A4F] text-xs mt-0.5">2 minutos · Sin tarjeta</p>
+            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Reserva en línea</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-soft)' }}>2 minutos · Sin tarjeta</p>
           </div>
         </div>
       </div>
@@ -287,10 +309,10 @@ export default function BookPage({ params }) {
 
         {/* Stepper */}
         <div className="flex items-center justify-between relative">
-          <div className="absolute top-4 left-0 right-0 h-px bg-[#EDE5DB] z-0" />
+          <div className="absolute top-4 left-0 right-0 h-px z-0" style={{ backgroundColor: 'var(--border)' }} />
           {['Servicio', 'Fecha y hora', 'Tus datos', 'Confirmar'].map((label, i) => (
-            <div key={i} className="z-10 bg-[#FAF6F0] px-1.5">
-              <StepDot n={i} current={step} label={label} brand={brand} />
+            <div key={i} className="z-10 px-1.5" style={{ backgroundColor: 'var(--bg)' }}>
+              <StepDot n={i} current={step} label={label} theme={theme} />
             </div>
           ))}
         </div>
@@ -298,10 +320,10 @@ export default function BookPage({ params }) {
         {step === 0 && (
           <div className="space-y-5">
             <div className="space-y-1">
-              <h2 className="text-[#2B1810] text-3xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
+              <h2 className="text-3xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
                 ¿Qué servicio deseas?
               </h2>
-              <p className="text-[#6B5A4F] text-sm">Elige el servicio que te viene bien hoy</p>
+              <p className="text-sm" style={{ color: 'var(--text-soft)' }}>Elige el servicio que te viene bien hoy</p>
             </div>
             <div className="space-y-2.5">
               {services.map((svc) => {
@@ -310,28 +332,30 @@ export default function BookPage({ params }) {
                   <button
                     key={svc.id}
                     onClick={() => setSelected((s) => ({ ...s, service: svc }))}
-                    className="w-full flex items-center justify-between px-5 py-4 rounded-2xl border text-left transition-all bg-white hover:shadow-md"
+                    className="w-full flex items-center justify-between px-5 py-4 rounded-2xl text-left transition-all hover:shadow-md"
                     style={{
-                      borderColor: isActive ? brand : '#EDE5DB',
-                      backgroundColor: isActive ? `${brand}0D` : 'white',
+                      backgroundColor: isActive ? `${theme.primary}0D` : theme.surface,
+                      borderWidth: 1,
+                      borderStyle: 'solid',
+                      borderColor: isActive ? theme.primary : theme.border,
                     }}
                   >
                     <div className="min-w-0">
-                      <p className="text-[#2B1810] text-base font-medium">{svc.name}</p>
-                      <p className="text-[#6B5A4F] text-xs mt-0.5">
+                      <p className="text-base font-medium" style={{ color: 'var(--text)' }}>{svc.name}</p>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-soft)' }}>
                         {fmtDuration(svc.duration_minutes)}
                         {svc.category ? ` · ${svc.category}` : ''}
                       </p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       {svc.price != null && (
-                        <p className="text-base font-semibold tabular-nums" style={{ color: brand }}>
+                        <p className="text-base font-semibold tabular-nums" style={{ color: theme.primary }}>
                           ${Number(svc.price).toFixed(0)}
                         </p>
                       )}
                       {isActive && (
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: brand }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primary }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={theme.onPrimary} strokeWidth="3" strokeLinecap="round">
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
                         </div>
@@ -341,7 +365,7 @@ export default function BookPage({ params }) {
                 )
               })}
               {services.length === 0 && (
-                <p className="text-[#6B5A4F] text-sm text-center py-8">
+                <p className="text-sm text-center py-8" style={{ color: 'var(--text-soft)' }}>
                   Este negocio aún no ha publicado servicios.
                 </p>
               )}
@@ -349,7 +373,7 @@ export default function BookPage({ params }) {
 
             {staff.length > 0 && (
               <div className="space-y-2 pt-2">
-                <p className="text-[#6B5A4F] text-[11px] uppercase tracking-wider font-medium">¿Con alguien en especial?</p>
+                <p className="text-[11px] uppercase tracking-wider font-medium" style={{ color: 'var(--text-soft)' }}>¿Con alguien en especial?</p>
                 <div className="flex gap-2 flex-wrap">
                   {[{ id: '', name: 'Sin preferencia' }, ...staff].map((m) => {
                     const isActive = selected.staffId === m.id
@@ -357,11 +381,13 @@ export default function BookPage({ params }) {
                       <button
                         key={m.id || 'none'}
                         onClick={() => setSelected((s) => ({ ...s, staffId: m.id }))}
-                        className="px-4 py-2 rounded-full text-sm font-medium border transition-all"
+                        className="px-4 py-2 rounded-full text-sm font-medium transition-all"
                         style={{
-                          backgroundColor: isActive ? `${brand}14` : 'white',
-                          color: isActive ? brand : '#6B5A4F',
-                          borderColor: isActive ? `${brand}66` : '#EDE5DB',
+                          backgroundColor: isActive ? `${theme.primary}14` : theme.surface,
+                          color: isActive ? theme.primary : theme.textSoft,
+                          borderWidth: 1,
+                          borderStyle: 'solid',
+                          borderColor: isActive ? `${theme.primary}66` : theme.border,
                         }}
                       >
                         {m.name}
@@ -375,8 +401,12 @@ export default function BookPage({ params }) {
             <button
               onClick={() => setStep(1)}
               disabled={!selected.service}
-              style={{ backgroundColor: selected.service ? brand : '#E8DCC9', boxShadow: selected.service ? `0 8px 20px ${brand}30` : 'none' }}
-              className="w-full py-3.5 rounded-full text-sm font-semibold text-white transition-all disabled:cursor-not-allowed hover:brightness-105 active:scale-[0.99]"
+              style={{
+                backgroundColor: selected.service ? theme.primary : theme.borderSoft,
+                color: selected.service ? theme.onPrimary : theme.textMuted,
+                boxShadow: selected.service ? `0 8px 20px ${theme.primary}30` : 'none',
+              }}
+              className="w-full py-3.5 rounded-full text-sm font-semibold transition-all disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.99]"
             >
               Continuar
             </button>
@@ -386,14 +416,14 @@ export default function BookPage({ params }) {
         {step === 1 && (
           <div className="space-y-6">
             <div className="space-y-1">
-              <h2 className="text-[#2B1810] text-3xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
+              <h2 className="text-3xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
                 ¿Cuándo te viene bien?
               </h2>
-              <p className="text-[#6B5A4F] text-sm">Elige el día y la hora que prefieras</p>
+              <p className="text-sm" style={{ color: 'var(--text-soft)' }}>Elige el día y la hora que prefieras</p>
             </div>
 
             <div className="space-y-2.5">
-              <p className="text-[#6B5A4F] text-[11px] uppercase tracking-wider font-medium">Fecha</p>
+              <p className="text-[11px] uppercase tracking-wider font-medium" style={{ color: 'var(--text-soft)' }}>Fecha</p>
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {availableDays.map((d, i) => {
                   const isSelected = selected.date?.toDateString() === d.toDateString()
@@ -401,26 +431,28 @@ export default function BookPage({ params }) {
                     <button
                       key={i}
                       onClick={() => setSelected((s) => ({ ...s, date: d, time: '' }))}
-                      className="py-3 px-2 rounded-2xl border text-center transition-all bg-white hover:shadow-sm"
+                      className="py-3 px-2 rounded-2xl text-center transition-all hover:shadow-sm"
                       style={{
-                        borderColor: isSelected ? brand : '#EDE5DB',
-                        backgroundColor: isSelected ? `${brand}0D` : 'white',
+                        backgroundColor: isSelected ? `${theme.primary}0D` : theme.surface,
+                        borderWidth: 1,
+                        borderStyle: 'solid',
+                        borderColor: isSelected ? theme.primary : theme.border,
                       }}
                     >
-                      <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: isSelected ? brand : '#6B5A4F' }}>
+                      <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: isSelected ? theme.primary : theme.textSoft }}>
                         {d.toLocaleDateString('es-MX', { weekday: 'short' })}
                       </p>
-                      <p className="text-xl font-medium mt-0.5 tabular-nums" style={{ color: isSelected ? brand : '#2B1810', fontFamily: 'var(--font-display)' }}>
+                      <p className="text-xl font-medium mt-0.5 tabular-nums" style={{ color: isSelected ? theme.primary : theme.text, fontFamily: 'var(--font-display)' }}>
                         {d.getDate()}
                       </p>
-                      <p className="text-[9px] mt-0.5" style={{ color: isSelected ? `${brand}B3` : '#A89582' }}>
+                      <p className="text-[9px] mt-0.5" style={{ color: isSelected ? `${theme.primary}B3` : theme.textMuted }}>
                         {d.toLocaleDateString('es-MX', { month: 'short' })}
                       </p>
                     </button>
                   )
                 })}
                 {availableDays.length === 0 && (
-                  <p className="col-span-full text-[#6B5A4F] text-sm text-center py-4">
+                  <p className="col-span-full text-sm text-center py-4" style={{ color: 'var(--text-soft)' }}>
                     El negocio aún no ha configurado horarios.
                   </p>
                 )}
@@ -429,9 +461,9 @@ export default function BookPage({ params }) {
 
             {selected.date && (
               <div className="space-y-2.5">
-                <p className="text-[#6B5A4F] text-[11px] uppercase tracking-wider font-medium">Hora disponible</p>
+                <p className="text-[11px] uppercase tracking-wider font-medium" style={{ color: 'var(--text-soft)' }}>Hora disponible</p>
                 {slots.length === 0 ? (
-                  <p className="text-[#A89582] text-sm py-4 text-center">No hay horarios disponibles este día</p>
+                  <p className="text-sm py-4 text-center" style={{ color: 'var(--text-muted)' }}>No hay horarios disponibles este día</p>
                 ) : (
                   <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
                     {slots.map((slot) => {
@@ -440,11 +472,13 @@ export default function BookPage({ params }) {
                         <button
                           key={slot}
                           onClick={() => setSelected((s) => ({ ...s, time: slot }))}
-                          className="py-2.5 rounded-xl border text-sm font-medium tabular-nums transition-all bg-white hover:shadow-sm"
+                          className="py-2.5 rounded-xl text-sm font-medium tabular-nums transition-all hover:shadow-sm"
                           style={{
-                            borderColor: isActive ? brand : '#EDE5DB',
-                            color: isActive ? brand : '#2B1810',
-                            backgroundColor: isActive ? `${brand}0D` : 'white',
+                            backgroundColor: isActive ? `${theme.primary}0D` : theme.surface,
+                            color: isActive ? theme.primary : theme.text,
+                            borderWidth: 1,
+                            borderStyle: 'solid',
+                            borderColor: isActive ? theme.primary : theme.border,
                           }}
                         >
                           {slot}
@@ -459,15 +493,20 @@ export default function BookPage({ params }) {
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setStep(0)}
-                className="px-6 py-3 rounded-full text-sm text-[#6B5A4F] border border-[#EDE5DB] bg-white hover:bg-[#F4EADB] transition-all"
+                className="px-6 py-3 rounded-full text-sm transition-all hover:brightness-95"
+                style={{ color: theme.textSoft, borderWidth: 1, borderStyle: 'solid', borderColor: theme.border, backgroundColor: theme.surface }}
               >
                 ← Atrás
               </button>
               <button
                 onClick={() => setStep(2)}
                 disabled={!selected.date || !selected.time}
-                style={{ backgroundColor: selected.date && selected.time ? brand : '#E8DCC9', boxShadow: selected.date && selected.time ? `0 8px 20px ${brand}30` : 'none' }}
-                className="flex-1 py-3.5 rounded-full text-sm font-semibold text-white transition-all disabled:cursor-not-allowed hover:brightness-105 active:scale-[0.99]"
+                style={{
+                  backgroundColor: selected.date && selected.time ? theme.primary : theme.borderSoft,
+                  color: selected.date && selected.time ? theme.onPrimary : theme.textMuted,
+                  boxShadow: selected.date && selected.time ? `0 8px 20px ${theme.primary}30` : 'none',
+                }}
+                className="flex-1 py-3.5 rounded-full text-sm font-semibold transition-all disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.99]"
               >
                 Continuar
               </button>
@@ -478,62 +517,58 @@ export default function BookPage({ params }) {
         {step === 2 && (
           <div className="space-y-6">
             <div className="space-y-1">
-              <h2 className="text-[#2B1810] text-3xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
+              <h2 className="text-3xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
                 ¿Cómo te llamamos?
               </h2>
-              <p className="text-[#6B5A4F] text-sm">Solo lo básico, para confirmar tu cita</p>
+              <p className="text-sm" style={{ color: 'var(--text-soft)' }}>Solo lo básico, para confirmar tu cita</p>
             </div>
             <div className="space-y-4">
-              <div className="space-y-1.5">
-                <p className="text-[#6B5A4F] text-[11px] uppercase tracking-wider font-medium">Nombre completo *</p>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder="Ej: María García"
-                  className="w-full bg-white border border-[#EDE5DB] rounded-xl px-4 py-3 text-[#2B1810] text-sm placeholder-[#A89582] focus:outline-none transition-all"
-                  style={{ '--tw-ring-color': brand }}
-                  onFocus={(e) => (e.target.style.borderColor = brand)}
-                  onBlur={(e) => (e.target.style.borderColor = '#EDE5DB')}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <p className="text-[#6B5A4F] text-[11px] uppercase tracking-wider font-medium">WhatsApp / Teléfono *</p>
-                <input
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                  placeholder="Ej: +52 55 1234 5678"
-                  className="w-full bg-white border border-[#EDE5DB] rounded-xl px-4 py-3 text-[#2B1810] text-sm placeholder-[#A89582] focus:outline-none transition-all"
-                  onFocus={(e) => (e.target.style.borderColor = brand)}
-                  onBlur={(e) => (e.target.style.borderColor = '#EDE5DB')}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <p className="text-[#6B5A4F] text-[11px] uppercase tracking-wider font-medium">Correo <span className="text-[#A89582] normal-case font-normal">(opcional)</span></p>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  placeholder="tu@correo.com"
-                  className="w-full bg-white border border-[#EDE5DB] rounded-xl px-4 py-3 text-[#2B1810] text-sm placeholder-[#A89582] focus:outline-none transition-all"
-                  onFocus={(e) => (e.target.style.borderColor = brand)}
-                  onBlur={(e) => (e.target.style.borderColor = '#EDE5DB')}
-                />
-              </div>
+              {[
+                { key: 'name', label: 'Nombre completo *', placeholder: 'Ej: María García', type: 'text' },
+                { key: 'phone', label: 'WhatsApp / Teléfono *', placeholder: 'Ej: +52 55 1234 5678', type: 'tel' },
+                { key: 'email', label: 'Correo', labelOpt: '(opcional)', placeholder: 'tu@correo.com', type: 'email' },
+              ].map((f) => (
+                <div key={f.key} className="space-y-1.5">
+                  <p className="text-[11px] uppercase tracking-wider font-medium" style={{ color: 'var(--text-soft)' }}>
+                    {f.label}
+                    {f.labelOpt && <span className="normal-case font-normal ml-1" style={{ color: 'var(--text-muted)' }}>{f.labelOpt}</span>}
+                  </p>
+                  <input
+                    type={f.type}
+                    value={form[f.key]}
+                    onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
+                    placeholder={f.placeholder}
+                    className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-all"
+                    style={{
+                      backgroundColor: theme.surface,
+                      color: theme.text,
+                      borderWidth: 1,
+                      borderStyle: 'solid',
+                      borderColor: theme.border,
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = theme.primary)}
+                    onBlur={(e) => (e.target.style.borderColor = theme.border)}
+                  />
+                </div>
+              ))}
             </div>
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setStep(1)}
-                className="px-6 py-3 rounded-full text-sm text-[#6B5A4F] border border-[#EDE5DB] bg-white hover:bg-[#F4EADB] transition-all"
+                className="px-6 py-3 rounded-full text-sm transition-all hover:brightness-95"
+                style={{ color: theme.textSoft, borderWidth: 1, borderStyle: 'solid', borderColor: theme.border, backgroundColor: theme.surface }}
               >
                 ← Atrás
               </button>
               <button
                 onClick={() => { if (form.name.trim() && form.phone.trim()) setStep(3) }}
                 disabled={!form.name.trim() || !form.phone.trim()}
-                style={{ backgroundColor: form.name.trim() && form.phone.trim() ? brand : '#E8DCC9', boxShadow: form.name.trim() && form.phone.trim() ? `0 8px 20px ${brand}30` : 'none' }}
-                className="flex-1 py-3.5 rounded-full text-sm font-semibold text-white transition-all disabled:cursor-not-allowed hover:brightness-105 active:scale-[0.99]"
+                style={{
+                  backgroundColor: form.name.trim() && form.phone.trim() ? theme.primary : theme.borderSoft,
+                  color: form.name.trim() && form.phone.trim() ? theme.onPrimary : theme.textMuted,
+                  boxShadow: form.name.trim() && form.phone.trim() ? `0 8px 20px ${theme.primary}30` : 'none',
+                }}
+                className="flex-1 py-3.5 rounded-full text-sm font-semibold transition-all disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.99]"
               >
                 Continuar
               </button>
@@ -544,53 +579,64 @@ export default function BookPage({ params }) {
         {step === 3 && (
           <div className="space-y-6">
             <div className="space-y-1">
-              <h2 className="text-[#2B1810] text-3xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
+              <h2 className="text-3xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
                 Revisa y confirma
               </h2>
-              <p className="text-[#6B5A4F] text-sm">Así quedará tu cita</p>
+              <p className="text-sm" style={{ color: 'var(--text-soft)' }}>Así quedará tu cita</p>
             </div>
-            <div className="bg-white border border-[#EDE5DB] rounded-3xl p-6 space-y-4 shadow-sm">
-              <Row label="Servicio" value={selected.service?.name} />
-              <Row label="Duración" value={fmtDuration(selected.service?.duration_minutes)} />
+            <div
+              className="rounded-3xl p-6 space-y-4 shadow-sm"
+              style={{ backgroundColor: theme.surface, borderWidth: 1, borderStyle: 'solid', borderColor: theme.border }}
+            >
+              <Row label="Servicio" value={selected.service?.name} theme={theme} />
+              <Row label="Duración" value={fmtDuration(selected.service?.duration_minutes)} theme={theme} />
               {selected.service?.price != null && (
-                <Row label="Precio" value={`$${Number(selected.service.price).toFixed(0)}`} accentColor={brand} />
+                <Row label="Precio" value={`$${Number(selected.service.price).toFixed(0)}`} accent={theme.primary} theme={theme} />
               )}
-              <div className="border-t border-[#EDE5DB]" />
-              <Row label="Fecha" value={fmtDate(selected.date)} />
-              <Row label="Hora" value={selected.time} />
+              <div style={{ borderTop: `1px solid ${theme.border}` }} />
+              <Row label="Fecha" value={fmtDate(selected.date)} theme={theme} />
+              <Row label="Hora" value={selected.time} theme={theme} />
               {selected.staffId && (
-                <Row label="Con" value={staff.find(s => s.id === selected.staffId)?.name} />
+                <Row label="Con" value={staff.find(s => s.id === selected.staffId)?.name} theme={theme} />
               )}
-              <div className="border-t border-[#EDE5DB]" />
-              <Row label="Nombre" value={form.name} />
-              <Row label="Teléfono" value={form.phone} />
+              <div style={{ borderTop: `1px solid ${theme.border}` }} />
+              <Row label="Nombre" value={form.name} theme={theme} />
+              <Row label="Teléfono" value={form.phone} theme={theme} />
             </div>
 
             {error && (
-              <div className="flex items-center gap-2.5 bg-[#FBE9E7] border border-[#E6A494] rounded-xl px-4 py-3">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C44646" strokeWidth="2" strokeLinecap="round" className="shrink-0">
+              <div
+                className="flex items-center gap-2.5 rounded-xl px-4 py-3"
+                style={{ backgroundColor: `${theme.error}15`, borderWidth: 1, borderStyle: 'solid', borderColor: `${theme.error}40` }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.error} strokeWidth="2" strokeLinecap="round" className="shrink-0">
                   <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
-                <p className="text-[#C44646] text-xs">{error}</p>
+                <p className="text-xs" style={{ color: theme.error }}>{error}</p>
               </div>
             )}
 
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setStep(2)}
-                className="px-6 py-3 rounded-full text-sm text-[#6B5A4F] border border-[#EDE5DB] bg-white hover:bg-[#F4EADB] transition-all"
+                className="px-6 py-3 rounded-full text-sm transition-all hover:brightness-95"
+                style={{ color: theme.textSoft, borderWidth: 1, borderStyle: 'solid', borderColor: theme.border, backgroundColor: theme.surface }}
               >
                 ← Atrás
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                style={{ backgroundColor: brand, boxShadow: `0 8px 20px ${brand}30` }}
-                className="flex-1 py-3.5 rounded-full text-sm font-semibold text-white transition-all disabled:opacity-70 hover:brightness-105 active:scale-[0.99] flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: theme.primary,
+                  color: theme.onPrimary,
+                  boxShadow: `0 8px 20px ${theme.primary}30`,
+                }}
+                className="flex-1 py-3.5 rounded-full text-sm font-semibold transition-all disabled:opacity-70 hover:brightness-110 active:scale-[0.99] flex items-center justify-center gap-2"
               >
                 {submitting ? (
                   <>
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: `${theme.onPrimary}30`, borderTopColor: theme.onPrimary }} />
                     Agendando…
                   </>
                 ) : 'Agendar cita'}
@@ -601,9 +647,12 @@ export default function BookPage({ params }) {
 
       </div>
 
-      <div className="text-center py-8 border-t border-[#EDE5DB] bg-white">
-        <p className="text-[#A89582] text-[10px] tracking-widest uppercase">
-          Reservas con <span className="text-[#6B5A4F] font-medium">AgendaFlow Beauty</span>
+      <div
+        className="text-center py-8"
+        style={{ backgroundColor: theme.surface, borderTop: `1px solid ${theme.border}` }}
+      >
+        <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.textMuted }}>
+          Reservas con <span className="font-medium" style={{ color: theme.textSoft }}>AgendaFlow Beauty</span>
         </p>
       </div>
     </div>

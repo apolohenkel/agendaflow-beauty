@@ -3,6 +3,7 @@ import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 import { sendWelcomeEmail } from '../../../lib/email'
 import { rateLimit } from '../../../lib/rate-limit'
+import { VERTICAL_KEYS, DEFAULT_VERTICAL } from '../../../lib/verticals'
 
 const OPENING_HOURS_DEFAULT = {
   1: { start: '09:00', end: '19:00' },
@@ -52,10 +53,12 @@ export async function POST(request) {
   const rl = await rateLimit(`on:${user.id}`, 3, 60)
   if (!rl.allowed) return NextResponse.json({ error: 'Demasiados intentos, espera un minuto.' }, { status: 429 })
 
-  const { name, slug, timezone, type, seed } = await request.json().catch(() => ({}))
+  const { name, slug, timezone, type, vertical, seed } = await request.json().catch(() => ({}))
   if (!name || !slug || !timezone) {
     return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 })
   }
+
+  const verticalKey = VERTICAL_KEYS.includes(vertical) ? vertical : DEFAULT_VERTICAL
 
   const { data, error } = await supa.rpc('create_organization', {
     p_slug: slug,
@@ -76,15 +79,21 @@ export async function POST(request) {
 
   const row = Array.isArray(data) ? data[0] : data
   const businessId = row?.business_id
+  const orgId = row?.org_id
+
+  const admin = createAdminClient()
+
+  if (orgId) {
+    await admin.from('organizations').update({ vertical: verticalKey }).eq('id', orgId)
+  }
 
   if (seed && businessId) {
-    const admin = createAdminClient()
     await admin.from('businesses').update({ opening_hours: OPENING_HOURS_DEFAULT }).eq('id', businessId)
     const services = SERVICES_BY_TYPE[type] || SERVICES_BY_TYPE['Otro']
     await admin.from('services').insert(services.map((s) => ({ ...s, business_id: businessId, active: true })))
   }
 
-  sendWelcomeEmail({ to: user.email, orgName: name, slug }).catch(() => {})
+  sendWelcomeEmail({ to: user.email, orgName: name, slug, vertical: verticalKey }).catch(() => {})
 
   return NextResponse.json({ ok: true, orgId: row?.org_id, slug })
 }

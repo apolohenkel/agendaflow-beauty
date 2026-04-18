@@ -76,7 +76,7 @@ export async function POST(request) {
 
         const { data: sub } = await admin
           .from('subscriptions')
-          .select('org_id, last_dunning_at, organizations(name, owner_user_id)')
+          .select('org_id, last_dunning_at, organizations(name, owner_user_id, vertical)')
           .eq('stripe_subscription_id', subId)
           .maybeSingle()
 
@@ -85,11 +85,12 @@ export async function POST(request) {
 
         const ownerId = sub?.organizations?.owner_user_id
         const orgName = sub?.organizations?.name
+        const orgVertical = sub?.organizations?.vertical
         if (ownerId) {
           const { data: userRes } = await admin.auth.admin.getUserById(ownerId)
           const email = userRes?.user?.email
           if (email) {
-            await sendPaymentFailedEmail({ to: email, orgName: orgName || 'tu organización' })
+            await sendPaymentFailedEmail({ to: email, orgName: orgName || 'tu organización', vertical: orgVertical })
             await admin.from('subscriptions').update({ last_dunning_at: new Date().toISOString() }).eq('stripe_subscription_id', subId)
           }
         }

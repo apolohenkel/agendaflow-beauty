@@ -32,7 +32,7 @@ export async function POST(request) {
 
   const { data: org } = await admin
     .from('organizations')
-    .select('id')
+    .select('id, vertical')
     .eq('slug', slug)
     .maybeSingle()
   if (!org) return NextResponse.json({ error: ApiError.ORG_NOT_FOUND }, { status: 404 })
@@ -110,6 +110,7 @@ export async function POST(request) {
       startsAt: startsDate.toISOString(),
       timezone: business.timezone || 'America/Mexico_City',
       address: business.address,
+      vertical: org.vertical,
     }),
     (async () => {
       const { data: account } = await admin

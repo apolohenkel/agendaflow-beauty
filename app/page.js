@@ -1,200 +1,309 @@
+'use client'
+
 import Link from 'next/link'
+import { useState } from 'react'
 import { PLANS, PUBLIC_PLANS } from '@/lib/plans'
-
-export const metadata = {
-  title: 'AgendaFlow — Tu salón merece una agenda que no duerma',
-  description: 'El asistente de WhatsApp que agenda, confirma y recuerda citas por ti. Para salones de belleza, barberías y spas. 14 días gratis, sin tarjeta.',
-}
-
-// Paleta hospitality warm:
-// Fondo: #FAF6F0 (crema papel)
-// Superficie: #FFFFFF
-// Borde: #EDE5DB
-// Texto: #2B1810 (espresso)
-// Texto 2: #6B5A4F (taupe)
-// Acento: #B8824B (cobre quemado)
-// Acento soft: #E8C5B8 (rosa polvo)
-// Éxito: #7A9A6E (salvia)
+import { VERTICALS, VERTICAL_KEYS, DEFAULT_VERTICAL, getVertical, themeCssVars } from '@/lib/verticals'
 
 function PainCard({ emoji, title, body }) {
   return (
-    <div className="bg-white border border-[#EDE5DB] rounded-3xl p-7 space-y-3 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-[#B8824B]/5">
+    <div
+      className="rounded-3xl p-7 space-y-3 transition-all hover:-translate-y-1"
+      style={{
+        backgroundColor: 'var(--surface)',
+        borderWidth: 1,
+        borderStyle: 'solid',
+        borderColor: 'var(--border)',
+      }}
+    >
       <div className="text-3xl">{emoji}</div>
-      <h3 className="text-[#2B1810] text-lg font-medium">{title}</h3>
-      <p className="text-[#6B5A4F] text-sm leading-relaxed">{body}</p>
+      <h3 className="text-lg font-medium" style={{ color: 'var(--text)' }}>{title}</h3>
+      <p className="text-sm leading-relaxed" style={{ color: 'var(--text-soft)' }}>{body}</p>
     </div>
   )
 }
 
-function Step({ n, title, body }) {
+function Step({ n, title, body, primary }) {
   return (
     <div className="flex gap-5">
-      <div className="shrink-0 w-12 h-12 rounded-full bg-[#B8824B] text-white flex items-center justify-center text-lg font-medium tabular-nums shadow-lg shadow-[#B8824B]/20" style={{ fontFamily: 'var(--font-display)' }}>
+      <div
+        className="shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-lg font-medium tabular-nums shadow-lg"
+        style={{
+          backgroundColor: primary,
+          color: 'var(--on-primary)',
+          boxShadow: `0 8px 20px ${primary}33`,
+          fontFamily: 'var(--font-display)',
+        }}
+      >
         {n}
       </div>
       <div className="flex-1 pt-1.5">
-        <h3 className="text-[#2B1810] text-base font-semibold mb-1.5">{title}</h3>
-        <p className="text-[#6B5A4F] text-sm leading-relaxed">{body}</p>
+        <h3 className="text-base font-semibold mb-1.5" style={{ color: 'var(--text)' }}>{title}</h3>
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--text-soft)' }}>{body}</p>
       </div>
     </div>
   )
 }
 
-function ChatPreview() {
-  const msgs = [
-    { from: 'client', text: '¿Tienen cita mañana para corte?' },
-    { from: 'bot', text: '¡Hola! Sí, tengo disponible:\n\n🕙 10:30 con Laura\n🕒 15:00 con Carla\n\n¿Cuál te acomoda?' },
-    { from: 'client', text: 'Las 3 está perfecto 🙌' },
-    { from: 'bot', text: '✨ Listo. Te agendé con Carla mañana 15:00.\nTe recordamos 2h antes.' },
-  ]
+function ChatPreview({ vertical }) {
+  const theme = vertical.theme
   return (
     <div className="relative mx-auto max-w-[340px]">
-      <div className="absolute -inset-8 bg-gradient-to-br from-[#E8C5B8]/40 via-[#FAF6F0] to-[#B8824B]/15 rounded-[2.5rem] blur-2xl" aria-hidden />
-      <div className="relative bg-[#FCF9F4] border border-[#EDE5DB] rounded-[2rem] p-4 space-y-2 shadow-2xl shadow-[#2B1810]/10">
-        <div className="flex items-center gap-2.5 pb-3 px-1 border-b border-[#EDE5DB]">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#B8824B] to-[#8C5E35] flex items-center justify-center text-white text-sm font-bold">S</div>
+      <div
+        className="absolute -inset-8 rounded-[2.5rem] blur-2xl"
+        style={{ background: `linear-gradient(135deg, ${theme.accent}40, transparent 50%, ${theme.primary}20)` }}
+        aria-hidden
+      />
+      <div
+        className="relative rounded-[2rem] p-4 space-y-2 shadow-2xl"
+        style={{
+          backgroundColor: 'var(--surface-soft)',
+          borderWidth: 1,
+          borderStyle: 'solid',
+          borderColor: 'var(--border)',
+          boxShadow: `0 25px 50px -12px ${theme.text}15`,
+        }}
+      >
+        <div className="flex items-center gap-2.5 pb-3 px-1" style={{ borderBottom: `1px solid ${theme.border}` }}>
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
+            style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.primaryHover})`, color: 'var(--on-primary)' }}
+          >
+            {vertical.copy.businessChatInitial}
+          </div>
           <div className="flex-1">
-            <p className="text-[#2B1810] text-sm font-semibold">Salón Sofía</p>
-            <p className="text-[#7A9A6E] text-[11px] flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[#7A9A6E] animate-pulse" />en línea</p>
+            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{vertical.copy.businessChatName}</p>
+            <p className="text-[11px] flex items-center gap-1" style={{ color: theme.success }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: theme.success }} />
+              en línea
+            </p>
           </div>
         </div>
-        {msgs.map((m, i) => (
+        {vertical.chatExample.map((m, i) => (
           <div key={i} className={`flex ${m.from === 'client' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[82%] text-[13px] px-3.5 py-2 rounded-2xl leading-snug whitespace-pre-line ${
-              m.from === 'client'
-                ? 'bg-[#B8824B] text-white rounded-br-md shadow-sm'
-                : 'bg-white text-[#2B1810] rounded-bl-md border border-[#EDE5DB] shadow-sm'
-            }`}>
+            <div
+              className="max-w-[82%] text-[13px] px-3.5 py-2 rounded-2xl leading-snug whitespace-pre-line shadow-sm"
+              style={
+                m.from === 'client'
+                  ? { backgroundColor: theme.primary, color: 'var(--on-primary)', borderBottomRightRadius: 6 }
+                  : {
+                      backgroundColor: 'var(--surface)',
+                      color: 'var(--text)',
+                      borderBottomLeftRadius: 6,
+                      borderWidth: 1,
+                      borderStyle: 'solid',
+                      borderColor: 'var(--border)',
+                    }
+              }
+            >
               {m.text}
             </div>
           </div>
         ))}
-        <p className="text-center text-[#A89582] text-[10px] pt-2 italic">Así le contesta tu bot mientras tú atiendes</p>
+        <p className="text-center text-[10px] pt-2 italic" style={{ color: 'var(--text-muted)' }}>
+          Así le contesta tu bot mientras tú atiendes
+        </p>
       </div>
     </div>
   )
 }
 
-function Testimonial({ initial, name, role, text, accent }) {
+function Testimonial({ initial, name, role, text, bg }) {
   return (
-    <div className="bg-white border border-[#EDE5DB] rounded-3xl p-7 space-y-4 flex flex-col">
-      <div className="flex -space-x-0.5 text-[#E8B352]">
+    <div
+      className="rounded-3xl p-7 space-y-4 flex flex-col"
+      style={{
+        backgroundColor: 'var(--surface)',
+        borderWidth: 1,
+        borderStyle: 'solid',
+        borderColor: 'var(--border)',
+      }}
+    >
+      <div className="flex -space-x-0.5" style={{ color: '#E8B352' }}>
         {[1,2,3,4,5].map((i) => (
           <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
         ))}
       </div>
-      <p className="text-[#2B1810] text-base leading-relaxed flex-1" style={{ fontFamily: 'var(--font-display)' }}>
-        "{text}"
+      <p className="text-base leading-relaxed flex-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
+        &ldquo;{text}&rdquo;
       </p>
-      <div className="flex items-center gap-3 pt-3 border-t border-[#EDE5DB]">
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold ${accent}`}>
+      <div className="flex items-center gap-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold"
+          style={{ background: bg, color: 'white' }}
+        >
           {initial}
         </div>
         <div>
-          <p className="text-[#2B1810] text-sm font-semibold">{name}</p>
-          <p className="text-[#6B5A4F] text-xs">{role}</p>
+          <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{name}</p>
+          <p className="text-xs" style={{ color: 'var(--text-soft)' }}>{role}</p>
         </div>
       </div>
     </div>
   )
 }
 
-export default function LandingPage() {
+function VerticalSelector({ value, onChange }) {
   return (
-    <div className="min-h-screen bg-[#FAF6F0] text-[#2B1810]" style={{ fontFamily: 'var(--font-body)' }}>
+    <div className="inline-flex items-center gap-1 p-1 rounded-full shadow-sm"
+      style={{ backgroundColor: 'var(--surface)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border)' }}
+    >
+      {VERTICAL_KEYS.map((key) => {
+        const v = VERTICALS[key]
+        const active = value === key
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onChange(key)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all"
+            style={
+              active
+                ? { backgroundColor: v.theme.primary, color: v.theme.onPrimary }
+                : { color: 'var(--text-soft)' }
+            }
+          >
+            <span>{v.emoji}</span>
+            <span>{v.shortLabel}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+export default function LandingPage() {
+  const [vertical, setVertical] = useState(DEFAULT_VERTICAL)
+  const v = getVertical(vertical)
+  const theme = v.theme
+  const cssVars = themeCssVars(theme)
+
+  function persistVertical() {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('af:vertical', vertical)
+    }
+  }
+
+  const signupHref = `/signup?v=${vertical}`
+
+  return (
+    <div
+      className="min-h-screen transition-colors"
+      style={{ ...cssVars, backgroundColor: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--font-body)' }}
+    >
 
       {/* Nav */}
       <nav className="px-4 sm:px-6 py-5">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 bg-gradient-to-br from-[#B8824B] to-[#8C5E35] rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-[#B8824B]/20">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-md"
+              style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.primaryHover})`, boxShadow: `0 4px 14px ${theme.primary}33` }}
+            >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">
                 <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
               </svg>
             </div>
-            <span className="text-[#2B1810] text-lg tracking-wide" style={{ fontFamily: 'var(--font-display)' }}>AgendaFlow</span>
+            <span className="text-lg tracking-wide" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>AgendaFlow</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-4 shrink-0">
-            <Link href="/login" className="text-[#6B5A4F] hover:text-[#2B1810] text-sm transition-colors px-3 py-2">Entrar</Link>
-            <Link href="/signup" className="bg-[#2B1810] hover:bg-[#3D241A] text-[#FAF6F0] text-sm font-medium px-4 sm:px-5 py-2.5 rounded-full transition-all whitespace-nowrap shadow-lg shadow-[#2B1810]/10">
+            <Link href="/login" className="text-sm transition-colors px-3 py-2 hover:opacity-80" style={{ color: 'var(--text-soft)' }}>Entrar</Link>
+            <Link
+              href={signupHref}
+              onClick={persistVertical}
+              className="text-sm font-medium px-4 sm:px-5 py-2.5 rounded-full transition-all whitespace-nowrap shadow-lg hover:brightness-110"
+              style={{ backgroundColor: 'var(--text)', color: 'var(--bg)', boxShadow: `0 8px 20px ${theme.text}20` }}
+            >
               Empezar gratis
             </Link>
           </div>
         </div>
       </nav>
 
+      {/* Vertical selector banner */}
+      <div className="px-4 sm:px-6 pt-4 pb-2">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+          <p className="text-xs font-medium" style={{ color: 'var(--text-soft)' }}>Veo esto como:</p>
+          <VerticalSelector value={vertical} onChange={setVertical} />
+        </div>
+      </div>
+
       {/* Hero */}
-      <section className="px-5 sm:px-6 pt-12 sm:pt-20 pb-16 sm:pb-24 max-w-6xl mx-auto">
+      <section className="px-5 sm:px-6 pt-8 sm:pt-14 pb-16 sm:pb-24 max-w-6xl mx-auto">
         <div className="grid md:grid-cols-[1.1fr_1fr] gap-12 md:gap-16 items-center">
           <div className="space-y-7">
-            <div className="inline-flex items-center gap-2 bg-white border border-[#EDE5DB] rounded-full pl-1 pr-4 py-1 shadow-sm">
-              <span className="bg-[#E8C5B8] text-[#8C5E35] text-[11px] font-semibold px-2.5 py-1 rounded-full tracking-wide uppercase">Nuevo</span>
-              <span className="text-[#6B5A4F] text-xs">Bot de WhatsApp con IA · 14 días gratis</span>
+            <div
+              className="inline-flex items-center gap-2 rounded-full pl-1 pr-4 py-1 shadow-sm"
+              style={{ backgroundColor: 'var(--surface)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border)' }}
+            >
+              <span
+                className="text-[11px] font-semibold px-2.5 py-1 rounded-full tracking-wide uppercase"
+                style={{ backgroundColor: theme.accent, color: theme.primaryHover }}
+              >
+                Nuevo
+              </span>
+              <span className="text-xs" style={{ color: 'var(--text-soft)' }}>Bot de WhatsApp con IA · 14 días gratis</span>
             </div>
-            <h1 className="text-[#2B1810] text-5xl sm:text-6xl md:text-[68px] leading-[1.05] font-light" style={{ fontFamily: 'var(--font-display)' }}>
-              Tu salón merece<br />
-              una agenda <em className="text-[#B8824B] not-italic font-normal" style={{ fontStyle: 'italic' }}>que no duerma</em>
+            <h1 className="text-5xl sm:text-6xl md:text-[68px] leading-[1.05] font-light" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
+              {v.copy.tagline}<br />
+              <em style={{ color: 'var(--primary)', fontStyle: 'italic', fontWeight: 'normal' }}>{v.copy.taglineAccent}</em>
             </h1>
-            <p className="text-[#6B5A4F] text-lg leading-relaxed max-w-lg">
-              Mientras cortas, tinturas o das masajes, un asistente contesta WhatsApp, agenda citas y recuerda a tus clientes. Tú sigues con lo que amas hacer.
+            <p className="text-lg leading-relaxed max-w-lg" style={{ color: 'var(--text-soft)' }}>
+              {v.copy.heroLead}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <Link href="/signup" className="group inline-flex items-center justify-center gap-2 bg-[#2B1810] hover:bg-[#3D241A] text-[#FAF6F0] text-base font-medium px-7 py-3.5 rounded-full transition-all shadow-xl shadow-[#2B1810]/15 hover:shadow-2xl hover:shadow-[#2B1810]/20">
+              <Link
+                href={signupHref}
+                onClick={persistVertical}
+                className="group inline-flex items-center justify-center gap-2 text-base font-medium px-7 py-3.5 rounded-full transition-all shadow-xl hover:brightness-110"
+                style={{ backgroundColor: 'var(--text)', color: 'var(--bg)', boxShadow: `0 20px 40px ${theme.text}20` }}
+              >
                 Probar gratis 14 días
                 <span className="transition-transform group-hover:translate-x-0.5">→</span>
               </Link>
-              <a href="#como-funciona" className="inline-flex items-center justify-center gap-2 text-[#2B1810] text-base font-medium px-5 py-3.5 transition-all hover:bg-white rounded-full border border-[#EDE5DB]">
+              <a
+                href="#como-funciona"
+                className="inline-flex items-center justify-center gap-2 text-base font-medium px-5 py-3.5 transition-all rounded-full"
+                style={{ color: 'var(--text)', backgroundColor: 'var(--surface)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border)' }}
+              >
                 Ver cómo funciona
               </a>
             </div>
-            <div className="flex items-center gap-5 pt-4 text-[#6B5A4F] text-xs">
-              <div className="flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7A9A6E" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
-                Sin tarjeta
-              </div>
-              <div className="flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7A9A6E" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
-                Listo en 5 minutos
-              </div>
-              <div className="flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7A9A6E" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
-                Cancela cuando quieras
-              </div>
+            <div className="flex flex-wrap items-center gap-5 pt-4 text-xs" style={{ color: 'var(--text-soft)' }}>
+              {['Sin tarjeta', 'Listo en 5 minutos', 'Cancela cuando quieras'].map((t) => (
+                <div key={t} className="flex items-center gap-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.success} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                  {t}
+                </div>
+              ))}
             </div>
           </div>
           <div className="md:pl-4">
-            <ChatPreview />
+            <ChatPreview vertical={v} />
           </div>
         </div>
       </section>
 
       {/* Te suena familiar? */}
-      <section className="px-5 sm:px-6 py-16 sm:py-24 bg-white border-y border-[#EDE5DB]">
+      <section
+        className="px-5 sm:px-6 py-16 sm:py-24"
+        style={{ backgroundColor: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}
+      >
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <p className="text-[#B8824B] text-xs uppercase tracking-[0.22em] font-medium">Si tienes un salón, esto te suena</p>
-            <h2 className="text-[#2B1810] text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
+            <p className="text-xs uppercase tracking-[0.22em] font-medium" style={{ color: 'var(--primary)' }}>
+              Si tienes {v.copy.salonWord === 'spa' ? 'un' : (v.copy.salonWord === 'nail studio' ? 'un' : 'una')} {v.copy.salonWord}, esto te suena
+            </p>
+            <h2 className="text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
               Cada día pierdes dinero<br />sin darte cuenta
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
-            <PainCard
-              emoji="📵"
-              title="Contestas WhatsApp 2 horas tarde"
-              body="Mientras tenías al cliente en la silla, 5 mensajes quedaron sin responder. Cuando respondes, ya agendaron en el salón de al lado."
-            />
-            <PainCard
-              emoji="💸"
-              title="No-shows que te cuestan el día"
-              body="Bloqueaste dos horas para María. No llegó. Tampoco avisó. Podrías haber atendido a otras dos clientas en ese hueco."
-            />
-            <PainCard
-              emoji="🤯"
-              title="Agenda en post-its, WhatsApp y cuadernos"
-              body="¿A qué hora es Andrea? ¿Qué servicio pidió? ¿Ya confirmó? El caos mental que te llevas a la cama cada noche."
-            />
+            {v.painPoints.map((p, i) => (
+              <PainCard key={i} emoji={p.emoji} title={p.title} body={p.body} />
+            ))}
           </div>
         </div>
       </section>
@@ -203,64 +312,47 @@ export default function LandingPage() {
       <section id="como-funciona" className="px-5 sm:px-6 py-16 sm:py-24 max-w-6xl mx-auto">
         <div className="grid md:grid-cols-[1fr_1.1fr] gap-16 items-start">
           <div className="space-y-3 md:sticky md:top-8">
-            <p className="text-[#B8824B] text-xs uppercase tracking-[0.22em] font-medium">La solución</p>
-            <h2 className="text-[#2B1810] text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
-              Una recepcionista<br />que <em className="text-[#B8824B]">nunca descansa</em>
+            <p className="text-xs uppercase tracking-[0.22em] font-medium" style={{ color: 'var(--primary)' }}>La solución</p>
+            <h2 className="text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
+              Una recepcionista<br />que <em style={{ color: 'var(--primary)' }}>nunca descansa</em>
             </h2>
-            <p className="text-[#6B5A4F] text-base leading-relaxed pt-2 max-w-md">
-              Un bot en tu WhatsApp aprende tus precios, horarios y servicios. Conversa como una persona real, no como un formulario. Tus clientas ni se dan cuenta.
+            <p className="text-base leading-relaxed pt-2 max-w-md" style={{ color: 'var(--text-soft)' }}>
+              Un bot en tu WhatsApp aprende tus precios, horarios y servicios. Conversa como una persona real, no como un formulario. Tus {v.copy.clientTerm} ni se dan cuenta.
             </p>
           </div>
           <div className="space-y-10">
-            <Step
-              n="1"
-              title="Crea tu cuenta en 2 minutos"
-              body="Registras tu salón, nos dices qué servicios ofreces y a qué hora atiendes. Te sugerimos plantillas para que no empieces de cero."
-            />
-            <Step
-              n="2"
-              title="Conectas tu WhatsApp"
-              body="Vinculamos tu número de WhatsApp Business. El bot aprende tu menú de servicios, precios y agenda. Empieza a contestar de inmediato."
-            />
-            <Step
-              n="3"
-              title="Contesta 24/7, incluso cuando duermes"
-              body="Tus clientas agendan, reagendan, cancelan y pagan desde WhatsApp. Tú ves todo en un panel limpio. Recibes recordatorios antes de cada cita."
-            />
-            <Step
-              n="4"
-              title="Tu agenda se llena sola"
-              body="Activamos recordatorios 24h y 2h antes — reduces no-shows hasta 70%. Compartes tu link de reservas en Instagram y recibes clientas nuevas."
-            />
+            <Step n="1" primary={theme.primary} title="Crea tu cuenta en 2 minutos" body={`Registras tu ${v.copy.salonWord}, nos dices qué servicios ofreces y a qué hora atiendes. Te sugerimos plantillas para que no empieces de cero.`} />
+            <Step n="2" primary={theme.primary} title="Conectas tu WhatsApp" body="Vinculamos tu número de WhatsApp Business. El bot aprende tu menú de servicios, precios y agenda. Empieza a contestar de inmediato." />
+            <Step n="3" primary={theme.primary} title="Contesta 24/7, incluso cuando duermes" body={`Tus ${v.copy.clientTerm} agendan, reagendan, cancelan y pagan desde WhatsApp. Tú ves todo en un panel limpio. Recibes recordatorios antes de cada cita.`} />
+            <Step n="4" primary={theme.primary} title="Tu agenda se llena sola" body="Activamos recordatorios 24h y 2h antes — reduces no-shows hasta 70%. Compartes tu link de reservas en Instagram y recibes clientes nuevos." />
           </div>
         </div>
       </section>
 
-      {/* Beneficios concretos */}
-      <section className="px-5 sm:px-6 py-16 sm:py-24 bg-gradient-to-b from-[#FAF6F0] to-[#F4EADB]">
+      {/* Beneficios */}
+      <section
+        className="px-5 sm:px-6 py-16 sm:py-24"
+        style={{ background: `linear-gradient(to bottom, var(--bg), ${theme.borderSoft})` }}
+      >
         <div className="max-w-6xl mx-auto space-y-14">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <p className="text-[#B8824B] text-xs uppercase tracking-[0.22em] font-medium">Lo que recuperas</p>
-            <h2 className="text-[#2B1810] text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
+            <p className="text-xs uppercase tracking-[0.22em] font-medium" style={{ color: 'var(--primary)' }}>Lo que recuperas</p>
+            <h2 className="text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
               Tu tiempo. Tu tranquilidad.<br />Tu ingreso.
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-3xl p-8 border border-[#EDE5DB] space-y-3">
-              <p className="text-5xl font-light text-[#B8824B] tabular-nums" style={{ fontFamily: 'var(--font-display)' }}>70%</p>
-              <p className="text-[#2B1810] text-base font-semibold">Menos no-shows</p>
-              <p className="text-[#6B5A4F] text-sm leading-relaxed">Recordatorios automáticos 24h y 2h antes. Las clientas confirman o cancelan con un toque.</p>
-            </div>
-            <div className="bg-white rounded-3xl p-8 border border-[#EDE5DB] space-y-3">
-              <p className="text-5xl font-light text-[#B8824B] tabular-nums" style={{ fontFamily: 'var(--font-display)' }}>24/7</p>
-              <p className="text-[#2B1810] text-base font-semibold">Contesta siempre</p>
-              <p className="text-[#6B5A4F] text-sm leading-relaxed">Responde en segundos, incluso a las 11pm o el domingo. No vuelves a perder una clienta por demora.</p>
-            </div>
-            <div className="bg-white rounded-3xl p-8 border border-[#EDE5DB] space-y-3">
-              <p className="text-5xl font-light text-[#B8824B] tabular-nums" style={{ fontFamily: 'var(--font-display)' }}>+32%</p>
-              <p className="text-[#2B1810] text-base font-semibold">Más ingresos</p>
-              <p className="text-[#6B5A4F] text-sm leading-relaxed">Salones que usan AgendaFlow llenan huecos antes muertos con clientas nuevas del booking público.</p>
-            </div>
+            {[
+              { stat: '70%', title: 'Menos no-shows', body: 'Recordatorios automáticos 24h y 2h antes. Confirman o cancelan con un toque.' },
+              { stat: '24/7', title: 'Contesta siempre', body: 'Responde en segundos, incluso a las 11pm o el domingo. No pierdes clientes por demora.' },
+              { stat: '+32%', title: 'Más ingresos', body: `${v.copy.salonWord === 'barbería' ? 'Barberías' : (v.copy.salonWord === 'spa' ? 'Spas' : 'Negocios')} que usan AgendaFlow llenan huecos antes muertos con clientes del booking público.` },
+            ].map((b, i) => (
+              <div key={i} className="rounded-3xl p-8 space-y-3" style={{ backgroundColor: 'var(--surface)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border)' }}>
+                <p className="text-5xl font-light tabular-nums" style={{ color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>{b.stat}</p>
+                <p className="text-base font-semibold" style={{ color: 'var(--text)' }}>{b.title}</p>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--text-soft)' }}>{b.body}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -268,9 +360,9 @@ export default function LandingPage() {
       {/* Testimonios */}
       <section className="px-5 sm:px-6 py-16 sm:py-24 max-w-6xl mx-auto">
         <div className="text-center space-y-3 max-w-2xl mx-auto mb-12">
-          <p className="text-[#B8824B] text-xs uppercase tracking-[0.22em] font-medium">Voces reales</p>
-          <h2 className="text-[#2B1810] text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
-            Dueñas como tú,<br />cambiando su día a día
+          <p className="text-xs uppercase tracking-[0.22em] font-medium" style={{ color: 'var(--primary)' }}>Voces reales</p>
+          <h2 className="text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
+            Gente como tú,<br />cambiando su día a día
           </h2>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
@@ -279,34 +371,38 @@ export default function LandingPage() {
             name="Sofía Martínez"
             role="Dueña, Estudio Sofía — CDMX"
             text="Antes perdía 3 o 4 clientas por semana por no contestar a tiempo. Desde que puse AgendaFlow, mi agenda está llena y yo descanso de verdad los domingos."
-            accent="bg-gradient-to-br from-[#E8C5B8] to-[#B8824B]"
+            bg="linear-gradient(135deg, #E8C5B8, #B8824B)"
           />
           <Testimonial
             initial="M"
             name="Miguel Rojas"
             role="Barbero, Barber Club Centro — Bogotá"
             text="Mis clientes agendan solos por WhatsApp hasta las 2am. Yo solo veo la agenda llena al día siguiente. Se siente como tener una recepcionista sin pagarle sueldo."
-            accent="bg-gradient-to-br from-[#3D241A] to-[#2B1810]"
+            bg="linear-gradient(135deg, #3D241A, #1A1410)"
           />
           <Testimonial
             initial="L"
             name="Laura Gómez"
             role="Spa Harmonía — Guatemala"
             text="Mis clientas ven mi logo, mis colores, mi link propio. Se siente súper profesional. Y los recordatorios bajaron los no-shows a casi cero."
-            accent="bg-gradient-to-br from-[#7A9A6E] to-[#4E6A44]"
+            bg="linear-gradient(135deg, #7A9A6E, #4E6A44)"
           />
         </div>
       </section>
 
       {/* Pricing */}
-      <section id="planes" className="px-5 sm:px-6 py-16 sm:py-24 bg-white border-y border-[#EDE5DB]">
+      <section
+        id="planes"
+        className="px-5 sm:px-6 py-16 sm:py-24"
+        style={{ backgroundColor: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}
+      >
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <p className="text-[#B8824B] text-xs uppercase tracking-[0.22em] font-medium">Planes</p>
-            <h2 className="text-[#2B1810] text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
-              Empieza gratis, paga<br />cuando estés segura
+            <p className="text-xs uppercase tracking-[0.22em] font-medium" style={{ color: 'var(--primary)' }}>Planes</p>
+            <h2 className="text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
+              Empieza gratis, paga<br />cuando estés seguro
             </h2>
-            <p className="text-[#6B5A4F] text-base pt-2">14 días completos gratis. Sin tarjeta. Cancela cuando quieras.</p>
+            <p className="text-base pt-2" style={{ color: 'var(--text-soft)' }}>14 días completos gratis. Sin tarjeta. Cancela cuando quieras.</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-5">
@@ -316,27 +412,43 @@ export default function LandingPage() {
               return (
                 <div
                   key={key}
-                  className={`relative rounded-3xl p-7 flex flex-col gap-5 transition-all duration-300 hover:-translate-y-1 ${
+                  className="relative rounded-3xl p-7 flex flex-col gap-5 transition-all duration-300 hover:-translate-y-1"
+                  style={
                     highlighted
-                      ? 'bg-[#2B1810] border border-[#2B1810] text-[#FAF6F0] shadow-2xl shadow-[#2B1810]/15 md:scale-105'
-                      : 'bg-white border border-[#EDE5DB] hover:shadow-xl hover:shadow-[#B8824B]/10'
-                  }`}
+                      ? {
+                          backgroundColor: theme.text,
+                          color: theme.bg,
+                          borderWidth: 1,
+                          borderStyle: 'solid',
+                          borderColor: theme.text,
+                          boxShadow: `0 25px 50px -12px ${theme.text}25`,
+                        }
+                      : {
+                          backgroundColor: theme.surface,
+                          borderWidth: 1,
+                          borderStyle: 'solid',
+                          borderColor: theme.border,
+                        }
+                  }
                 >
                   {highlighted && (
-                    <span className="absolute -top-3 left-7 bg-[#E8C5B8] text-[#8C5E35] text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
+                    <span
+                      className="absolute -top-3 left-7 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-md"
+                      style={{ backgroundColor: theme.accent, color: theme.primaryHover }}
+                    >
                       Más elegido
                     </span>
                   )}
                   <div>
-                    <p className={`text-lg font-medium ${highlighted ? 'text-[#FAF6F0]' : 'text-[#2B1810]'}`}>{p.name}</p>
-                    <p className={`text-5xl font-light mt-3 tabular-nums ${highlighted ? 'text-[#E8C5B8]' : 'text-[#B8824B]'}`} style={{ fontFamily: 'var(--font-display)' }}>
-                      ${p.price}<span className={`text-sm ${highlighted ? 'text-[#A89582]' : 'text-[#A89582]'}`}>/mes</span>
+                    <p className="text-lg font-medium" style={{ color: highlighted ? theme.bg : theme.text }}>{p.name}</p>
+                    <p className="text-5xl font-light mt-3 tabular-nums" style={{ color: highlighted ? theme.accent : theme.primary, fontFamily: 'var(--font-display)' }}>
+                      ${p.price}<span className="text-sm" style={{ color: theme.textMuted }}>/mes</span>
                     </p>
                   </div>
                   <ul className="space-y-2.5 flex-1 pt-2">
                     {p.features?.map((f) => (
-                      <li key={f} className={`flex items-start gap-2.5 text-sm ${highlighted ? 'text-[#E8DCC9]' : 'text-[#3D2C22]'}`}>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={highlighted ? '#E8C5B8' : '#B8824B'} strokeWidth="2.5" strokeLinecap="round" className="mt-0.5 shrink-0">
+                      <li key={f} className="flex items-start gap-2.5 text-sm" style={{ color: highlighted ? theme.borderSoft : theme.text }}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={highlighted ? theme.accent : theme.primary} strokeWidth="2.5" strokeLinecap="round" className="mt-0.5 shrink-0">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
                         {f}
@@ -344,12 +456,14 @@ export default function LandingPage() {
                     ))}
                   </ul>
                   <Link
-                    href="/signup"
-                    className={`w-full py-3 rounded-full text-sm font-semibold transition-all text-center ${
+                    href={signupHref}
+                    onClick={persistVertical}
+                    className="w-full py-3 rounded-full text-sm font-semibold transition-all text-center hover:brightness-110"
+                    style={
                       highlighted
-                        ? 'bg-[#E8C5B8] text-[#2B1810] hover:bg-[#F0D4C7] shadow-lg'
-                        : 'bg-[#2B1810] text-[#FAF6F0] hover:bg-[#3D241A]'
-                    }`}
+                        ? { backgroundColor: theme.accent, color: theme.text, boxShadow: `0 8px 20px ${theme.accent}33` }
+                        : { backgroundColor: theme.text, color: theme.bg }
+                    }
                   >
                     Empezar gratis
                   </Link>
@@ -362,36 +476,44 @@ export default function LandingPage() {
 
       {/* CTA final */}
       <section className="px-5 sm:px-6 py-20 sm:py-28 max-w-3xl mx-auto text-center space-y-7">
-        <h2 className="text-[#2B1810] text-4xl md:text-6xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
-          Deja que tu agenda<br /><em className="text-[#B8824B]">se llene sola</em>
+        <h2 className="text-4xl md:text-6xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
+          Deja que tu agenda<br /><em style={{ color: 'var(--primary)' }}>se llene sola</em>
         </h2>
-        <p className="text-[#6B5A4F] text-lg leading-relaxed max-w-xl mx-auto">
+        <p className="text-lg leading-relaxed max-w-xl mx-auto" style={{ color: 'var(--text-soft)' }}>
           Prueba 14 días completos. Si no te hace la vida más fácil, simplemente no pagas. Así de simple.
         </p>
         <div className="pt-4">
-          <Link href="/signup" className="group inline-flex items-center gap-2 bg-[#2B1810] hover:bg-[#3D241A] text-[#FAF6F0] text-base font-medium px-8 py-4 rounded-full transition-all shadow-xl shadow-[#2B1810]/15 hover:shadow-2xl hover:shadow-[#2B1810]/25">
+          <Link
+            href={signupHref}
+            onClick={persistVertical}
+            className="group inline-flex items-center gap-2 text-base font-medium px-8 py-4 rounded-full transition-all shadow-xl hover:brightness-110"
+            style={{ backgroundColor: theme.text, color: theme.bg, boxShadow: `0 20px 40px ${theme.text}25` }}
+          >
             Empezar gratis 14 días
             <span className="transition-transform group-hover:translate-x-0.5">→</span>
           </Link>
         </div>
-        <p className="text-[#A89582] text-xs">Sin tarjeta · Cancela cuando quieras</p>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Sin tarjeta · Cancela cuando quieras</p>
       </section>
 
       {/* Footer */}
-      <footer className="px-5 sm:px-6 py-10 border-t border-[#EDE5DB] bg-[#F4EADB]">
+      <footer className="px-5 sm:px-6 py-10" style={{ backgroundColor: theme.borderSoft, borderTop: '1px solid var(--border)' }}>
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 bg-gradient-to-br from-[#B8824B] to-[#8C5E35] rounded-lg flex items-center justify-center shrink-0">
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.primaryHover})` }}
+            >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
               </svg>
             </div>
-            <p className="text-[#6B5A4F] text-sm">© 2026 AgendaFlow Beauty</p>
+            <p className="text-sm" style={{ color: 'var(--text-soft)' }}>© 2026 AgendaFlow Beauty</p>
           </div>
-          <div className="flex items-center gap-6 text-[#6B5A4F] text-sm">
-            <Link href="/legal/terminos" className="hover:text-[#2B1810] transition-colors">Términos</Link>
-            <Link href="/legal/privacidad" className="hover:text-[#2B1810] transition-colors">Privacidad</Link>
-            <Link href="/login" className="hover:text-[#2B1810] transition-colors">Entrar</Link>
+          <div className="flex items-center gap-6 text-sm" style={{ color: 'var(--text-soft)' }}>
+            <Link href="/legal/terminos" className="transition-colors hover:opacity-80">Términos</Link>
+            <Link href="/legal/privacidad" className="transition-colors hover:opacity-80">Privacidad</Link>
+            <Link href="/login" className="transition-colors hover:opacity-80">Entrar</Link>
           </div>
         </div>
       </footer>
