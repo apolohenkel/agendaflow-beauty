@@ -19,14 +19,19 @@ const DIAS = [
 const DEFAULT_HORARIO = { start: '09:00', end: '18:00' }
 
 // ─── MODAL PERSONAL ───────────────────────────────────────────────────────────
-function PersonalModal({ miembro, businessId, onClose, onSaved }) {
+function PersonalModal({ miembro, businessId, orgId, onClose, onSaved }) {
   const isEdit = Boolean(miembro)
   const [form, setForm] = useState({
     name: miembro?.name || '',
     role: miembro?.role || '',
     phone: miembro?.phone || '',
+    bio: miembro?.bio || '',
+    photo_url: miembro?.photo_url || null,
     active: miembro?.active ?? true,
   })
+  const [specialties, setSpecialties] = useState(Array.isArray(miembro?.specialties) ? miembro.specialties : [])
+  const [specialtyInput, setSpecialtyInput] = useState('')
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   // Días activos con su horario
   const [schedule, setSchedule] = useState(() => {
     if (miembro?.schedule_config) {
@@ -55,6 +60,39 @@ function PersonalModal({ miembro, businessId, onClose, onSaved }) {
     }))
   }
 
+  function addSpecialty() {
+    const t = specialtyInput.trim()
+    if (!t) return
+    if (specialties.includes(t) || specialties.length >= 8) { setSpecialtyInput(''); return }
+    setSpecialties((xs) => [...xs, t])
+    setSpecialtyInput('')
+  }
+
+  function removeSpecialty(t) {
+    setSpecialties((xs) => xs.filter((x) => x !== t))
+  }
+
+  async function handlePhotoUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file || !orgId) return
+    if (file.size > 2 * 1024 * 1024) { setError('La imagen supera los 2 MB.'); return }
+    setUploadingPhoto(true)
+    setError(null)
+    const ext = file.name.split('.').pop().toLowerCase()
+    const path = `staff/${orgId}/${miembro?.id || `new-${Date.now()}`}.${ext}`
+    const { error: upErr } = await supabase.storage
+      .from('logos')
+      .upload(path, file, { upsert: true, contentType: file.type })
+    if (upErr) {
+      setError('No se pudo subir la foto.')
+      setUploadingPhoto(false)
+      return
+    }
+    const { data: pub } = supabase.storage.from('logos').getPublicUrl(path)
+    setForm((f) => ({ ...f, photo_url: `${pub.publicUrl}?v=${Date.now()}` }))
+    setUploadingPhoto(false)
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     if (!form.name.trim()) { setError('El nombre es obligatorio.'); return }
@@ -65,6 +103,9 @@ function PersonalModal({ miembro, businessId, onClose, onSaved }) {
       name: form.name.trim(),
       role: form.role || null,
       phone: form.phone.trim() || null,
+      bio: form.bio.trim().slice(0, 300) || null,
+      photo_url: form.photo_url,
+      specialties,
       active: form.active,
       schedule_config: schedule,
     }
@@ -105,6 +146,33 @@ function PersonalModal({ miembro, businessId, onClose, onSaved }) {
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
 
+          {/* Foto */}
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-20 rounded-2xl bg-[#111] border border-[#1E1E1E] flex items-center justify-center overflow-hidden shrink-0">
+              {form.photo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={form.photo_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E2E2E" strokeWidth="1.5" strokeLinecap="round">
+                  <circle cx="12" cy="8" r="4" /><path d="M4 21v-1a7 7 0 0 1 14 0v1" />
+                </svg>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium bg-[#1A1A1A] border border-[#2A2A2A] text-[#C8C3BC] hover:border-[#3A3A3A] transition-all w-fit">
+                <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handlePhotoUpload} className="hidden" disabled={uploadingPhoto} />
+                {uploadingPhoto ? 'Subiendo…' : form.photo_url ? 'Cambiar foto' : 'Subir foto'}
+              </label>
+              {form.photo_url && (
+                <button type="button" onClick={() => setForm((f) => ({ ...f, photo_url: null }))}
+                  className="text-[#666] hover:text-red-400 text-xs text-left transition-colors w-fit">
+                  Eliminar foto
+                </button>
+              )}
+              <p className="text-[#666] text-[10px]">PNG, JPG o WEBP · máx 2 MB</p>
+            </div>
+          </div>
+
           {/* Nombre y teléfono */}
           <div className="space-y-3">
             <div className="space-y-1">
@@ -126,6 +194,50 @@ function PersonalModal({ miembro, businessId, onClose, onSaved }) {
                 onChange={(e) => set('phone', e.target.value)}
                 className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
               />
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div className="space-y-1">
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Bio corta <span className="normal-case text-[#555]">(opcional · visible al cliente)</span></p>
+            <textarea
+              value={form.bio}
+              onChange={(e) => set('bio', e.target.value.slice(0, 300))}
+              rows={2}
+              placeholder="Ej: 8 años en coloración. Especialista en balayage y rubios."
+              className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors resize-none"
+            />
+            <p className="text-[10px] text-right text-[#555] tabular-nums">{form.bio.length}/300</p>
+          </div>
+
+          {/* Especialidades */}
+          <div className="space-y-2">
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Especialidades <span className="normal-case text-[#555]">(hasta 8)</span></p>
+            {specialties.length > 0 && (
+              <div className="flex gap-1.5 flex-wrap">
+                {specialties.map((t) => (
+                  <span key={t} className="inline-flex items-center gap-1 text-xs bg-[#C8A96E]/10 text-[#C8A96E] border border-[#C8A96E]/30 px-2.5 py-1 rounded-full">
+                    {t}
+                    <button type="button" onClick={() => removeSpecialty(t)} className="text-[#C8A96E]/60 hover:text-[#C8A96E]" aria-label="Quitar">
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={specialtyInput}
+                onChange={(e) => setSpecialtyInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSpecialty() } }}
+                placeholder="Ej: balayage, corte hombre, pedicura spa"
+                className="flex-1 bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+              />
+              <button type="button" onClick={addSpecialty}
+                className="px-4 py-2 rounded-xl text-xs font-medium bg-[#1A1A1A] border border-[#2A2A2A] text-[#C8C3BC] hover:border-[#3A3A3A] transition-all">
+                Agregar
+              </button>
             </div>
           </div>
 
@@ -227,10 +339,16 @@ function PersonalModal({ miembro, businessId, onClose, onSaved }) {
 }
 
 // ─── AVATAR INICIAL ───────────────────────────────────────────────────────────
-function Avatar({ name }) {
+function Avatar({ name, photoUrl }) {
   const initials = name
     ? name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
     : '?'
+  if (photoUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={photoUrl} alt={name} className="w-10 h-10 rounded-xl object-cover border border-[#2A2A2A] shrink-0" />
+    )
+  }
   return (
     <div className="w-10 h-10 rounded-xl bg-[#C8A96E]/10 border border-[#C8A96E]/20 flex items-center justify-center shrink-0">
       <span className="text-[#C8A96E] text-sm font-semibold">{initials}</span>
@@ -256,7 +374,7 @@ function HorarioChips({ schedule }) {
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function PersonalPage() {
-  const { businessId } = useOrg()
+  const { businessId, orgId } = useOrg()
   const [staff, setStaff] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -343,10 +461,10 @@ export default function PersonalPage() {
               key={m.id}
               className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl px-6 py-5 flex items-start gap-5 hover:border-[#2A2A2A] transition-colors group"
             >
-              <Avatar name={m.name} />
+              <Avatar name={m.name} photoUrl={m.photo_url} />
 
               <div className="flex-1 min-w-0 space-y-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-[#E8E3DC] text-sm font-medium truncate">{m.name}</p>
                   {m.role && (
                     <span className="text-[#9A9A9A] text-[10px] border border-[#1E1E1E] px-2 py-0.5 rounded-full shrink-0">
@@ -359,6 +477,18 @@ export default function PersonalPage() {
                     </span>
                   )}
                 </div>
+                {m.bio && (
+                  <p className="text-[#888] text-xs leading-relaxed line-clamp-2">{m.bio}</p>
+                )}
+                {Array.isArray(m.specialties) && m.specialties.length > 0 && (
+                  <div className="flex gap-1 flex-wrap">
+                    {m.specialties.slice(0, 6).map((t) => (
+                      <span key={t} className="text-[10px] text-[#C8A96E] bg-[#C8A96E]/8 border border-[#C8A96E]/20 px-2 py-0.5 rounded-full">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {m.phone && (
                   <p className="text-[#888] text-xs">{m.phone}</p>
                 )}
@@ -399,6 +529,7 @@ export default function PersonalPage() {
         <PersonalModal
           miembro={editTarget}
           businessId={businessId}
+          orgId={orgId}
           onClose={() => { setShowModal(false); setEditTarget(null) }}
           onSaved={load}
         />

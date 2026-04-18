@@ -157,7 +157,7 @@ export default function BookPage({ params }) {
       const [{ data: svcs }, { data: stf }] = await Promise.all([
         supabase.from('services').select('id, name, duration_minutes, price, category')
           .eq('business_id', biz.id).eq('active', true).order('name'),
-        supabase.from('staff').select('id, name, role')
+        supabase.from('staff').select('id, name, role, photo_url, bio, specialties')
           .eq('business_id', biz.id).eq('active', true).order('name'),
       ])
       setServices(svcs || [])
@@ -730,29 +730,91 @@ export default function BookPage({ params }) {
             )}
 
             {staff.length > 0 && (
-              <div className="space-y-2 pt-2">
+              <div className="space-y-3 pt-2">
                 <p className="text-[11px] uppercase tracking-wider font-medium" style={{ color: 'var(--text-soft)' }}>¿Con alguien en especial?</p>
-                <div className="flex gap-2 flex-wrap">
-                  {[{ id: '', name: 'Sin preferencia' }, ...staff].map((m) => {
-                    const isActive = selected.staffId === m.id
-                    return (
-                      <button
-                        key={m.id || 'none'}
-                        onClick={() => setSelected((s) => ({ ...s, staffId: m.id }))}
-                        className="px-4 py-2 rounded-full text-sm font-medium transition-all"
-                        style={{
-                          backgroundColor: isActive ? `${theme.primary}14` : theme.surface,
-                          color: isActive ? theme.primary : theme.textSoft,
-                          borderWidth: 1,
-                          borderStyle: 'solid',
-                          borderColor: isActive ? `${theme.primary}66` : theme.border,
-                        }}
-                      >
-                        {m.name}
-                      </button>
-                    )
-                  })}
-                </div>
+
+                {/* Sin preferencia */}
+                <button
+                  onClick={() => setSelected((s) => ({ ...s, staffId: '' }))}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all"
+                  style={{
+                    backgroundColor: !selected.staffId ? `${theme.primary}0D` : theme.surface,
+                    borderWidth: 1,
+                    borderStyle: 'solid',
+                    borderColor: !selected.staffId ? theme.primary : theme.border,
+                  }}
+                >
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: theme.surfaceSoft, borderWidth: 1, borderStyle: 'solid', borderColor: theme.border }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.textMuted} strokeWidth="1.5" strokeLinecap="round">
+                      <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium" style={{ color: theme.text }}>Sin preferencia</p>
+                    <p className="text-xs" style={{ color: theme.textMuted }}>Asignamos a quien esté disponible</p>
+                  </div>
+                </button>
+
+                {/* Cards de staff */}
+                {staff.map((m) => {
+                  const isActive = selected.staffId === m.id
+                  const initials = m.name?.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?'
+                  const specs = Array.isArray(m.specialties) ? m.specialties.slice(0, 4) : []
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => setSelected((s) => ({ ...s, staffId: m.id }))}
+                      className="w-full flex items-start gap-3 px-4 py-3 rounded-2xl text-left transition-all hover:shadow-sm"
+                      style={{
+                        backgroundColor: isActive ? `${theme.primary}0D` : theme.surface,
+                        borderWidth: 1,
+                        borderStyle: 'solid',
+                        borderColor: isActive ? theme.primary : theme.border,
+                      }}
+                    >
+                      {m.photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={m.photo_url} alt={m.name} className="w-12 h-12 rounded-full object-cover shrink-0" style={{ borderWidth: 1, borderStyle: 'solid', borderColor: theme.border }} />
+                      ) : (
+                        <div
+                          className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
+                          style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.primaryHover})`, color: theme.onPrimary }}
+                        >
+                          {initials}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium" style={{ color: theme.text }}>{m.name}</p>
+                          {m.role && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: theme.textSoft, backgroundColor: theme.surfaceSoft }}>
+                              {m.role}
+                            </span>
+                          )}
+                        </div>
+                        {m.bio && (
+                          <p className="text-xs leading-relaxed" style={{ color: theme.textSoft }}>{m.bio}</p>
+                        )}
+                        {specs.length > 0 && (
+                          <div className="flex gap-1 flex-wrap pt-0.5">
+                            {specs.map((t) => (
+                              <span
+                                key={t}
+                                className="text-[10px] px-2 py-0.5 rounded-full"
+                                style={{ color: theme.primary, backgroundColor: `${theme.primary}14`, borderWidth: 1, borderStyle: 'solid', borderColor: `${theme.primary}33` }}
+                              >
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
             )}
 
