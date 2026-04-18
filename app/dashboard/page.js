@@ -28,8 +28,9 @@ function StatCard({ label, value, sub, gold = false }) {
   )
 }
 
-function AppointmentRow({ appt, isActive }) {
+function AppointmentRow({ appt, isActive, birthdayIds }) {
   const status = STATUS_MAP[appt.status] || STATUS_MAP.pending
+  const isBirthday = appt.clients?.id && birthdayIds?.has(appt.clients.id)
   const fmt = (iso) =>
     new Date(iso).toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' })
 
@@ -54,9 +55,12 @@ function AppointmentRow({ appt, isActive }) {
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-[#E8E3DC] text-sm font-medium truncate">
-          {appt.clients?.name || 'Cliente sin nombre'}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-[#E8E3DC] text-sm font-medium truncate">
+            {appt.clients?.name || 'Cliente sin nombre'}
+          </p>
+          {isBirthday && <span className="text-xs" title="Cumpleaños hoy">🎂</span>}
+        </div>
         <p className="text-[#888] text-xs truncate mt-0.5">
           {appt.services?.name || 'Servicio'}
           {appt.staff?.name ? ` · ${appt.staff.name}` : ''}
@@ -81,6 +85,7 @@ function AppointmentRow({ appt, isActive }) {
 
 export default function DashboardPage() {
   const [appointments, setAppointments] = useState([])
+  const [birthdays, setBirthdays] = useState([])
   const [stats, setStats] = useState({ today: 0, clients: 0, nextTime: '—' })
   const [loading, setLoading] = useState(true)
   const [now, setNow] = useState(new Date())
@@ -101,12 +106,16 @@ export default function DashboardPage() {
       const todayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate()).toISOString()
       const todayEnd   = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1).toISOString()
 
-      const [{ data: appts }, { count: clientCount }] = await Promise.all([
+      // Mes/día locales para filtrar cumpleaños
+      const mm = String(day.getMonth() + 1).padStart(2, '0')
+      const dd = String(day.getDate()).padStart(2, '0')
+
+      const [{ data: appts }, { count: clientCount }, { data: todayBdays }] = await Promise.all([
         supabase
           .from('appointments')
           .select(`
             id, starts_at, ends_at, status,
-            clients(name, phone),
+            clients(id, name, phone, birthday),
             services(name, duration_minutes, price),
             staff(name)
           `)
@@ -114,11 +123,23 @@ export default function DashboardPage() {
           .lt('starts_at', todayEnd)
           .order('starts_at'),
         supabase.from('clients').select('*', { count: 'exact', head: true }),
+        supabase
+          .from('clients')
+          .select('id, name, phone, birthday')
+          .not('birthday', 'is', null),
       ])
 
       const list = appts || []
       const nowRef = new Date()
       const upcoming = list.find((a) => new Date(a.starts_at) > nowRef)
+
+      // Filtrar cumpleaños de hoy (comparando sólo MM-DD, ignorando año)
+      const bdayToday = (todayBdays || []).filter((c) => {
+        if (!c.birthday) return false
+        const b = String(c.birthday)
+        return b.endsWith(`-${mm}-${dd}`) || b.slice(5) === `${mm}-${dd}`
+      })
+      setBirthdays(bdayToday)
 
       setAppointments(list)
       setStats({
@@ -142,6 +163,12 @@ export default function DashboardPage() {
   const hourLabel = now.toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' })
 
   const greeting = now.getHours() < 12 ? 'Buenos días' : now.getHours() < 19 ? 'Buenas tardes' : 'Buenas noches'
+
+  // IDs de clientes con cumpleaños hoy, para mostrar 🎂 en la lista
+  const birthdayIdSet = new Set(birthdays.map((c) => c.id))
+  // Los cumpleañeros QUE NO tienen cita hoy (para seccion aparte)
+  const appointmentClientIds = new Set(appointments.map((a) => a.clients?.id).filter(Boolean))
+  const birthdaysWithoutAppt = birthdays.filter((c) => !appointmentClientIds.has(c.id))
 
   return (
     <div className="min-h-screen bg-[#080808] p-8 space-y-8">
@@ -193,6 +220,42 @@ export default function DashboardPage() {
         />
       </div>
 
+      {/* Cumpleaños sin cita */}
+      {birthdaysWithoutAppt.length > 0 && (
+        <div className="bg-gradient-to-br from-[#C8A96E]/10 to-[#0D0D0D] border border-[#C8A96E]/20 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xl">🎂</span>
+            <p className="text-[#C8A96E] text-sm font-medium">
+              {birthdaysWithoutAppt.length === 1 ? 'Hoy cumple años' : `Hoy cumplen años (${birthdaysWithoutAppt.length})`}
+            </p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {birthdaysWithoutAppt.map((c) => {
+              const clean = String(c.phone || '').replace(/\D+/g, '')
+              const wa = clean ? `https://wa.me/${clean}?text=${encodeURIComponent(`¡Feliz cumpleaños, ${c.name?.split(' ')[0] || ''}! 🎉 Un abrazo de todo el equipo.`)}` : null
+              return (
+                <div key={c.id} className="flex items-center gap-2 bg-[#0D0D0D]/60 border border-[#C8A96E]/20 rounded-xl px-3 py-2">
+                  <div className="w-7 h-7 rounded-lg bg-[#C8A96E]/15 border border-[#C8A96E]/30 flex items-center justify-center shrink-0">
+                    <span className="text-[#C8A96E] text-xs font-semibold">{c.name ? c.name[0].toUpperCase() : '?'}</span>
+                  </div>
+                  <p className="text-[#E8E3DC] text-sm">{c.name}</p>
+                  {wa && (
+                    <a
+                      href={wa}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-[#3DBA6E] hover:text-[#4BC97D] px-2 py-1 rounded-lg hover:bg-[#3DBA6E]/10 transition-all"
+                    >
+                      Felicitar →
+                    </a>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Agenda */}
       <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl overflow-hidden">
 
@@ -241,7 +304,7 @@ export default function DashboardPage() {
             {appointments.map((appt) => {
               const isActive =
                 new Date(appt.starts_at) <= now && new Date(appt.ends_at) >= now
-              return <AppointmentRow key={appt.id} appt={appt} isActive={isActive} />
+              return <AppointmentRow key={appt.id} appt={appt} isActive={isActive} birthdayIds={birthdayIdSet} />
             })}
           </div>
         )}

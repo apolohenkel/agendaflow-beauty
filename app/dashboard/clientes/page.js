@@ -13,6 +13,23 @@ function fmtTime(iso) {
   return new Date(iso).toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' })
 }
 
+function FilterChip({ active, onClick, tone, children }) {
+  const palette = active
+    ? { bg: '#C8A96E', color: '#080808', border: '#C8A96E' }
+    : tone === 'warn'
+      ? { bg: 'transparent', color: '#E89B7A', border: '#3A2A22' }
+      : { bg: 'transparent', color: '#A0A0A0', border: '#1E1E1E' }
+  return (
+    <button
+      onClick={onClick}
+      className="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all hover:brightness-110"
+      style={{ backgroundColor: palette.bg, color: palette.color, borderWidth: 1, borderStyle: 'solid', borderColor: palette.border }}
+    >
+      {children}
+    </button>
+  )
+}
+
 const STATUS_MAP = {
   pending:   { dot: 'bg-amber-400',   label: 'Pendiente'  },
   confirmed: { dot: 'bg-emerald-400', label: 'Confirmada' },
@@ -27,12 +44,26 @@ function ClienteModal({ cliente, onClose, onSaved }) {
     name: cliente.name || '',
     phone: cliente.phone || '',
     email: cliente.email || '',
+    birthday: cliente.birthday || '',
     notes: cliente.notes || '',
   })
+  const [tags, setTags] = useState(Array.isArray(cliente.tags) ? cliente.tags : [])
+  const [tagInput, setTagInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  function addTag() {
+    const t = tagInput.trim()
+    if (!t || tags.includes(t) || tags.length >= 6) { setTagInput(''); return }
+    setTags((xs) => [...xs, t])
+    setTagInput('')
+  }
+
+  function removeTag(t) {
+    setTags((xs) => xs.filter((x) => x !== t))
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -45,6 +76,8 @@ function ClienteModal({ cliente, onClose, onSaved }) {
         name: form.name.trim(),
         phone: form.phone.trim() || null,
         email: form.email.trim().toLowerCase() || null,
+        birthday: form.birthday || null,
+        tags,
         notes: form.notes.trim() || null,
       })
       .eq('id', cliente.id)
@@ -78,11 +111,41 @@ function ClienteModal({ cliente, onClose, onSaved }) {
             <input type="text" value={form.phone} onChange={(e) => set('phone', e.target.value)}
               className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
           </div>
-          <div className="space-y-1">
-            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Correo (opcional)</p>
-            <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)}
-              placeholder="cliente@correo.com"
-              className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Correo</p>
+              <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)}
+                placeholder="cliente@correo.com"
+                className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Cumpleaños</p>
+              <input type="date" value={form.birthday} onChange={(e) => set('birthday', e.target.value)}
+                className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Etiquetas <span className="normal-case text-[#555]">(hasta 6)</span></p>
+            {tags.length > 0 && (
+              <div className="flex gap-1.5 flex-wrap">
+                {tags.map((t) => (
+                  <span key={t} className="inline-flex items-center gap-1 text-xs bg-[#C8A96E]/10 text-[#C8A96E] border border-[#C8A96E]/30 px-2.5 py-1 rounded-full">
+                    {t}
+                    <button type="button" onClick={() => removeTag(t)} className="text-[#C8A96E]/60 hover:text-[#C8A96E]" aria-label="Quitar">×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input type="text" value={tagInput} onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
+                placeholder="VIP, Primeriza, Alergia al amoniaco…"
+                className="flex-1 bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
+              <button type="button" onClick={addTag}
+                className="px-4 py-2 rounded-xl text-xs font-medium bg-[#1A1A1A] border border-[#2A2A2A] text-[#C8C3BC] hover:border-[#3A3A3A] transition-all">
+                Agregar
+              </button>
+            </div>
           </div>
           <div className="space-y-1">
             <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Notas internas</p>
@@ -108,6 +171,19 @@ function ClienteModal({ cliente, onClose, onSaved }) {
 }
 
 // ─── PANEL DETALLE CLIENTE ────────────────────────────────────────────────────
+function daysSince(iso) {
+  if (!iso) return null
+  const ms = Date.now() - new Date(iso).getTime()
+  return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)))
+}
+
+function isBirthdayToday(iso) {
+  if (!iso) return false
+  const d = new Date(iso)
+  const now = new Date()
+  return d.getUTCMonth() === now.getMonth() && d.getUTCDate() === now.getDate()
+}
+
 function ClienteDrawer({ cliente, onClose, onEdit }) {
   const [appts, setAppts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -126,11 +202,27 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
     loadAppts()
   }, [cliente.id])
 
-  const completed = appts.filter((a) => a.status === 'completed').length
+  const completedAppts = appts.filter((a) => a.status === 'completed')
+  const completed = completedAppts.length
   const noShows = appts.filter((a) => a.status === 'no_show').length
-  const totalSpent = appts
-    .filter((a) => a.status === 'completed' && a.services?.price != null)
+  const totalSpent = completedAppts
+    .filter((a) => a.services?.price != null)
     .reduce((sum, a) => sum + Number(a.services.price), 0)
+
+  // Frecuencia promedio entre visitas completadas
+  const avgFrequencyDays = (() => {
+    if (completedAppts.length < 2) return null
+    const sorted = [...completedAppts].sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at))
+    const diffs = []
+    for (let i = 1; i < sorted.length; i++) {
+      diffs.push((new Date(sorted[i].starts_at) - new Date(sorted[i - 1].starts_at)) / (1000 * 60 * 60 * 24))
+    }
+    return Math.round(diffs.reduce((s, d) => s + d, 0) / diffs.length)
+  })()
+
+  const daysAgo = daysSince(cliente.last_visit)
+  const inactive = daysAgo !== null && avgFrequencyDays && daysAgo > avgFrequencyDays * 2
+  const birthdayToday = isBirthdayToday(cliente.birthday)
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
@@ -146,7 +238,12 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
               </span>
             </div>
             <div>
-              <p className="text-[#E8E3DC] text-sm font-medium">{cliente.name}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-[#E8E3DC] text-sm font-medium">{cliente.name}</p>
+                {birthdayToday && (
+                  <span className="text-xs" title="Hoy es su cumpleaños">🎂</span>
+                )}
+              </div>
               <p className="text-[#888] text-xs">{cliente.phone || 'Sin teléfono'}</p>
               {cliente.email && <p className="text-[#888] text-xs">{cliente.email}</p>}
             </div>
@@ -182,11 +279,48 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
           ))}
         </div>
 
+        {/* CRM stats: última visita + frecuencia */}
+        {(daysAgo !== null || avgFrequencyDays) && (
+          <div className="px-6 py-3 border-b border-[#161616] space-y-1">
+            {daysAgo !== null && (
+              <p className="text-xs" style={{ color: inactive ? '#E89B7A' : '#9A9A9A' }}>
+                <span className="text-[#777]">Última visita:</span> hace {daysAgo} {daysAgo === 1 ? 'día' : 'días'}
+                {inactive && <span className="ml-1 text-[#E89B7A]">· suele venir cada {avgFrequencyDays}d</span>}
+              </p>
+            )}
+            {!inactive && avgFrequencyDays && (
+              <p className="text-xs text-[#9A9A9A]">
+                <span className="text-[#777]">Viene cada:</span> ~{avgFrequencyDays} días
+              </p>
+            )}
+            {cliente.birthday && (
+              <p className="text-xs text-[#9A9A9A]">
+                <span className="text-[#777]">Cumpleaños:</span> {new Date(cliente.birthday).toLocaleDateString('es-GT', { day: 'numeric', month: 'long' })}
+                {birthdayToday && <span className="ml-1 text-[#C8A96E]">🎂 hoy</span>}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Tags */}
+        {Array.isArray(cliente.tags) && cliente.tags.length > 0 && (
+          <div className="px-6 py-3 border-b border-[#161616]">
+            <p className="text-[#888] text-[10px] uppercase tracking-widest mb-2">Etiquetas</p>
+            <div className="flex gap-1.5 flex-wrap">
+              {cliente.tags.map((t) => (
+                <span key={t} className="text-[10px] text-[#C8A96E] bg-[#C8A96E]/8 border border-[#C8A96E]/20 px-2 py-0.5 rounded-full">
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Notas */}
         {cliente.notes && (
           <div className="px-6 py-4 border-b border-[#161616]">
             <p className="text-[#888] text-[10px] uppercase tracking-widest mb-1">Notas</p>
-            <p className="text-[#888] text-xs">{cliente.notes}</p>
+            <p className="text-[#C8C3BC] text-xs leading-relaxed">{cliente.notes}</p>
           </div>
         )}
 
@@ -233,18 +367,21 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
 }
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
+const INACTIVITY_DAYS = 60
+
 export default function ClientesPage() {
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState(null)
   const [editTarget, setEditTarget] = useState(null)
+  const [activeFilter, setActiveFilter] = useState('all') // all | inactive | birthday | <tag>
 
   const load = useCallback(async () => {
     setLoading(true)
     const { data } = await supabase
       .from('clients')
-      .select('id, name, phone, email, notes, created_at, last_visit')
+      .select('id, name, phone, email, notes, created_at, last_visit, birthday, tags')
       .order('name')
     setClients(data || [])
     setLoading(false)
@@ -252,16 +389,43 @@ export default function ClientesPage() {
 
   useEffect(() => { load() }, [load])
 
-  const filtered = search.trim()
-    ? clients.filter((c) => {
-        const q = search.toLowerCase()
-        return (
-          c.name?.toLowerCase().includes(q) ||
-          c.phone?.includes(search) ||
-          c.email?.toLowerCase().includes(q)
-        )
-      })
-    : clients
+  // Todas las tags únicas que usan
+  const allTags = [...new Set(clients.flatMap((c) => Array.isArray(c.tags) ? c.tags : []))].sort()
+
+  const now = Date.now()
+  const inactiveCount = clients.filter((c) => {
+    if (!c.last_visit) return false
+    return (now - new Date(c.last_visit).getTime()) / (1000 * 60 * 60 * 24) > INACTIVITY_DAYS
+  }).length
+  const birthdayCount = clients.filter((c) => isBirthdayToday(c.birthday)).length
+
+  const filtered = (() => {
+    let list = clients
+
+    if (activeFilter === 'inactive') {
+      list = list.filter((c) => c.last_visit && (now - new Date(c.last_visit).getTime()) / (1000 * 60 * 60 * 24) > INACTIVITY_DAYS)
+    } else if (activeFilter === 'birthday') {
+      list = list.filter((c) => isBirthdayToday(c.birthday))
+    } else if (activeFilter !== 'all') {
+      list = list.filter((c) => Array.isArray(c.tags) && c.tags.includes(activeFilter))
+    }
+
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      list = list.filter((c) => (
+        c.name?.toLowerCase().includes(q) ||
+        c.phone?.includes(search) ||
+        c.email?.toLowerCase().includes(q)
+      ))
+    }
+
+    return list
+  })()
+
+  function waLink(phone) {
+    const clean = String(phone || '').replace(/\D+/g, '')
+    return clean ? `https://wa.me/${clean}` : null
+  }
 
   return (
     <div className="min-h-screen bg-[#080808] p-8 space-y-6">
@@ -292,6 +456,30 @@ export default function ClientesPage() {
         />
       </div>
 
+      {/* Filtros */}
+      {!loading && (clients.length > 0) && (
+        <div className="flex gap-2 flex-wrap">
+          <FilterChip active={activeFilter === 'all'} onClick={() => setActiveFilter('all')}>
+            Todas <span className="text-[#666]">· {clients.length}</span>
+          </FilterChip>
+          {birthdayCount > 0 && (
+            <FilterChip active={activeFilter === 'birthday'} onClick={() => setActiveFilter('birthday')}>
+              🎂 Cumpleañeras <span className="text-[#666]">· {birthdayCount}</span>
+            </FilterChip>
+          )}
+          {inactiveCount > 0 && (
+            <FilterChip active={activeFilter === 'inactive'} onClick={() => setActiveFilter('inactive')} tone="warn">
+              Inactivas {INACTIVITY_DAYS}+ d <span className="text-[#666]">· {inactiveCount}</span>
+            </FilterChip>
+          )}
+          {allTags.map((t) => (
+            <FilterChip key={t} active={activeFilter === t} onClick={() => setActiveFilter(t)}>
+              {t}
+            </FilterChip>
+          ))}
+        </div>
+      )}
+
       {/* Lista */}
       {loading ? (
         <div className="flex items-center justify-center py-32">
@@ -317,43 +505,72 @@ export default function ClientesPage() {
       ) : (
         <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl overflow-hidden">
           <div className="divide-y divide-[#111]">
-            {filtered.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setSelected(c)}
-                className="w-full flex items-center gap-4 px-6 py-4 hover:bg-[#111] transition-colors text-left group"
-              >
-                {/* Avatar */}
-                <div className="w-9 h-9 rounded-xl bg-[#C8A96E]/10 border border-[#C8A96E]/20 flex items-center justify-center shrink-0">
-                  <span className="text-[#C8A96E] text-sm font-semibold">
-                    {c.name ? c.name[0].toUpperCase() : '?'}
-                  </span>
-                </div>
+            {filtered.map((c) => {
+              const daysAgo = c.last_visit ? Math.floor((now - new Date(c.last_visit).getTime()) / (1000 * 60 * 60 * 24)) : null
+              const isInactive = daysAgo !== null && daysAgo > INACTIVITY_DAYS
+              const birthday = isBirthdayToday(c.birthday)
+              const wa = activeFilter === 'inactive' ? waLink(c.phone) : null
+              return (
+                <div
+                  key={c.id}
+                  className="flex items-center gap-4 px-6 py-4 hover:bg-[#111] transition-colors group"
+                >
+                  <button onClick={() => setSelected(c)} className="flex items-center gap-4 flex-1 min-w-0 text-left">
+                    {/* Avatar */}
+                    <div className="w-9 h-9 rounded-xl bg-[#C8A96E]/10 border border-[#C8A96E]/20 flex items-center justify-center shrink-0">
+                      <span className="text-[#C8A96E] text-sm font-semibold">
+                        {c.name ? c.name[0].toUpperCase() : '?'}
+                      </span>
+                    </div>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-[#E8E3DC] text-sm font-medium truncate">{c.name || '—'}</p>
-                  <p className="text-[#888] text-xs mt-0.5 truncate">{c.phone || 'Sin teléfono'}</p>
-                </div>
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-[#E8E3DC] text-sm font-medium truncate">{c.name || '—'}</p>
+                        {birthday && <span className="text-xs" title="Cumpleaños hoy">🎂</span>}
+                        {Array.isArray(c.tags) && c.tags.slice(0, 2).map((t) => (
+                          <span key={t} className="text-[9px] text-[#C8A96E] bg-[#C8A96E]/8 border border-[#C8A96E]/20 px-1.5 py-0.5 rounded-full">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-[#888] text-xs mt-0.5 truncate">{c.phone || 'Sin teléfono'}</p>
+                    </div>
+                  </button>
 
-                {/* Última visita */}
-                <div className="text-right shrink-0">
-                  {c.last_visit ? (
-                    <>
-                      <p className="text-[#888] text-xs">{fmtDate(c.last_visit)}</p>
-                      <p className="text-[#666] text-[10px] mt-0.5">última visita</p>
-                    </>
+                  {/* Última visita */}
+                  <div className="text-right shrink-0">
+                    {c.last_visit ? (
+                      <>
+                        <p className={`text-xs ${isInactive ? 'text-[#E89B7A]' : 'text-[#888]'}`}>
+                          {daysAgo === 0 ? 'Hoy' : daysAgo === 1 ? 'Ayer' : `hace ${daysAgo}d`}
+                        </p>
+                        <p className="text-[#666] text-[10px] mt-0.5">última visita</p>
+                      </>
+                    ) : (
+                      <p className="text-[#666] text-xs">Sin visitas</p>
+                    )}
+                  </div>
+
+                  {wa ? (
+                    <a
+                      href={wa}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full bg-[#3DBA6E]/10 text-[#3DBA6E] border border-[#3DBA6E]/30 hover:bg-[#3DBA6E]/20 transition-all"
+                      title="Enviar WhatsApp"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                      Saludar
+                    </a>
                   ) : (
-                    <p className="text-[#666] text-xs">Sin visitas</p>
+                    <svg className="text-[#555] group-hover:text-[#444] transition-colors shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
                   )}
                 </div>
-
-                {/* Flecha */}
-                <svg className="text-[#555] group-hover:text-[#444] transition-colors shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </button>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
