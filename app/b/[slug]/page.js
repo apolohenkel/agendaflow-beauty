@@ -87,7 +87,18 @@ export default function BookPage({ params }) {
   const [notFound, setNotFound] = useState(false)
 
   const [step, setStep] = useState(0)
-  const [selected, setSelected] = useState({ service: null, staffId: '', date: null, time: '' })
+  const [selected, setSelected] = useState({ services: [], staffId: '', date: null, time: '' })
+
+  const totalDuration = selected.services.reduce((sum, s) => sum + (s?.duration_minutes || 0), 0)
+  const totalPrice = selected.services.reduce((sum, s) => (s?.price != null ? sum + Number(s.price) : sum), 0)
+  const hasPrice = selected.services.some((s) => s?.price != null)
+
+  function toggleService(svc) {
+    setSelected((s) => {
+      const exists = s.services.some((x) => x.id === svc.id)
+      return { ...s, services: exists ? s.services.filter((x) => x.id !== svc.id) : [...s.services, svc], time: '' }
+    })
+  }
   const [form, setForm] = useState({ name: '', phone: '', email: '' })
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
@@ -156,12 +167,13 @@ export default function BookPage({ params }) {
     return days
   })()
 
-  const slots = selected.date && selected.service
-    ? generateSlots(business?.opening_hours, selected.date, selected.service.duration_minutes)
+  const slots = selected.date && totalDuration > 0
+    ? generateSlots(business?.opening_hours, selected.date, totalDuration)
     : []
 
   async function handleSubmit() {
     if (!form.name.trim() || !form.phone.trim()) { setError('Completa tu nombre y teléfono.'); return }
+    if (selected.services.length === 0) { setError('Selecciona al menos un servicio.'); return }
     setSubmitting(true)
     setError(null)
 
@@ -175,7 +187,7 @@ export default function BookPage({ params }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slug,
-          service_id: selected.service.id,
+          service_ids: selected.services.map((s) => s.id),
           staff_id: selected.staffId || null,
           starts_at: startsAt.toISOString(),
           client_name: form.name.trim(),
@@ -198,7 +210,11 @@ export default function BookPage({ params }) {
         return
       }
 
-      setConfirmation({ id: data.appointment_id, token: data.cancel_token })
+      setConfirmation({
+        id: data.appointment_id,
+        token: data.cancel_token,
+        appointments: data.appointments || [{ id: data.appointment_id, cancel_token: data.cancel_token }],
+      })
       setDone(true)
     } catch {
       setError('Ocurrió un error. Por favor intenta de nuevo.')
@@ -208,15 +224,17 @@ export default function BookPage({ params }) {
   }
 
   function icsContent() {
-    if (!selected.date || !selected.service || !selected.time) return ''
+    if (!selected.date || selected.services.length === 0 || !selected.time) return ''
     const [h, m] = selected.time.split(':').map(Number)
     const starts = new Date(selected.date)
     starts.setHours(h, m, 0, 0)
-    const ends = new Date(starts.getTime() + (selected.service.duration_minutes || 60) * 60000)
+    const total = totalDuration || 60
+    const ends = new Date(starts.getTime() + total * 60000)
     const fmt = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
     const uid = confirmation?.id || `${Date.now()}@agendaflow`
-    const summary = `${selected.service.name} · ${business?.name || ''}`.trim()
-    const desc = `Servicio: ${selected.service.name}\\nCliente: ${form.name}\\nTel: ${form.phone}`
+    const serviceNames = selected.services.map((s) => s.name).join(' + ')
+    const summary = `${serviceNames} · ${business?.name || ''}`.trim()
+    const desc = `Servicios: ${serviceNames}\\nCliente: ${form.name}\\nTel: ${form.phone}`
     const loc = business?.address || ''
     return [
       'BEGIN:VCALENDAR',
@@ -248,16 +266,19 @@ export default function BookPage({ params }) {
   }
 
   async function handleCancelHere() {
-    if (!confirmation?.id || !confirmation?.token) return
+    const list = confirmation?.appointments || (confirmation?.id ? [{ id: confirmation.id, cancel_token: confirmation.token }] : [])
+    if (list.length === 0) return
     if (!confirm('¿Seguro que quieres cancelar tu cita?')) return
     setCancelling(true)
-    const res = await fetch('/api/bookings/cancel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ appointment_id: confirmation.id, token: confirmation.token }),
-    })
+    await Promise.all(list.map((a) =>
+      fetch('/api/bookings/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appointment_id: a.id, token: a.cancel_token }),
+      }).catch(() => null),
+    ))
     setCancelling(false)
-    if (res.ok) setCancelledHere(true)
+    setCancelledHere(true)
   }
 
   async function lookupMyAppointments(e) {
@@ -371,9 +392,24 @@ export default function BookPage({ params }) {
             className="rounded-3xl p-6 text-left space-y-3 shadow-sm"
             style={{ backgroundColor: 'var(--surface)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border)', opacity: isCancelled ? 0.55 : 1 }}
           >
-            <Row label="Servicio" value={selected.service?.name} theme={theme} />
+            {selected.services.length === 1 ? (
+              <Row label="Servicio" value={selected.services[0].name} theme={theme} />
+            ) : (
+              <div>
+                <p className="text-xs mb-1.5" style={{ color: theme.textSoft }}>Servicios</p>
+                <ul className="space-y-1">
+                  {selected.services.map((s) => (
+                    <li key={s.id} className="text-sm font-medium flex items-center justify-between" style={{ color: theme.text }}>
+                      <span>{s.name}</span>
+                      {s.price != null && <span className="tabular-nums" style={{ color: theme.primary }}>${Number(s.price).toFixed(0)}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <Row label="Fecha" value={fmtDate(selected.date)} theme={theme} />
             <Row label="Hora" value={selected.time} theme={theme} />
+            {totalDuration > 0 && <Row label="Duración" value={fmtDuration(totalDuration)} theme={theme} />}
             {selected.staffId && (
               <Row label="Con" value={staff.find(s => s.id === selected.staffId)?.name} theme={theme} />
             )}
@@ -504,13 +540,18 @@ export default function BookPage({ params }) {
               </h2>
               <p className="text-sm" style={{ color: 'var(--text-soft)' }}>Elige el servicio que te viene bien hoy</p>
             </div>
+            {selected.services.length > 0 && (
+              <p className="text-xs" style={{ color: theme.textSoft }}>
+                Puedes agregar varios servicios en una misma visita.
+              </p>
+            )}
             <div className="space-y-2.5">
               {services.map((svc) => {
-                const isActive = selected.service?.id === svc.id
+                const isActive = selected.services.some((s) => s.id === svc.id)
                 return (
                   <button
                     key={svc.id}
-                    onClick={() => setSelected((s) => ({ ...s, service: svc }))}
+                    onClick={() => toggleService(svc)}
                     className="w-full flex items-center justify-between px-5 py-4 rounded-2xl text-left transition-all hover:shadow-md"
                     style={{
                       backgroundColor: isActive ? `${theme.primary}0D` : theme.surface,
@@ -532,13 +573,21 @@ export default function BookPage({ params }) {
                           ${Number(svc.price).toFixed(0)}
                         </p>
                       )}
-                      {isActive && (
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primary }}>
+                      <div
+                        className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-all"
+                        style={{
+                          backgroundColor: isActive ? theme.primary : 'transparent',
+                          borderWidth: isActive ? 0 : 2,
+                          borderStyle: 'solid',
+                          borderColor: theme.border,
+                        }}
+                      >
+                        {isActive && (
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={theme.onPrimary} strokeWidth="3" strokeLinecap="round">
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </button>
                 )
@@ -549,6 +598,24 @@ export default function BookPage({ params }) {
                 </p>
               )}
             </div>
+
+            {selected.services.length > 0 && (
+              <div
+                className="rounded-2xl px-4 py-3 flex items-center justify-between"
+                style={{ backgroundColor: `${theme.primary}0F`, borderWidth: 1, borderStyle: 'solid', borderColor: `${theme.primary}33` }}
+              >
+                <div>
+                  <p className="text-xs" style={{ color: theme.textSoft }}>
+                    {selected.services.length} {selected.services.length === 1 ? 'servicio' : 'servicios'} · {fmtDuration(totalDuration)}
+                  </p>
+                </div>
+                {hasPrice && (
+                  <p className="text-lg font-semibold tabular-nums" style={{ color: theme.primary }}>
+                    ${totalPrice.toFixed(0)}
+                  </p>
+                )}
+              </div>
+            )}
 
             {staff.length > 0 && (
               <div className="space-y-2 pt-2">
@@ -579,11 +646,11 @@ export default function BookPage({ params }) {
 
             <button
               onClick={() => setStep(1)}
-              disabled={!selected.service}
+              disabled={selected.services.length === 0}
               style={{
-                backgroundColor: selected.service ? theme.primary : theme.borderSoft,
-                color: selected.service ? theme.onPrimary : theme.textMuted,
-                boxShadow: selected.service ? `0 8px 20px ${theme.primary}30` : 'none',
+                backgroundColor: selected.services.length > 0 ? theme.primary : theme.borderSoft,
+                color: selected.services.length > 0 ? theme.onPrimary : theme.textMuted,
+                boxShadow: selected.services.length > 0 ? `0 8px 20px ${theme.primary}30` : 'none',
               }}
               className="w-full py-3.5 rounded-full text-sm font-semibold transition-all disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.99]"
             >
@@ -767,10 +834,32 @@ export default function BookPage({ params }) {
               className="rounded-3xl p-6 space-y-4 shadow-sm"
               style={{ backgroundColor: theme.surface, borderWidth: 1, borderStyle: 'solid', borderColor: theme.border }}
             >
-              <Row label="Servicio" value={selected.service?.name} theme={theme} />
-              <Row label="Duración" value={fmtDuration(selected.service?.duration_minutes)} theme={theme} />
-              {selected.service?.price != null && (
-                <Row label="Precio" value={`$${Number(selected.service.price).toFixed(0)}`} accent={theme.primary} theme={theme} />
+              {selected.services.length === 1 ? (
+                <>
+                  <Row label="Servicio" value={selected.services[0].name} theme={theme} />
+                  <Row label="Duración" value={fmtDuration(selected.services[0].duration_minutes)} theme={theme} />
+                  {selected.services[0].price != null && (
+                    <Row label="Precio" value={`$${Number(selected.services[0].price).toFixed(0)}`} accent={theme.primary} theme={theme} />
+                  )}
+                </>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-xs mb-2" style={{ color: theme.textSoft }}>Servicios ({selected.services.length})</p>
+                    <ul className="space-y-1.5">
+                      {selected.services.map((s) => (
+                        <li key={s.id} className="flex items-center justify-between text-sm" style={{ color: theme.text }}>
+                          <span>{s.name} <span style={{ color: theme.textMuted }}>· {fmtDuration(s.duration_minutes)}</span></span>
+                          {s.price != null && <span className="tabular-nums font-medium" style={{ color: theme.primary }}>${Number(s.price).toFixed(0)}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <Row label="Duración total" value={fmtDuration(totalDuration)} theme={theme} />
+                  {hasPrice && (
+                    <Row label="Precio total" value={`$${totalPrice.toFixed(0)}`} accent={theme.primary} theme={theme} />
+                  )}
+                </>
               )}
               <div style={{ borderTop: `1px solid ${theme.border}` }} />
               <Row label="Fecha" value={fmtDate(selected.date)} theme={theme} />
