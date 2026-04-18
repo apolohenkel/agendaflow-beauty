@@ -5,6 +5,7 @@ import { sendText } from '../../../../lib/whatsapp/send'
 import { rateLimit, clientIp } from '../../../../lib/rate-limit'
 import { logger } from '../../../../lib/logger'
 import { ApiError, BookingError } from '../../../../lib/error-codes'
+import { signCancelToken } from '../../../../lib/booking-tokens'
 
 export async function POST(request) {
   const ip = clientIp(request)
@@ -101,6 +102,8 @@ export async function POST(request) {
     return NextResponse.json({ error: ApiError.BOOKING_FAILED }, { status: 500 })
   }
 
+  const cancelToken = signCancelToken(apptId)
+
   Promise.allSettled([
     sendAppointmentConfirmation({
       to: client_email,
@@ -111,6 +114,9 @@ export async function POST(request) {
       timezone: business.timezone || 'America/Mexico_City',
       address: business.address,
       vertical: org.vertical,
+      appointmentId: apptId,
+      cancelToken,
+      slug,
     }),
     (async () => {
       const { data: account } = await admin
@@ -140,5 +146,5 @@ export async function POST(request) {
     })
   })
 
-  return NextResponse.json({ ok: true, appointment_id: apptId })
+  return NextResponse.json({ ok: true, appointment_id: apptId, cancel_token: cancelToken })
 }

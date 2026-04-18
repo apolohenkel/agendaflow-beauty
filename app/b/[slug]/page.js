@@ -91,6 +91,9 @@ export default function BookPage({ params }) {
   const [form, setForm] = useState({ name: '', phone: '', email: '' })
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
+  const [confirmation, setConfirmation] = useState(null)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelledHere, setCancelledHere] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -186,12 +189,66 @@ export default function BookPage({ params }) {
         return
       }
 
+      setConfirmation({ id: data.appointment_id, token: data.cancel_token })
       setDone(true)
     } catch {
       setError('Ocurrió un error. Por favor intenta de nuevo.')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function icsContent() {
+    if (!selected.date || !selected.service || !selected.time) return ''
+    const [h, m] = selected.time.split(':').map(Number)
+    const starts = new Date(selected.date)
+    starts.setHours(h, m, 0, 0)
+    const ends = new Date(starts.getTime() + (selected.service.duration_minutes || 60) * 60000)
+    const fmt = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+    const uid = confirmation?.id || `${Date.now()}@agendaflow`
+    const summary = `${selected.service.name} · ${business?.name || ''}`.trim()
+    const desc = `Servicio: ${selected.service.name}\\nCliente: ${form.name}\\nTel: ${form.phone}`
+    const loc = business?.address || ''
+    return [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//AgendaFlow//EN',
+      'BEGIN:VEVENT',
+      `UID:${uid}`,
+      `DTSTAMP:${fmt(new Date())}`,
+      `DTSTART:${fmt(starts)}`,
+      `DTEND:${fmt(ends)}`,
+      `SUMMARY:${summary}`,
+      loc ? `LOCATION:${loc}` : '',
+      `DESCRIPTION:${desc}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].filter(Boolean).join('\r\n')
+  }
+
+  function downloadIcs() {
+    const blob = new Blob([icsContent()], { type: 'text/calendar;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'cita-agendaflow.ics'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  async function handleCancelHere() {
+    if (!confirmation?.id || !confirmation?.token) return
+    if (!confirm('¿Seguro que quieres cancelar tu cita?')) return
+    setCancelling(true)
+    const res = await fetch('/api/bookings/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appointment_id: confirmation.id, token: confirmation.token }),
+    })
+    setCancelling(false)
+    if (res.ok) setCancelledHere(true)
   }
 
   if (loading) {
@@ -219,6 +276,8 @@ export default function BookPage({ params }) {
   }
 
   if (done) {
+    const mapsUrl = business?.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address)}` : null
+    const isCancelled = cancelledHere
     return (
       <div
         className="min-h-screen flex items-center justify-center p-6"
@@ -227,23 +286,34 @@ export default function BookPage({ params }) {
         <div className="text-center max-w-sm w-full space-y-6">
           <div
             className="w-20 h-20 rounded-full flex items-center justify-center mx-auto"
-            style={{ backgroundColor: `${theme.primary}1A`, borderWidth: 1, borderStyle: 'solid', borderColor: `${theme.primary}4D` }}
+            style={{
+              backgroundColor: isCancelled ? `${theme.textMuted}1A` : `${theme.primary}1A`,
+              borderWidth: 1,
+              borderStyle: 'solid',
+              borderColor: isCancelled ? `${theme.textMuted}4D` : `${theme.primary}4D`,
+            }}
           >
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke={theme.primary} strokeWidth="1.8" strokeLinecap="round">
-              <polyline points="20 6 9 17 4 12" />
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke={isCancelled ? theme.textMuted : theme.primary} strokeWidth="1.8" strokeLinecap="round">
+              {isCancelled ? (
+                <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>
+              ) : (
+                <polyline points="20 6 9 17 4 12" />
+              )}
             </svg>
           </div>
           <div className="space-y-2">
             <h2 className="text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
-              ¡Cita agendada!
+              {isCancelled ? 'Cita cancelada' : '¡Cita agendada!'}
             </h2>
             <p className="text-sm" style={{ color: 'var(--text-soft)' }}>
-              Tu cita en <span className="font-medium" style={{ color: 'var(--text)' }}>{business?.name}</span> quedó registrada.
+              {isCancelled
+                ? <>Cancelamos tu cita en <span className="font-medium" style={{ color: 'var(--text)' }}>{business?.name}</span>. Puedes volver a reservar cuando quieras.</>
+                : <>Tu cita en <span className="font-medium" style={{ color: 'var(--text)' }}>{business?.name}</span> quedó registrada.</>}
             </p>
           </div>
           <div
             className="rounded-3xl p-6 text-left space-y-3 shadow-sm"
-            style={{ backgroundColor: 'var(--surface)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border)' }}
+            style={{ backgroundColor: 'var(--surface)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border)', opacity: isCancelled ? 0.55 : 1 }}
           >
             <Row label="Servicio" value={selected.service?.name} theme={theme} />
             <Row label="Fecha" value={fmtDate(selected.date)} theme={theme} />
@@ -251,8 +321,49 @@ export default function BookPage({ params }) {
             {selected.staffId && (
               <Row label="Con" value={staff.find(s => s.id === selected.staffId)?.name} theme={theme} />
             )}
+            {business?.address && (
+              <Row label="Dónde" value={business.address} theme={theme} />
+            )}
           </div>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Te contactaremos por WhatsApp para confirmar.</p>
+
+          {!isCancelled && (
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2 flex-wrap justify-center">
+                <button
+                  onClick={downloadIcs}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all hover:brightness-105 active:scale-[0.98]"
+                  style={{ backgroundColor: theme.primary, color: theme.onPrimary }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="3" y1="10" x2="21" y2="10" /><line x1="12" y1="14" x2="12" y2="20" /><line x1="9" y1="17" x2="15" y2="17" /></svg>
+                  Añadir al calendario
+                </button>
+                {mapsUrl && (
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all hover:brightness-95"
+                    style={{ backgroundColor: theme.surface, color: theme.text, borderWidth: 1, borderStyle: 'solid', borderColor: theme.border }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                    Abrir en Maps
+                  </a>
+                )}
+              </div>
+              <button
+                onClick={handleCancelHere}
+                disabled={cancelling}
+                className="text-xs underline-offset-2 hover:underline disabled:opacity-60 transition-opacity mt-2"
+                style={{ color: theme.textMuted }}
+              >
+                {cancelling ? 'Cancelando…' : '¿Necesitas cancelar? Cancelar esta cita'}
+              </button>
+            </div>
+          )}
+
+          {!isCancelled && (
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Te contactaremos por WhatsApp para confirmar.</p>
+          )}
         </div>
       </div>
     )
