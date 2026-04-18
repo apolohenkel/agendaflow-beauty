@@ -83,6 +83,7 @@ export default function BookPage({ params }) {
   const [business, setBusiness] = useState(null)
   const [services, setServices] = useState([])
   const [staff, setStaff] = useState([])
+  const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
 
@@ -162,6 +163,15 @@ export default function BookPage({ params }) {
       ])
       setServices(svcs || [])
       setStaff(stf || [])
+
+      // Stats de reviews (no-blocking)
+      supabase.rpc('get_public_org_stats', { p_slug: slug }).then(({ data }) => {
+        const row = Array.isArray(data) ? data[0] : data
+        if (row && Number(row.review_count) > 0) {
+          setStats({ avg: Number(row.avg_rating), count: Number(row.review_count) })
+        }
+      })
+
       setLoading(false)
     }
     load()
@@ -225,9 +235,17 @@ export default function BookPage({ params }) {
           setError('Este negocio no está aceptando reservas en este momento.')
         } else if (data.error === 'rate_limited') {
           setError('Demasiados intentos. Espera un minuto y vuelve a intentar.')
+        } else if (data.error === 'deposit_session_failed') {
+          setError('No pudimos iniciar el pago de la seña. Intenta de nuevo.')
         } else {
           setError('Ocurrió un error. Por favor intenta de nuevo.')
         }
+        return
+      }
+
+      // Si requiere seña, redirigir a Stripe Checkout
+      if (data.requires_deposit && data.checkout_url) {
+        window.location.href = data.checkout_url
         return
       }
 
@@ -608,9 +626,20 @@ export default function BookPage({ params }) {
               <h1 className="text-xl font-medium truncate" style={{ fontFamily: 'var(--font-display)' }}>
                 {business?.name}
               </h1>
-              {business?.address && (
-                <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-soft)' }}>{business.address}</p>
-              )}
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                {business?.address && (
+                  <p className="text-xs truncate" style={{ color: 'var(--text-soft)' }}>{business.address}</p>
+                )}
+                {stats && (
+                  <div className="flex items-center gap-1 text-xs">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill={theme.primary}>
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                    <span className="font-semibold tabular-nums" style={{ color: theme.text }}>{stats.avg.toFixed(1)}</span>
+                    <span style={{ color: theme.textMuted }}>· {stats.count} {stats.count === 1 ? 'review' : 'reviews'}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <button

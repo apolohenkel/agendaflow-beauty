@@ -6,6 +6,7 @@ import { rateLimit, clientIp } from '../../../../lib/rate-limit'
 import { logger } from '../../../../lib/logger'
 import { ApiError, BookingError } from '../../../../lib/error-codes'
 import { signCancelToken } from '../../../../lib/booking-tokens'
+import { getStripe } from '../../../../lib/stripe'
 
 export async function POST(request) {
   const ip = clientIp(request)
@@ -54,7 +55,7 @@ export async function POST(request) {
 
   const { data: business } = await admin
     .from('businesses')
-    .select('id, name, address, timezone, organization_id')
+    .select('id, name, address, timezone, organization_id, deposit_enabled, deposit_amount, deposit_currency')
     .eq('organization_id', org.id)
     .eq('active', true)
     .maybeSingle()
@@ -95,6 +96,52 @@ export async function POST(request) {
       .update({ email: client_email.trim().toLowerCase() })
       .eq('id', clientId)
       .is('email', null)
+  }
+
+  // Si el negocio tiene seña activada, crear Checkout Session y devolver URL.
+  // El webhook de Stripe llamará a book_appointment al recibir session.completed.
+  const needsDeposit = business.deposit_enabled && business.deposit_amount > 0
+  if (needsDeposit) {
+    try {
+      const stripe = getStripe()
+      const appUrl = process.env.APP_URL || 'http://localhost:3000'
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        line_items: [{
+          price_data: {
+            currency: business.deposit_currency || 'usd',
+            product_data: {
+              name: `Seña · ${business.name}`,
+              description: services.map((s) => s.name).join(' + '),
+            },
+            unit_amount: business.deposit_amount,
+          },
+          quantity: 1,
+        }],
+        customer_email: client_email || undefined,
+        success_url: `${appUrl}/b/${slug}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${appUrl}/b/${slug}?checkout=cancelled`,
+        metadata: {
+          type: 'booking_deposit',
+          slug,
+          org_id: org.id,
+          business_id: business.id,
+          client_id: clientId,
+          service_ids: services.map((s) => s.id).join(','),
+          staff_id: staff_id || '',
+          starts_at: firstStart.toISOString(),
+          client_name: client_name.trim(),
+          client_phone: client_phone.trim(),
+          client_email: client_email || '',
+          notes: finalNotes || '',
+        },
+        locale: 'es',
+      })
+      return NextResponse.json({ ok: true, requires_deposit: true, checkout_url: session.url })
+    } catch (err) {
+      logger.error('bookings_create_checkout', err, { slug })
+      return NextResponse.json({ error: 'deposit_session_failed' }, { status: 500 })
+    }
   }
 
   // Reservar cada servicio en cadena. Si alguno falla, cancelar los previos.

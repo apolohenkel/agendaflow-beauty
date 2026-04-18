@@ -97,6 +97,75 @@ export async function POST(request) {
         break
       }
 
+      case 'checkout.session.completed': {
+        const session = event.data.object
+        const meta = session.metadata || {}
+        if (meta.type !== 'booking_deposit') break
+        if (session.payment_status !== 'paid') break
+
+        const serviceIds = (meta.service_ids || '').split(',').filter(Boolean)
+        const startsAt = new Date(meta.starts_at)
+        if (!meta.business_id || !meta.client_id || serviceIds.length === 0 || isNaN(startsAt.getTime())) {
+          logger.error('stripe_webhook', 'booking_deposit_invalid_metadata', { session_id: session.id })
+          break
+        }
+
+        // Cargar servicios para saber duraciones
+        const { data: svcs } = await admin
+          .from('services')
+          .select('id, duration_minutes')
+          .in('id', serviceIds)
+        const svcById = new Map((svcs || []).map((s) => [s.id, s]))
+        const orderedSvcs = serviceIds.map((id) => svcById.get(id)).filter(Boolean)
+        if (orderedSvcs.length !== serviceIds.length) {
+          logger.error('stripe_webhook', 'booking_deposit_service_missing', { session_id: session.id })
+          break
+        }
+
+        // Crear cada cita secuencialmente vía RPC
+        let offset = 0
+        const createdAppts = []
+        for (const svc of orderedSvcs) {
+          const sStart = new Date(startsAt.getTime() + offset * 60000)
+          const sEnd = new Date(sStart.getTime() + svc.duration_minutes * 60000)
+          const { data: apptId, error: bErr } = await admin.rpc('book_appointment', {
+            p_business_id: meta.business_id,
+            p_client_id: meta.client_id,
+            p_service_id: svc.id,
+            p_staff_id: meta.staff_id || null,
+            p_starts_at: sStart.toISOString(),
+            p_ends_at: sEnd.toISOString(),
+            p_status: 'confirmed',
+            p_source: 'web',
+            p_notes: meta.notes || null,
+          })
+          if (bErr) {
+            logger.error('stripe_webhook', bErr, { scope: 'book_appointment_deposit', session_id: session.id })
+            // Rollback cancelando los ya creados
+            if (createdAppts.length > 0) {
+              await admin.from('appointments').update({ status: 'cancelled' }).in('id', createdAppts.map((c) => c.id))
+            }
+            break
+          }
+          createdAppts.push({ id: apptId })
+          offset += svc.duration_minutes
+        }
+
+        // Marcar la seña en el primer appointment
+        if (createdAppts.length > 0) {
+          await admin
+            .from('appointments')
+            .update({
+              deposit_payment_intent: session.payment_intent,
+              deposit_paid_at: new Date().toISOString(),
+              deposit_amount: session.amount_total,
+            })
+            .eq('id', createdAppts[0].id)
+          logger.info('stripe_webhook', 'booking_deposit_confirmed', { session_id: session.id, appointments: createdAppts.length })
+        }
+        break
+      }
+
       default:
         // ignore
         break
