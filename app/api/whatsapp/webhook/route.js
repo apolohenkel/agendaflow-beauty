@@ -87,13 +87,14 @@ export async function POST(request) {
       return NextResponse.json({ ok: true, ignored: 'rate_limited' })
     }
 
-    // Lookup business + name + tz para la conversación
+    // Lookup business + name + tz + slug del org para la conversación
     const { data: business } = await admin
       .from('businesses')
-      .select('id, name, timezone')
+      .select('id, name, timezone, organizations!inner(slug)')
       .eq('organization_id', orgId)
       .single()
     if (!business) return NextResponse.json({ ok: true, ignored: 'no-business' })
+    const orgSlug = business.organizations?.slug
 
     // Conversación + persistir mensaje entrante
     const { data: conv } = await admin
@@ -124,6 +125,7 @@ export async function POST(request) {
     // Llamar al agente
     const reply = await runAgent({
       orgId,
+      orgSlug,
       businessId: business.id,
       businessName: business.name,
       timezone: business.timezone || 'America/Mexico_City',
