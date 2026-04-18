@@ -92,11 +92,14 @@ export default function DashboardPage() {
     return () => clearInterval(t)
   }, [])
 
+  const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`
+
   useEffect(() => {
     async function load() {
       setLoading(true)
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
-      const todayEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
+      const day = new Date()
+      const todayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate()).toISOString()
+      const todayEnd   = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1).toISOString()
 
       const [{ data: appts }, { count: clientCount }] = await Promise.all([
         supabase
@@ -114,7 +117,8 @@ export default function DashboardPage() {
       ])
 
       const list = appts || []
-      const upcoming = list.find((a) => new Date(a.starts_at) > now)
+      const nowRef = new Date()
+      const upcoming = list.find((a) => new Date(a.starts_at) > nowRef)
 
       setAppointments(list)
       setStats({
@@ -127,7 +131,7 @@ export default function DashboardPage() {
       setLoading(false)
     }
     load()
-  }, [refreshKey])
+  }, [refreshKey, todayKey])
 
   const dateLabel = now.toLocaleDateString('es-GT', {
     weekday: 'long',

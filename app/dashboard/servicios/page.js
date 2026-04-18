@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useOrg } from '@/lib/org-context'
 
 const CATEGORIAS = ['Corte', 'Color', 'Tratamiento', 'Uñas', 'Maquillaje', 'Spa', 'Otro']
 
@@ -214,41 +215,22 @@ function ServicioModal({ servicio, businessId, onClose, onSaved }) {
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function ServiciosPage() {
+  const { businessId } = useOrg()
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
-  const [businessId, setBusinessId] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [editTarget, setEditTarget] = useState(null)
   const [filterCat, setFilterCat] = useState('all')
   const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   const load = useCallback(async () => {
+    if (!businessId) return
     setLoading(true)
-
-    // Obtener negocio
-    let bId = businessId
-    if (!bId) {
-      const { data: biz } = await supabase.from('businesses').select('id').limit(1)
-      if (biz && biz.length > 0) {
-        bId = biz[0].id
-        setBusinessId(bId)
-      } else {
-        const { data: newBiz } = await supabase
-          .from('businesses')
-          .insert({ name: 'Mi Negocio', timezone: 'America/Guatemala' })
-          .select('id')
-          .single()
-        bId = newBiz?.id
-        setBusinessId(bId)
-      }
-    }
-
     const { data } = await supabase
       .from('services')
       .select('*')
-      .eq('business_id', bId)
+      .eq('business_id', businessId)
       .order('name')
-
     setServices(data || [])
     setLoading(false)
   }, [businessId])

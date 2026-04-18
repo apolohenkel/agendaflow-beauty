@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useOrg } from '@/lib/org-context'
 
 export default function NuevaCitaModal({ onClose, onCreated }) {
+  const { businessId } = useOrg()
   const [form, setForm] = useState({
     clientName: '',
     clientPhone: '',
@@ -15,7 +17,6 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
   })
   const [services, setServices] = useState([])
   const [staff, setStaff] = useState([])
-  const [businessId, setBusinessId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
   const [error, setError] = useState(null)
@@ -27,31 +28,18 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
   const duration = selectedService?.duration_minutes || 60
 
   useEffect(() => {
+    if (!businessId) return
     async function loadData() {
-      // Obtener o crear negocio
-      let bId = null
-      const { data: biz } = await supabase.from('businesses').select('id').limit(1)
-      if (biz && biz.length > 0) {
-        bId = biz[0].id
-      } else {
-        const { data: newBiz } = await supabase
-          .from('businesses')
-          .insert({ name: 'Mi Negocio', timezone: 'America/Guatemala' })
-          .select('id').single()
-        bId = newBiz?.id
-      }
-      setBusinessId(bId)
-
       const [{ data: svcs }, { data: stf }] = await Promise.all([
-        supabase.from('services').select('id, name, duration_minutes, price').eq('business_id', bId).eq('active', true).order('name'),
-        supabase.from('staff').select('id, name, role').eq('business_id', bId).eq('active', true).order('name'),
+        supabase.from('services').select('id, name, duration_minutes, price').eq('business_id', businessId).eq('active', true).order('name'),
+        supabase.from('staff').select('id, name, role').eq('business_id', businessId).eq('active', true).order('name'),
       ])
       setServices(svcs || [])
       setStaff(stf || [])
       setLoadingData(false)
     }
     loadData()
-  }, [])
+  }, [businessId])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -86,22 +74,32 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
       const startsAt = new Date(`${form.date}T${form.time}:00`)
       const endsAt = new Date(startsAt.getTime() + duration * 60000)
 
-      await supabase.from('appointments').insert({
-        business_id: businessId,
-        client_id: clientId,
-        service_id: form.serviceId || null,
-        staff_id: form.staffId || null,
-        starts_at: startsAt.toISOString(),
-        ends_at: endsAt.toISOString(),
-        status: 'confirmed',
-        notes: form.notes || null,
-        source: 'manual',
+      const { error: bookErr } = await supabase.rpc('book_appointment', {
+        p_business_id: businessId,
+        p_client_id: clientId,
+        p_service_id: form.serviceId || null,
+        p_staff_id: form.staffId || null,
+        p_starts_at: startsAt.toISOString(),
+        p_ends_at: endsAt.toISOString(),
+        p_status: 'confirmed',
+        p_source: 'manual',
+        p_notes: form.notes || null,
       })
+      if (bookErr) throw bookErr
 
       onCreated()
       onClose()
     } catch (err) {
-      setError('Error al crear la cita. Intenta de nuevo.')
+      const msg = err?.message || ''
+      if (msg.includes('slot_unavailable')) {
+        setError('Ese horario ya tiene una cita. Elige otra hora.')
+      } else if (msg.includes('plan_limit_reached')) {
+        setError('Alcanzaste el límite de citas de tu plan este mes. Actualiza tu plan en Facturación.')
+      } else if (msg.includes('trial_expired') || msg.includes('no_active_plan')) {
+        setError('Tu prueba terminó o no tienes plan activo. Ve a Facturación para suscribirte.')
+      } else {
+        setError('Error al crear la cita. Intenta de nuevo.')
+      }
     } finally {
       setLoading(false)
     }

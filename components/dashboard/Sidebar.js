@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useOrg } from '@/lib/org-context'
 import NotificationBell from '@/components/dashboard/NotificationBell'
 
 const navItems = [
@@ -76,6 +76,26 @@ const navItems = [
     ),
   },
   {
+    label: 'WhatsApp',
+    href: '/dashboard/whatsapp',
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Facturación',
+    href: '/dashboard/billing',
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+        <rect x="2" y="6" width="20" height="14" rx="2" />
+        <line x1="2" y1="11" x2="22" y2="11" />
+        <line x1="6" y1="16" x2="10" y2="16" />
+      </svg>
+    ),
+  },
+  {
     label: 'Configuración',
     href: '/dashboard/configuracion',
     icon: (
@@ -90,16 +110,9 @@ const navItems = [
 export default function Sidebar() {
   const pathname  = usePathname()
   const router    = useRouter()
-  const [bizName, setBizName] = useState('Mi negocio')
-  const [userEmail, setUserEmail] = useState('')
-
-  useEffect(() => {
-    supabase.from('businesses').select('name').limit(1).single()
-      .then(({ data }) => { if (data?.name) setBizName(data.name) })
-
-    supabase.auth.getSession()
-      .then(({ data: { session } }) => { if (session?.user?.email) setUserEmail(session.user.email) })
-  }, [])
+  const { business, user, whatsappConnected } = useOrg()
+  const bizName = business?.name || 'Mi negocio'
+  const userEmail = user?.email || ''
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -156,13 +169,17 @@ export default function Sidebar() {
       </div>
 
       {/* WhatsApp status indicator */}
-      <div className="px-3 py-3 mx-3 mb-3 bg-[#111] rounded-xl border border-[#1A1A1A]">
+      <Link href="/dashboard/whatsapp" className="block px-3 py-3 mx-3 mb-3 bg-[#111] rounded-xl border border-[#1A1A1A] hover:border-[#2A2A2A] transition-colors">
         <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-[#3DBA6E] animate-pulse" />
-          <p className="text-[#3DBA6E] text-[10px] font-medium tracking-wide">WhatsApp conectado</p>
+          <div className={`w-1.5 h-1.5 rounded-full ${whatsappConnected ? 'bg-[#3DBA6E] animate-pulse' : 'bg-[#444]'}`} />
+          <p className={`text-[10px] font-medium tracking-wide ${whatsappConnected ? 'text-[#3DBA6E]' : 'text-[#666]'}`}>
+            {whatsappConnected ? 'WhatsApp conectado' : 'WhatsApp desconectado'}
+          </p>
         </div>
-        <p className="text-[#333] text-[9px] mt-0.5 pl-3.5">Bot activo</p>
-      </div>
+        <p className="text-[#333] text-[9px] mt-0.5 pl-3.5">
+          {whatsappConnected ? 'Bot activo' : 'Configura para activar el bot'}
+        </p>
+      </Link>
 
       {/* User + Logout */}
       <div className="px-3 pb-4 border-t border-[#1A1A1A] pt-3">

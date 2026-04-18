@@ -1,0 +1,272 @@
+'use client'
+
+import { useEffect, useState, useCallback } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+import { useOrg } from '@/lib/org-context'
+import { PLANS, PUBLIC_PLANS } from '@/lib/plans'
+
+function fmtDate(iso) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function StatusBadge({ status, trialActive }) {
+  let label = 'Inactivo', color = 'bg-zinc-500/10 text-zinc-400'
+  if (status === 'active') { label = 'Activo'; color = 'bg-emerald-500/10 text-emerald-400' }
+  else if (status === 'trialing' || trialActive) { label = 'Prueba gratis'; color = 'bg-[#C8A96E]/10 text-[#C8A96E]' }
+  else if (status === 'past_due') { label = 'Pago fallido'; color = 'bg-red-500/10 text-red-400' }
+  else if (status === 'canceled') { label = 'Cancelado'; color = 'bg-zinc-500/10 text-zinc-400' }
+  return <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${color}`}>{label}</span>
+}
+
+export default function BillingPage() {
+  const router = useRouter()
+  const search = useSearchParams()
+  const { orgId, plan: orgPlan, trialEndsAt, loading: orgLoading } = useOrg()
+  const [sub, setSub] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState(null)
+  const [notice, setNotice] = useState(null)
+
+  const checkoutResult = search.get('checkout')
+
+  useEffect(() => {
+    if (checkoutResult === 'success') setNotice({ type: 'success', text: '¡Suscripción activada! Puede tomar unos segundos en reflejarse.' })
+    else if (checkoutResult === 'cancelled') setNotice({ type: 'info', text: 'Checkout cancelado. Puedes intentar de nuevo cuando quieras.' })
+  }, [checkoutResult])
+
+  const load = useCallback(async () => {
+    if (!orgId) return
+    const { data } = await supabase
+      .from('subscriptions')
+      .select('status, plan, current_period_end, cancel_at_period_end')
+      .eq('org_id', orgId)
+      .maybeSingle()
+    setSub(data)
+    setLoading(false)
+  }, [orgId])
+
+  useEffect(() => { load() }, [load])
+
+  // Tras ?checkout=success el webhook de Stripe tarda ~1-3s en actualizar la suscripción.
+  // Poll 2s x 5 ticks para que la UI refleje el plan activo sin refresh manual.
+  useEffect(() => {
+    if (checkoutResult !== 'success') return
+    let ticks = 0
+    const id = setInterval(() => {
+      load()
+      if (++ticks >= 5) clearInterval(id)
+    }, 2000)
+    return () => clearInterval(id)
+  }, [checkoutResult, load])
+
+  async function handleCheckout(planKey) {
+    setBusy(planKey)
+    setNotice(null)
+    const res = await fetch('/api/stripe/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan: planKey }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      setNotice({ type: 'error', text: data.error || 'No se pudo iniciar checkout.' })
+      setBusy(null)
+      return
+    }
+    window.location.href = data.url
+  }
+
+  async function handlePortal() {
+    setBusy('portal')
+    const res = await fetch('/api/stripe/portal', { method: 'POST' })
+    const data = await res.json()
+    if (!res.ok) {
+      setNotice({ type: 'error', text: data.error || 'No se pudo abrir el portal.' })
+      setBusy(null)
+      return
+    }
+    window.location.href = data.url
+  }
+
+  async function handleCancel() {
+    if (!confirm('¿Cancelar tu suscripción al final del período actual?')) return
+    setBusy('cancel')
+    const res = await fetch('/api/stripe/cancel', { method: 'POST' })
+    const data = await res.json()
+    if (!res.ok) {
+      setNotice({ type: 'error', text: data.error || 'No se pudo cancelar.' })
+    } else {
+      setNotice({ type: 'info', text: 'Tu suscripción se cancelará al final del período actual.' })
+      await load()
+    }
+    setBusy(null)
+  }
+
+  async function handleResume() {
+    setBusy('resume')
+    const res = await fetch('/api/stripe/resume', { method: 'POST' })
+    const data = await res.json()
+    if (!res.ok) {
+      setNotice({ type: 'error', text: data.error || 'No se pudo reanudar.' })
+    } else {
+      setNotice({ type: 'success', text: 'Suscripción reanudada.' })
+      await load()
+    }
+    setBusy(null)
+  }
+
+  if (orgLoading || loading) {
+    return (
+      <div className="min-h-screen bg-[#080808] flex items-center justify-center">
+        <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  const trialActive = trialEndsAt && new Date(trialEndsAt) > new Date()
+  const status = sub?.status ?? (trialActive ? 'trialing' : 'expired')
+  const currentPlanKey = sub?.plan ?? (trialActive ? 'trial' : null)
+  const currentPlan = currentPlanKey ? PLANS[currentPlanKey] : null
+  const periodEnd = sub?.current_period_end ?? trialEndsAt
+
+  return (
+    <div className="min-h-screen bg-[#080808] p-8 space-y-8">
+
+      <div>
+        <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
+          Facturación
+        </h1>
+        <p className="text-[#383430] text-xs mt-1">Tu plan y suscripción</p>
+      </div>
+
+      {notice && (
+        <div className={`px-4 py-3 rounded-xl border text-sm ${
+          notice.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+          notice.type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+          'bg-[#1A1A1A] border-[#2A2A2A] text-[#888]'
+        }`}>
+          {notice.text}
+        </div>
+      )}
+
+      {/* Plan actual */}
+      <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-6 space-y-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[#444] text-[10px] uppercase tracking-widest font-medium">Plan actual</p>
+            <div className="flex items-center gap-3 mt-1">
+              <h2 className="text-[#F0EBE3] text-2xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
+                {currentPlan?.name || 'Sin plan'}
+              </h2>
+              <StatusBadge status={status} trialActive={trialActive} />
+            </div>
+            {periodEnd && (
+              <p className="text-[#555] text-xs mt-2">
+                {sub?.cancel_at_period_end ? 'Termina el ' : (status === 'trialing' || trialActive ? 'Prueba termina el ' : 'Próxima factura el ')}
+                <span className="text-[#888]">{fmtDate(periodEnd)}</span>
+              </p>
+            )}
+          </div>
+          {currentPlan && currentPlan.price > 0 && (
+            <p className="text-[#C8A96E] text-2xl font-light tabular-nums">${currentPlan.price}<span className="text-[#444] text-sm">/mes</span></p>
+          )}
+        </div>
+
+        {sub && status !== 'expired' ? (
+          <div className="flex gap-3 pt-2 border-t border-[#161616] flex-wrap">
+            <button
+              onClick={handlePortal}
+              disabled={busy === 'portal'}
+              className="px-4 py-2 rounded-xl text-sm bg-[#1A1A1A] border border-[#2A2A2A] text-[#C8C3BC] hover:border-[#3A3A3A] disabled:opacity-50 transition-all"
+            >
+              {busy === 'portal' ? 'Abriendo…' : 'Gestionar suscripción'}
+            </button>
+            {sub.cancel_at_period_end ? (
+              <button
+                onClick={handleResume}
+                disabled={busy === 'resume'}
+                className="px-4 py-2 rounded-xl text-sm bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-50 transition-all"
+              >
+                {busy === 'resume' ? 'Reanudando…' : 'Reanudar suscripción'}
+              </button>
+            ) : (status === 'active' || status === 'trialing') && (
+              <button
+                onClick={handleCancel}
+                disabled={busy === 'cancel'}
+                className="px-4 py-2 rounded-xl text-sm bg-transparent border border-[#2A2A2A] text-[#888] hover:border-red-500/40 hover:text-red-300 disabled:opacity-50 transition-all"
+              >
+                {busy === 'cancel' ? 'Cancelando…' : 'Cancelar suscripción'}
+              </button>
+            )}
+          </div>
+        ) : null}
+      </div>
+
+      {/* Planes disponibles */}
+      <div className="space-y-3">
+        <h2 className="text-[#D4CFC8] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
+          {currentPlan && status === 'active' ? 'Cambiar de plan' : 'Elige tu plan'}
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {PUBLIC_PLANS.map((key) => {
+            const p = PLANS[key]
+            const isCurrent = currentPlanKey === key && status === 'active'
+            const highlighted = key === 'pro'
+            return (
+              <div
+                key={key}
+                className={`relative bg-[#0D0D0D] border rounded-2xl p-6 flex flex-col gap-4 ${
+                  highlighted ? 'border-[#C8A96E]/40' : 'border-[#1A1A1A]'
+                }`}
+              >
+                {highlighted && (
+                  <span className="absolute -top-2 left-6 bg-[#C8A96E] text-[#080808] text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    Más popular
+                  </span>
+                )}
+                <div>
+                  <p className="text-[#E8E3DC] text-lg font-medium">{p.name}</p>
+                  <p className="text-[#C8A96E] text-3xl font-light mt-2 tabular-nums" style={{ fontFamily: 'var(--font-display)' }}>
+                    ${p.price}<span className="text-[#444] text-sm">/mes</span>
+                  </p>
+                </div>
+
+                <ul className="space-y-2 flex-1">
+                  {p.features?.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-[#C8C3BC] text-xs">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" strokeWidth="2.5" strokeLinecap="round" className="mt-0.5 shrink-0">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() => handleCheckout(key)}
+                  disabled={busy === key || isCurrent}
+                  className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 ${
+                    isCurrent
+                      ? 'bg-[#1A1A1A] text-[#666] cursor-default'
+                      : 'bg-[#C8A96E] text-[#080808] hover:bg-[#D4B87A]'
+                  }`}
+                >
+                  {isCurrent ? 'Plan actual' : busy === key ? 'Cargando…' : 'Suscribirme'}
+                </button>
+              </div>
+            )
+          })}
+        </div>
+
+        {(!PLANS.starter.priceId || !PLANS.pro.priceId || !PLANS.business.priceId) && (
+          <p className="text-amber-400/70 text-xs bg-amber-500/5 border border-amber-500/20 px-4 py-2.5 rounded-xl">
+            ⚠️ Algunos planes aún no tienen precio configurado en Stripe. Define las variables `STRIPE_PRICE_*` en tu entorno.
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}

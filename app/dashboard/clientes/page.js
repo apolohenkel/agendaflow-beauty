@@ -26,6 +26,7 @@ function ClienteModal({ cliente, onClose, onSaved }) {
   const [form, setForm] = useState({
     name: cliente.name || '',
     phone: cliente.phone || '',
+    email: cliente.email || '',
     notes: cliente.notes || '',
   })
   const [loading, setLoading] = useState(false)
@@ -40,7 +41,12 @@ function ClienteModal({ cliente, onClose, onSaved }) {
     setError(null)
     const { error: err } = await supabase
       .from('clients')
-      .update({ name: form.name.trim(), phone: form.phone.trim() || null, notes: form.notes.trim() || null })
+      .update({
+        name: form.name.trim(),
+        phone: form.phone.trim() || null,
+        email: form.email.trim().toLowerCase() || null,
+        notes: form.notes.trim() || null,
+      })
       .eq('id', cliente.id)
     if (err) { setError('Error al guardar.'); setLoading(false); return }
     onSaved()
@@ -70,6 +76,12 @@ function ClienteModal({ cliente, onClose, onSaved }) {
           <div className="space-y-1">
             <p className="text-[#555] text-[10px] uppercase tracking-widest">Teléfono / WhatsApp</p>
             <input type="text" value={form.phone} onChange={(e) => set('phone', e.target.value)}
+              className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-[#555] text-[10px] uppercase tracking-widest">Correo (opcional)</p>
+            <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)}
+              placeholder="cliente@correo.com"
               className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
           </div>
           <div className="space-y-1">
@@ -136,6 +148,7 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
             <div>
               <p className="text-[#E8E3DC] text-sm font-medium">{cliente.name}</p>
               <p className="text-[#444] text-xs">{cliente.phone || 'Sin teléfono'}</p>
+              {cliente.email && <p className="text-[#444] text-xs">{cliente.email}</p>}
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -231,7 +244,7 @@ export default function ClientesPage() {
     setLoading(true)
     const { data } = await supabase
       .from('clients')
-      .select('id, name, phone, notes, created_at, last_visit')
+      .select('id, name, phone, email, notes, created_at, last_visit')
       .order('name')
     setClients(data || [])
     setLoading(false)
@@ -240,10 +253,14 @@ export default function ClientesPage() {
   useEffect(() => { load() }, [load])
 
   const filtered = search.trim()
-    ? clients.filter((c) =>
-        c.name?.toLowerCase().includes(search.toLowerCase()) ||
-        c.phone?.includes(search)
-      )
+    ? clients.filter((c) => {
+        const q = search.toLowerCase()
+        return (
+          c.name?.toLowerCase().includes(q) ||
+          c.phone?.includes(search) ||
+          c.email?.toLowerCase().includes(q)
+        )
+      })
     : clients
 
   return (
@@ -268,7 +285,7 @@ export default function ClientesPage() {
         </svg>
         <input
           type="text"
-          placeholder="Buscar por nombre o teléfono..."
+          placeholder="Buscar por nombre, teléfono o correo..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full bg-[#0D0D0D] border border-[#1E1E1E] rounded-xl pl-10 pr-4 py-3 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/40 transition-colors"

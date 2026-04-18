@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useOrg } from '@/lib/org-context'
 
 const ROLES = ['Estilista', 'Colorista', 'Manicurista', 'Barbero', 'Esteticista', 'Admin', 'Otro']
 
@@ -255,37 +256,21 @@ function HorarioChips({ schedule }) {
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function PersonalPage() {
+  const { businessId } = useOrg()
   const [staff, setStaff] = useState([])
   const [loading, setLoading] = useState(true)
-  const [businessId, setBusinessId] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [editTarget, setEditTarget] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   const load = useCallback(async () => {
+    if (!businessId) return
     setLoading(true)
-    let bId = businessId
-    if (!bId) {
-      const { data: biz } = await supabase.from('businesses').select('id').limit(1)
-      if (biz && biz.length > 0) {
-        bId = biz[0].id
-        setBusinessId(bId)
-      } else {
-        const { data: newBiz } = await supabase
-          .from('businesses')
-          .insert({ name: 'Mi Negocio', timezone: 'America/Guatemala' })
-          .select('id').single()
-        bId = newBiz?.id
-        setBusinessId(bId)
-      }
-    }
-
     const { data } = await supabase
       .from('staff')
       .select('*')
-      .eq('business_id', bId)
+      .eq('business_id', businessId)
       .order('name')
-
     setStaff(data || [])
     setLoading(false)
   }, [businessId])

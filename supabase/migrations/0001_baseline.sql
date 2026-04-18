@@ -1,0 +1,14 @@
+-- Baseline: snapshot del esquema ya existente en producción.
+--
+-- Cómo generar esta baseline desde tu proyecto Supabase actual:
+--   1) Instalar Supabase CLI: npm i -g supabase
+--   2) Login y vincular proyecto:
+--        supabase login
+--        supabase link --project-ref <TU_PROJECT_REF>
+--   3) Volcar el esquema actual a este archivo:
+--        supabase db dump --schema public --linked > supabase/migrations/0001_baseline.sql
+--
+-- Tras volcar, revisa que aparezcan las tablas: businesses, services, staff, clients, appointments.
+-- La siguiente migración (0002_multitenancy.sql) añadirá organizations, organization_members y RLS.
+
+-- Placeholder: reemplaza todo este archivo con la salida del dump.

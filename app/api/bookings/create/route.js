@@ -1,0 +1,143 @@
+import { NextResponse } from 'next/server'
+import { createAdminClient } from '../../../../lib/supabase/admin'
+import { sendAppointmentConfirmation } from '../../../../lib/email'
+import { sendText } from '../../../../lib/whatsapp/send'
+import { rateLimit, clientIp } from '../../../../lib/rate-limit'
+import { logger } from '../../../../lib/logger'
+import { ApiError, BookingError } from '../../../../lib/error-codes'
+
+export async function POST(request) {
+  const ip = clientIp(request)
+  const rl = await rateLimit(`bk:${ip}`, 5, 60)
+  if (!rl.allowed) {
+    return NextResponse.json({ error: ApiError.RATE_LIMITED }, { status: 429 })
+  }
+
+  const body = await request.json().catch(() => ({}))
+  const {
+    slug,
+    service_id,
+    staff_id,
+    starts_at,
+    client_name,
+    client_phone,
+    client_email,
+  } = body
+
+  if (!slug || !service_id || !starts_at || !client_name || !client_phone) {
+    return NextResponse.json({ error: ApiError.MISSING_FIELDS }, { status: 400 })
+  }
+
+  const admin = createAdminClient()
+
+  const { data: org } = await admin
+    .from('organizations')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle()
+  if (!org) return NextResponse.json({ error: ApiError.ORG_NOT_FOUND }, { status: 404 })
+
+  const { data: business } = await admin
+    .from('businesses')
+    .select('id, name, address, timezone, organization_id')
+    .eq('organization_id', org.id)
+    .eq('active', true)
+    .maybeSingle()
+  if (!business) return NextResponse.json({ error: BookingError.BUSINESS_NOT_ACTIVE }, { status: 404 })
+
+  const { data: service } = await admin
+    .from('services')
+    .select('id, name, duration_minutes')
+    .eq('id', service_id)
+    .eq('business_id', business.id)
+    .maybeSingle()
+  if (!service) return NextResponse.json({ error: ApiError.SERVICE_NOT_FOUND }, { status: 404 })
+
+  const startsDate = new Date(starts_at)
+  if (isNaN(startsDate.getTime())) {
+    return NextResponse.json({ error: ApiError.INVALID_DATE }, { status: 400 })
+  }
+  const endsDate = new Date(startsDate.getTime() + service.duration_minutes * 60000)
+
+  const { data: clientId, error: clientErr } = await admin.rpc('find_or_create_client', {
+    p_business_id: business.id,
+    p_phone: client_phone.trim(),
+    p_name: client_name.trim(),
+  })
+  if (clientErr) {
+    logger.error('bookings_create', clientErr, { scope: 'find_or_create_client', slug })
+    return NextResponse.json({ error: ApiError.CLIENT_FAILED }, { status: 500 })
+  }
+
+  if (client_email) {
+    await admin
+      .from('clients')
+      .update({ email: client_email.trim().toLowerCase() })
+      .eq('id', clientId)
+      .is('email', null)
+  }
+
+  const { data: apptId, error: bookErr } = await admin.rpc('book_appointment', {
+    p_business_id: business.id,
+    p_client_id: clientId,
+    p_service_id: service.id,
+    p_staff_id: staff_id || null,
+    p_starts_at: startsDate.toISOString(),
+    p_ends_at: endsDate.toISOString(),
+    p_status: 'pending',
+    p_source: 'web',
+    p_notes: null,
+  })
+
+  if (bookErr) {
+    const msg = bookErr.message || ''
+    if (msg.includes(BookingError.SLOT_UNAVAILABLE)) {
+      return NextResponse.json({ error: BookingError.SLOT_UNAVAILABLE }, { status: 409 })
+    }
+    if (msg.includes(BookingError.PLAN_LIMIT_REACHED) || msg.includes(BookingError.TRIAL_EXPIRED) || msg.includes(BookingError.NO_ACTIVE_PLAN) || msg.includes(BookingError.BUSINESS_NOT_ACTIVE)) {
+      return NextResponse.json({ error: ApiError.NOT_ACCEPTING }, { status: 403 })
+    }
+    logger.error('bookings_create', bookErr, { scope: 'book_appointment', slug })
+    return NextResponse.json({ error: ApiError.BOOKING_FAILED }, { status: 500 })
+  }
+
+  Promise.allSettled([
+    sendAppointmentConfirmation({
+      to: client_email,
+      clientName: client_name,
+      businessName: business.name,
+      serviceName: service.name,
+      startsAt: startsDate.toISOString(),
+      timezone: business.timezone || 'America/Mexico_City',
+      address: business.address,
+    }),
+    (async () => {
+      const { data: account } = await admin
+        .from('whatsapp_accounts')
+        .select('phone_number_id, access_token, enabled')
+        .eq('org_id', org.id)
+        .maybeSingle()
+      if (!account?.enabled) return
+      const when = startsDate.toLocaleString('es-MX', {
+        timeZone: business.timezone || 'America/Mexico_City',
+        weekday: 'long', day: 'numeric', month: 'long',
+        hour: '2-digit', minute: '2-digit',
+      })
+      const text = `Hola ${client_name.split(' ')[0]} 👋\n\nTu cita en *${business.name}* quedó registrada.\n\n📅 ${when}\n💇 ${service.name}\n\n¿Necesitas cambiarla? Responde a este mensaje.`
+      await sendText({
+        phoneNumberId: account.phone_number_id,
+        accessToken: account.access_token,
+        to: client_phone.trim(),
+        body: text,
+      })
+    })(),
+  ]).then((results) => {
+    results.forEach((r, i) => {
+      if (r.status === 'rejected') {
+        logger.error('bookings_notify', r.reason, { channel: i === 0 ? 'email' : 'whatsapp', appointment_id: apptId })
+      }
+    })
+  })
+
+  return NextResponse.json({ ok: true, appointment_id: apptId })
+}

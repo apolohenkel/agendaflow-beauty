@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useOrg } from '@/lib/org-context'
 import NuevaCitaModal from '@/components/dashboard/citas/NuevaCitaModal'
 
 const STATUS_MAP = {
@@ -26,6 +27,7 @@ function fmtDate(date) {
 
 // ─── MODAL EDITAR CITA ────────────────────────────────────────────────────────
 function EditarCitaModal({ appt, onClose, onSaved }) {
+  const { businessId } = useOrg()
   const [services, setServices] = useState([])
   const [staff, setStaff]       = useState([])
   const [loadingData, setLoadingData] = useState(true)
@@ -45,20 +47,18 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
   useEffect(() => {
+    if (!businessId) return
     async function loadData() {
-      const { data: biz } = await supabase.from('businesses').select('id').limit(1)
-      const bId = biz?.[0]?.id
-      if (!bId) { setLoadingData(false); return }
       const [{ data: svcs }, { data: stf }] = await Promise.all([
-        supabase.from('services').select('id, name, duration_minutes, price').eq('business_id', bId).eq('active', true).order('name'),
-        supabase.from('staff').select('id, name, role').eq('business_id', bId).eq('active', true).order('name'),
+        supabase.from('services').select('id, name, duration_minutes, price').eq('business_id', businessId).eq('active', true).order('name'),
+        supabase.from('staff').select('id, name, role').eq('business_id', businessId).eq('active', true).order('name'),
       ])
       setServices(svcs || [])
       setStaff(stf || [])
       setLoadingData(false)
     }
     loadData()
-  }, [])
+  }, [businessId])
 
   const selectedService = services.find((s) => s.id === form.serviceId)
   const duration = selectedService?.duration_minutes || Math.round((new Date(appt.ends_at) - new Date(appt.starts_at)) / 60000)

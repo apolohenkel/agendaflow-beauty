@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
@@ -111,7 +112,20 @@ export default function LoginPage() {
               ) : 'Entrar'}
             </button>
 
+            <p className="text-center -mt-1">
+              <Link href="/forgot-password" className="text-[#666] hover:text-[#C8A96E] text-xs">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </p>
+
           </form>
+
+          <p className="text-center text-[#666] text-xs pt-2 border-t border-[#161616]">
+            ¿Aún no tienes cuenta?{' '}
+            <Link href="/signup" className="text-[#C8A96E] hover:text-[#D4B87A] font-medium">
+              Crea una gratis
+            </Link>
+          </p>
         </div>
 
         <p className="text-center text-[#2A2A2A] text-[10px] tracking-wider uppercase">

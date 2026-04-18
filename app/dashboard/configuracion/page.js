@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useOrg } from '@/lib/org-context'
 
 const DIAS = [
   { key: 0, label: 'Domingo' },
@@ -74,6 +75,7 @@ function SaveButton({ saving, saved, label = 'Guardar cambios' }) {
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function ConfiguracionPage() {
+  const { orgId, business: orgBusiness, refresh: refreshOrg, loading: orgLoading } = useOrg()
   const [business, setBusiness]   = useState(null)
   const [loading, setLoading]     = useState(true)
   const [savingInfo, setSavingInfo]       = useState(false)
@@ -84,6 +86,11 @@ export default function ConfiguracionPage() {
   const [savingPw, setSavingPw]   = useState(false)
   const [savedPw, setSavedPw]     = useState(false)
   const [errorPw, setErrorPw]     = useState(null)
+  const [brandForm, setBrandForm] = useState({ primary_color: '#C8A96E', logo_url: null })
+  const [savingBrand, setSavingBrand] = useState(false)
+  const [savedBrand, setSavedBrand] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [brandError, setBrandError] = useState(null)
 
   const [infoForm, setInfoForm] = useState({
     name:             '',
@@ -103,30 +110,36 @@ export default function ConfiguracionPage() {
   })
 
   const load = useCallback(async () => {
-    setLoading(true)
-    const { data: biz } = await supabase
-      .from('businesses')
-      .select('*')
-      .limit(1)
-      .single()
-
-    if (biz) {
-      setBusiness(biz)
-      setInfoForm({
-        name:            biz.name            || '',
-        phone:           biz.phone           || '',
-        whatsapp_number: biz.whatsapp_number || '',
-        address:         biz.address         || '',
-        timezone:        biz.timezone        || 'America/Guatemala',
+    if (!orgBusiness || !orgId) return
+    setBusiness(orgBusiness)
+    setInfoForm({
+      name:            orgBusiness.name            || '',
+      phone:           orgBusiness.phone           || '',
+      whatsapp_number: orgBusiness.whatsapp_number || '',
+      address:         orgBusiness.address         || '',
+      timezone:        orgBusiness.timezone        || 'America/Guatemala',
+    })
+    if (orgBusiness.opening_hours) {
+      setSchedule(orgBusiness.opening_hours)
+    }
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('primary_color, logo_url')
+      .eq('id', orgId)
+      .maybeSingle()
+    if (org) {
+      setBrandForm({
+        primary_color: org.primary_color || '#C8A96E',
+        logo_url: org.logo_url,
       })
-      if (biz.opening_hours) {
-        setSchedule(biz.opening_hours)
-      }
     }
     setLoading(false)
-  }, [])
+  }, [orgBusiness, orgId])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    if (orgLoading) return
+    load()
+  }, [load, orgLoading])
 
   function setInfo(k, v) { setInfoForm((f) => ({ ...f, [k]: v })) }
 
@@ -155,6 +168,7 @@ export default function ConfiguracionPage() {
       address:         infoForm.address.trim()         || null,
       timezone:        infoForm.timezone,
     }).eq('id', business.id)
+    await refreshOrg()
     setSavingInfo(false)
     setSavedInfo(true)
     setTimeout(() => setSavedInfo(false), 2500)
@@ -164,9 +178,70 @@ export default function ConfiguracionPage() {
     e.preventDefault()
     setSavingHorario(true)
     await supabase.from('businesses').update({ opening_hours: schedule }).eq('id', business.id)
+    await refreshOrg()
     setSavingHorario(false)
     setSavedHorario(true)
     setTimeout(() => setSavedHorario(false), 2500)
+  }
+
+  async function handleLogoUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file || !orgId) return
+    if (file.size > 2 * 1024 * 1024) { setBrandError('El archivo supera los 2 MB.'); return }
+    setUploadingLogo(true)
+    setBrandError(null)
+
+    const ext = file.name.split('.').pop().toLowerCase()
+    const path = `${orgId}/logo.${ext}`
+
+    const { error: uploadErr } = await supabase.storage
+      .from('logos')
+      .upload(path, file, { upsert: true, contentType: file.type })
+
+    if (uploadErr) {
+      setBrandError('No se pudo subir el logo. Intenta de nuevo.')
+      setUploadingLogo(false)
+      return
+    }
+
+    const { data: pub } = supabase.storage.from('logos').getPublicUrl(path)
+    const cacheBustedUrl = `${pub.publicUrl}?v=${Date.now()}`
+
+    await supabase.from('organizations').update({ logo_url: cacheBustedUrl }).eq('id', orgId)
+    setBrandForm((f) => ({ ...f, logo_url: cacheBustedUrl }))
+    await refreshOrg()
+    setUploadingLogo(false)
+  }
+
+  async function handleSaveBrand(e) {
+    e.preventDefault()
+    setSavingBrand(true)
+    setBrandError(null)
+    const { error: err } = await supabase
+      .from('organizations')
+      .update({ primary_color: brandForm.primary_color })
+      .eq('id', orgId)
+    if (err) {
+      setBrandError('No se pudo guardar el color.')
+      setSavingBrand(false)
+      return
+    }
+    await refreshOrg()
+    setSavingBrand(false)
+    setSavedBrand(true)
+    setTimeout(() => setSavedBrand(false), 2500)
+  }
+
+  async function handleRemoveLogo() {
+    if (!orgId || !brandForm.logo_url) return
+    setUploadingLogo(true)
+    const url = brandForm.logo_url.split('?')[0]
+    const path = url.split('/logos/')[1]
+    if (path) await supabase.storage.from('logos').remove([path])
+    await supabase.from('organizations').update({ logo_url: null }).eq('id', orgId)
+    setBrandForm((f) => ({ ...f, logo_url: null }))
+    await refreshOrg()
+    setUploadingLogo(false)
   }
 
   async function handleSavePassword(e) {
@@ -267,6 +342,82 @@ export default function ConfiguracionPage() {
             <SaveButton saving={savingInfo} saved={savedInfo} />
           </div>
         </form>
+      </Section>
+
+      {/* ── Marca ── */}
+      <Section title="Marca" description="Logo y color que verán tus clientes en el booking público">
+        <div className="space-y-5">
+
+          {/* Logo */}
+          <div className="space-y-2">
+            <p className="text-[#555] text-[10px] uppercase tracking-widest">Logo</p>
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-2xl bg-[#111] border border-[#1E1E1E] flex items-center justify-center overflow-hidden shrink-0">
+                {brandForm.logo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={brandForm.logo_url} alt="Logo" className="w-full h-full object-contain" />
+                ) : (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E2E2E" strokeWidth="1.5" strokeLinecap="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium bg-[#1A1A1A] border border-[#2A2A2A] text-[#C8C3BC] hover:border-[#3A3A3A] transition-all w-fit">
+                  <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={handleLogoUpload} className="hidden" disabled={uploadingLogo} />
+                  {uploadingLogo ? 'Subiendo…' : (brandForm.logo_url ? 'Cambiar logo' : 'Subir logo')}
+                </label>
+                {brandForm.logo_url && (
+                  <button type="button" onClick={handleRemoveLogo} disabled={uploadingLogo}
+                    className="text-[#666] hover:text-red-400 text-xs text-left transition-colors w-fit">
+                    Eliminar logo
+                  </button>
+                )}
+                <p className="text-[#444] text-[10px]">PNG, JPG, WEBP o SVG · máx 2 MB</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Color primario */}
+          <form onSubmit={handleSaveBrand} className="space-y-3">
+            <Field label="Color primario">
+              <div className="flex items-center gap-3">
+                <div className="relative w-12 h-12 rounded-xl border border-[#2A2A2A] overflow-hidden">
+                  <input
+                    type="color"
+                    value={brandForm.primary_color}
+                    onChange={(e) => setBrandForm((f) => ({ ...f, primary_color: e.target.value }))}
+                    className="absolute inset-0 w-full h-full cursor-pointer"
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={brandForm.primary_color}
+                  onChange={(e) => setBrandForm((f) => ({ ...f, primary_color: e.target.value }))}
+                  pattern="^#[0-9A-Fa-f]{6}$"
+                  className="w-32 bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm tabular-nums focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+                />
+                <div
+                  className="flex-1 h-10 rounded-xl border border-[#2A2A2A] flex items-center justify-center text-xs font-semibold"
+                  style={{ backgroundColor: brandForm.primary_color, color: '#080808' }}
+                >
+                  Vista previa
+                </div>
+              </div>
+            </Field>
+
+            {brandError && (
+              <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 px-4 py-2.5 rounded-xl">{brandError}</p>
+            )}
+
+            <div className="flex justify-end pt-1">
+              <SaveButton saving={savingBrand} saved={savedBrand} label="Guardar color" />
+            </div>
+          </form>
+        </div>
       </Section>
 
       {/* ── Horario de atención ── */}
