@@ -64,10 +64,16 @@ export default function BillingPage() {
   async function handleCheckout(planKey) {
     setBusy(planKey)
     setNotice(null)
+    // Detecta moneda del visitante vía endpoint liviano (Vercel geo header).
+    let currency
+    try {
+      const locale = await fetch('/api/locale').then((r) => r.json()).catch(() => null)
+      currency = locale?.currency
+    } catch {}
     const res = await fetch('/api/stripe/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan: planKey }),
+      body: JSON.stringify({ plan: planKey, currency }),
     })
     const data = await res.json()
     if (!res.ok) {

@@ -36,20 +36,22 @@ export async function POST(request) {
           logger.warn('stripe_webhook', 'sub_without_org_id', { sub_id: sub.id })
           break
         }
-        const priceId = sub.items?.data?.[0]?.price?.id
-        const plan = planByPriceId(priceId)
+        // Con checkout multi-moneda (price_data dinámico), el plan viene en metadata.
+        // Fallback: priceId legacy si la sub fue creada con price ID antiguo.
+        const planKey = sub.metadata?.plan
+          || (planByPriceId(sub.items?.data?.[0]?.price?.id)?.key ?? null)
         await admin.from('subscriptions').upsert({
           org_id: orgId,
           stripe_customer_id: sub.customer,
           stripe_subscription_id: sub.id,
           status: sub.status,
-          plan: plan?.key ?? null,
+          plan: planKey,
           current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
           cancel_at_period_end: sub.cancel_at_period_end,
           updated_at: new Date().toISOString(),
         })
-        if (plan?.key) {
-          await admin.from('organizations').update({ plan: plan.key }).eq('id', orgId)
+        if (planKey) {
+          await admin.from('organizations').update({ plan: planKey }).eq('id', orgId)
         }
         break
       }

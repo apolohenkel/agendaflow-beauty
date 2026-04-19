@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 import { createClient } from '../../../../lib/supabase/server'
 import { createAdminClient } from '../../../../lib/supabase/admin'
 import { getStripe } from '../../../../lib/stripe'
-import { PLANS, PUBLIC_PLANS } from '../../../../lib/plans'
+import { PLANS, PUBLIC_PLANS, PLAN_PRICES, currencyForCountry, CURRENCY_LOCALES } from '../../../../lib/plans'
 import { rateLimit } from '../../../../lib/rate-limit'
 
 const APP_URL = process.env.APP_URL || 'http://localhost:3000'
@@ -15,13 +16,21 @@ export async function POST(request) {
   const rl = await rateLimit(`ck:${user.id}`, 5, 60)
   if (!rl.allowed) return NextResponse.json({ error: 'Demasiados intentos, espera un minuto.' }, { status: 429 })
 
-  const { plan: planKey } = await request.json().catch(() => ({}))
+  const { plan: planKey, currency: reqCurrency } = await request.json().catch(() => ({}))
   if (!PUBLIC_PLANS.includes(planKey)) {
     return NextResponse.json({ error: 'Plan inválido' }, { status: 400 })
   }
   const plan = PLANS[planKey]
-  if (!plan.priceId) {
-    return NextResponse.json({ error: 'Plan no configurado en Stripe' }, { status: 500 })
+
+  // Moneda: 1) body, 2) Vercel geo header, 3) fallback USD
+  const h = await headers()
+  const country = h.get('x-vercel-ip-country')
+  const currency = (reqCurrency && CURRENCY_LOCALES[reqCurrency])
+    ? reqCurrency
+    : currencyForCountry(country)
+  const unitAmount = PLAN_PRICES[planKey]?.[currency]
+  if (!unitAmount) {
+    return NextResponse.json({ error: 'Moneda no configurada' }, { status: 500 })
   }
 
   const admin = createAdminClient()
@@ -60,11 +69,21 @@ export async function POST(request) {
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
     customer: customerId,
-    line_items: [{ price: plan.priceId, quantity: 1 }],
+    line_items: [{
+      price_data: {
+        currency,
+        product_data: {
+          name: `AgendaFlow ${plan.name}`,
+        },
+        unit_amount: unitAmount,
+        recurring: { interval: 'month' },
+      },
+      quantity: 1,
+    }],
     success_url: `${APP_URL}/dashboard/billing?checkout=success`,
     cancel_url: `${APP_URL}/dashboard/billing?checkout=cancelled`,
-    metadata: { org_id: orgId, plan: planKey },
-    subscription_data: { metadata: { org_id: orgId, plan: planKey } },
+    metadata: { org_id: orgId, plan: planKey, currency },
+    subscription_data: { metadata: { org_id: orgId, plan: planKey, currency } },
     allow_promotion_codes: true,
     locale: 'es',
   })

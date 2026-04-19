@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
-import { PLANS, PUBLIC_PLANS } from '@/lib/plans'
+import { useEffect, useState } from 'react'
+import { PLANS, PUBLIC_PLANS, formatPlanPrice, CURRENCY_LOCALES } from '@/lib/plans'
 import { VERTICALS, VERTICAL_KEYS, DEFAULT_VERTICAL, getVertical, themeCssVars } from '@/lib/verticals'
 
 function PainCard({ emoji, title, body }) {
@@ -176,9 +176,23 @@ function VerticalSelector({ value, onChange }) {
 
 export default function LandingPage() {
   const [vertical, setVertical] = useState(DEFAULT_VERTICAL)
+  const [currency, setCurrency] = useState('usd')
+  const [country, setCountry] = useState(null)
   const v = getVertical(vertical)
   const theme = v.theme
   const cssVars = themeCssVars(theme)
+
+  useEffect(() => {
+    fetch('/api/locale')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.currency && CURRENCY_LOCALES[data.currency]) {
+          setCurrency(data.currency)
+          setCountry(data.country)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   function persistVertical() {
     if (typeof window !== 'undefined') {
@@ -442,7 +456,7 @@ export default function LandingPage() {
                   <div>
                     <p className="text-lg font-medium" style={{ color: highlighted ? theme.bg : theme.text }}>{p.name}</p>
                     <p className="text-5xl font-light mt-3 tabular-nums" style={{ color: highlighted ? theme.accent : theme.primary, fontFamily: 'var(--font-display)' }}>
-                      ${p.price}<span className="text-sm" style={{ color: theme.textMuted }}>/mes</span>
+                      {formatPlanPrice(key, currency)}<span className="text-sm" style={{ color: theme.textMuted }}>/mes</span>
                     </p>
                   </div>
                   <ul className="space-y-2.5 flex-1 pt-2">

@@ -1,16 +1,19 @@
-import { DM_Sans, Cormorant_Garamond } from 'next/font/google'
+import { Inter, Fraunces } from 'next/font/google'
 import './globals.css'
 
-const dmSans = DM_Sans({
+const inter = Inter({
   subsets: ['latin'],
   variable: '--font-body',
-  weight: ['300', '400', '500', '600'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
 })
 
-const cormorant = Cormorant_Garamond({
+const fraunces = Fraunces({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600'],
   variable: '--font-display',
+  weight: ['300', '400', '500', '600', '700'],
+  // Fraunces es variable: opsz (óptica) 9-144, soft 0-100. Usamos defaults.
+  display: 'swap',
 })
 
 export const metadata = {
@@ -26,7 +29,7 @@ export const dynamic = 'force-dynamic'
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es" className={`${dmSans.variable} ${cormorant.variable} h-full antialiased`}>
+    <html lang="es" className={`${inter.variable} ${fraunces.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col" style={{ fontFamily: 'var(--font-body)' }}>
         {children}
       </body>
