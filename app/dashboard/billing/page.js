@@ -70,7 +70,7 @@ export default function BillingPage() {
       const locale = await fetch('/api/locale').then((r) => r.json()).catch(() => null)
       currency = locale?.currency
     } catch {}
-    const res = await fetch('/api/stripe/checkout', {
+    const res = await fetch('/api/recurrente/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ plan: planKey, currency }),
@@ -86,7 +86,7 @@ export default function BillingPage() {
 
   async function handlePortal() {
     setBusy('portal')
-    const res = await fetch('/api/stripe/portal', { method: 'POST' })
+    const res = await fetch('/api/recurrente/cancel', { method: 'POST' })
     const data = await res.json()
     if (!res.ok) {
       setNotice({ type: 'error', text: data.error || 'No se pudo abrir el portal.' })
@@ -99,7 +99,7 @@ export default function BillingPage() {
   async function handleCancel() {
     if (!confirm('¿Cancelar tu suscripción al final del período actual?')) return
     setBusy('cancel')
-    const res = await fetch('/api/stripe/cancel', { method: 'POST' })
+    const res = await fetch('/api/recurrente/cancel', { method: 'POST' })
     const data = await res.json()
     if (!res.ok) {
       setNotice({ type: 'error', text: data.error || 'No se pudo cancelar.' })
@@ -112,7 +112,7 @@ export default function BillingPage() {
 
   async function handleResume() {
     setBusy('resume')
-    const res = await fetch('/api/stripe/resume', { method: 'POST' })
+    const res = await fetch('/api/recurrente/cancel', { method: 'POST' })
     const data = await res.json()
     if (!res.ok) {
       setNotice({ type: 'error', text: data.error || 'No se pudo reanudar.' })
