@@ -78,7 +78,7 @@ function ServicioModal({ servicio, businessId, depositCurrency, depositEnabled, 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md bg-[#111] border border-[#222] rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
 
@@ -287,7 +287,7 @@ export default function ServiciosPage() {
   const activeCount = services.filter((s) => s.active).length
 
   return (
-    <div className="min-h-screen p-10 space-y-8 animate-fade-up">
+    <div className="min-h-screen p-4 sm:p-6 md:p-10 space-y-5 md:space-y-8 animate-fade-up">
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -296,7 +296,7 @@ export default function ServiciosPage() {
             Tu oferta
           </p>
           <h1
-            className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+            className="text-[var(--dash-text)] text-3xl sm:text-4xl md:text-[44px] font-light leading-none tracking-tight"
             style={{ fontFamily: 'var(--font-display)' }}
           >
             Servicios
@@ -474,7 +474,7 @@ export default function ServiciosPage() {
 
       {/* Confirm eliminar */}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
           <div className="relative bg-[#111] border border-[#222] rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4">
             <h3 className="text-[#F0EBE3] text-base font-medium">Eliminar servicio</h3>

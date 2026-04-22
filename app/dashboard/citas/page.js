@@ -106,9 +106,9 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
   const inputCls = 'w-full bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder:text-[var(--dash-text-dim)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
       <div className="absolute inset-0 scrim-glass animate-scrim-in" onClick={onClose} />
-      <div className="relative w-full max-w-[480px] rounded-[14px] overflow-hidden animate-modal-in"
+      <div className="relative w-full sm:max-w-[480px] max-h-[92vh] overflow-auto scrollbar-hide rounded-t-3xl sm:rounded-[14px] animate-modal-in pb-safe"
         style={{
           background: 'var(--dash-ink-raised)',
           border: '1px solid var(--dash-border)',
@@ -306,43 +306,44 @@ function ListView({ appointments, filterStatus, setFilterStatus, onEdit }) {
             const chipVariant = STATUS_TO_CHIP[appt.status] || 'muted'
             const label = STATUS_MAP[appt.status]?.label || 'Pendiente'
             return (
-              <div
+              <button
                 key={appt.id}
-                className="flex items-center gap-4 px-6 py-4 hover:bg-[var(--dash-ink)]/60 transition-colors group"
+                onClick={() => onEdit(appt)}
+                className="w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 hover:bg-[var(--dash-ink)]/60 transition-colors group text-left"
+                aria-label="Editar cita"
               >
                 {/* Fecha y hora */}
-                <div className="w-24 shrink-0">
-                  <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.14em]">
+                <div className="w-16 sm:w-24 shrink-0">
+                  <p className="text-[var(--dash-text-muted)] text-[9px] sm:text-[10px] uppercase tracking-[0.14em]">
                     {new Date(appt.starts_at).toLocaleDateString('es-GT', { day: 'numeric', month: 'short' })}
                   </p>
                   <p
-                    className="text-[var(--dash-text)] text-base leading-none tabular-nums mt-1"
+                    className="text-[var(--dash-text)] text-sm sm:text-base leading-none tabular-nums mt-1"
                     style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}
                   >
                     {fmt(appt.starts_at)}
                   </p>
-                  <p className="text-[var(--dash-text-dim)] text-[10px] tabular-nums mt-1">
+                  <p className="hidden sm:block text-[var(--dash-text-dim)] text-[10px] tabular-nums mt-1">
                     hasta {fmt(appt.ends_at)}
                   </p>
                 </div>
 
                 {/* Hairline divisor */}
-                <div className="w-px self-stretch my-2" style={{ background: 'var(--dash-border)' }} />
+                <div className="w-px self-stretch my-2 hidden sm:block" style={{ background: 'var(--dash-border)' }} />
 
                 {/* Cliente */}
                 <div className="flex-1 min-w-0">
                   <p className="text-[var(--dash-text)] text-sm font-medium truncate">{appt.clients?.name || '—'}</p>
                   <p className="text-[var(--dash-text-muted)] text-xs truncate mt-0.5">
-                    {appt.clients?.phone || ''}
-                    {appt.services?.name ? ` · ${appt.services.name}` : ''}
+                    {appt.services?.name ? appt.services.name : appt.clients?.phone || ''}
                     {appt.staff?.name    ? ` · ${appt.staff.name}`    : ''}
                   </p>
                 </div>
 
-                {/* Precio */}
+                {/* Precio - oculto en móvil para dar espacio al estado */}
                 {appt.services?.price != null && (
                   <p
-                    className="text-[var(--dash-primary-soft)] text-sm shrink-0 tabular-nums tracking-tight"
+                    className="hidden sm:block text-[var(--dash-primary-soft)] text-sm shrink-0 tabular-nums tracking-tight"
                     style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}
                   >
                     Q{Number(appt.services.price).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -351,20 +352,7 @@ function ListView({ appointments, filterStatus, setFilterStatus, onEdit }) {
 
                 {/* Estado */}
                 <Chip variant={chipVariant} size="sm">{label}</Chip>
-
-                {/* Botón editar */}
-                <button
-                  onClick={() => onEdit(appt)}
-                  className="shrink-0 opacity-0 group-hover:opacity-100 p-2 text-[var(--dash-text-dim)] hover:text-[var(--dash-primary)] hover:bg-[var(--dash-primary-bg-8)] rounded-lg transition-all"
-                  aria-label="Editar cita"
-                  title="Editar cita"
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
-                </button>
-              </div>
+              </button>
             )
           })}
         </div>
@@ -396,6 +384,8 @@ function CalendarView({ appointments, weekStart, onEdit }) {
 
   return (
     <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl overflow-hidden">
+      <div className="overflow-x-auto scrollbar-hide">
+      <div className="min-w-[640px]">
       {/* Cabecera días */}
       <div className="grid grid-cols-8">
         <div className="px-3 py-4" />
@@ -423,7 +413,7 @@ function CalendarView({ appointments, weekStart, onEdit }) {
       <Hairline />
 
       {/* Grid de horas */}
-      <div className="overflow-auto max-h-[560px]">
+      <div className="max-h-[560px]">
         {HOURS.map((hour) => (
           <div key={hour} className="grid grid-cols-8 border-b border-[var(--dash-border)] min-h-[56px]">
             <div className="px-3 py-2 flex items-start justify-end border-r border-[var(--dash-border)]">
@@ -451,6 +441,8 @@ function CalendarView({ appointments, weekStart, onEdit }) {
             })}
           </div>
         ))}
+      </div>
+      </div>
       </div>
     </div>
   )
@@ -515,33 +507,35 @@ export default function CitasPage() {
   function nextWeek() { setWeekStart((d) => { const n = new Date(d); n.setDate(n.getDate() + 7); return n }) }
 
   return (
-    <div className="min-h-screen p-10 space-y-8 animate-fade-up">
+    <div className="min-h-screen p-4 sm:p-6 md:p-10 space-y-5 md:space-y-8 animate-fade-up">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.24em]">
-            Agenda
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-1.5 md:space-y-2 flex items-baseline sm:block gap-3">
+          <div className="hidden sm:block">
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.24em]">
+              Agenda
+            </p>
+          </div>
           <h1
-            className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+            className="text-[var(--dash-text)] text-3xl sm:text-4xl md:text-[44px] font-light leading-none tracking-tight"
             style={{ fontFamily: 'var(--font-display)' }}
           >
             Citas
             {!loading && appointments.length > 0 && (
-              <span className="text-[var(--dash-primary)] text-2xl ml-3" style={{ fontStyle: 'italic' }}>
+              <span className="text-[var(--dash-primary)] text-xl md:text-2xl ml-2 md:ml-3" style={{ fontStyle: 'italic' }}>
                 {appointments.length}
               </span>
             )}
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {/* Toggle vista */}
           <div className="flex bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-full p-1">
             <button
               onClick={() => setView('lista')}
               className={`
-                px-4 py-1.5 rounded-full text-[11px] uppercase tracking-[0.14em] font-medium transition-all
+                px-3 sm:px-4 py-1.5 rounded-full text-[10px] sm:text-[11px] uppercase tracking-[0.14em] font-medium transition-all no-min-tap
                 ${view === 'lista' ? 'bg-[var(--dash-primary-bg-15)] text-[var(--dash-primary-soft)]' : 'text-[var(--dash-text-muted)] hover:text-[var(--dash-text-soft)]'}
               `}
             >
@@ -550,17 +544,19 @@ export default function CitasPage() {
             <button
               onClick={() => setView('calendario')}
               className={`
-                px-4 py-1.5 rounded-full text-[11px] uppercase tracking-[0.14em] font-medium transition-all
+                px-3 sm:px-4 py-1.5 rounded-full text-[10px] sm:text-[11px] uppercase tracking-[0.14em] font-medium transition-all no-min-tap
                 ${view === 'calendario' ? 'bg-[var(--dash-primary-bg-15)] text-[var(--dash-primary-soft)]' : 'text-[var(--dash-text-muted)] hover:text-[var(--dash-text-soft)]'}
               `}
             >
-              Calendario
+              <span className="hidden sm:inline">Calendario</span>
+              <span className="sm:hidden">Cal</span>
             </button>
           </div>
 
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 text-sm font-semibold px-5 py-3 rounded-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            aria-label="Nueva cita"
+            className="flex items-center gap-2 text-sm font-semibold px-3 sm:px-5 py-2.5 sm:py-3 rounded-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ml-auto sm:ml-0"
             style={{
               background: 'linear-gradient(135deg, var(--dash-primary), var(--dash-primary-deep))',
               color: 'var(--dash-ink)',
@@ -570,7 +566,8 @@ export default function CitasPage() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
             </svg>
-            Nueva cita
+            <span className="hidden sm:inline">Nueva cita</span>
+            <span className="sm:hidden">Nueva</span>
           </button>
         </div>
       </div>

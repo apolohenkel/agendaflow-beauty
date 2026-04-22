@@ -8,10 +8,6 @@ import { getVertical, DEFAULT_VERTICAL } from '@/lib/verticals'
 //   1. organizations.primary_color (override custom del dueño)
 //   2. theme del vertical (beauty_salon, barbershop, nail_salon, spa)
 //   3. #C8A96E default (champagne gold)
-//
-// El dashboard se mantiene dark warm luxury (menos cansado en jornadas largas),
-// pero su acento cambia según la identidad del negocio. Así, un salón de uñas
-// tiene acentos rosa, una barbería dorados, un spa verde sage.
 
 function hexWithAlpha(hex, alpha) {
   if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) return null
@@ -23,8 +19,6 @@ function hexWithAlpha(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-// Derivar un color "deep" (20% más oscuro) para hovers. Si no se puede
-// calcular, retornar el mismo.
 function darken(hex, amount = 0.25) {
   if (!hex || !hex.startsWith('#')) return hex
   const c = hex.replace('#', '')
@@ -57,7 +51,6 @@ export default function DashboardTheme({ children }) {
   const verticalKey = vertical || DEFAULT_VERTICAL
   const v = getVertical(verticalKey)
 
-  // Prioridad: override custom > vertical primary > champagne default
   const primary = primaryColorOverride || v?.theme?.primary || '#C8A96E'
   const primaryDeep = darken(primary, 0.3)
   const primarySoft = lighten(primary, 0.35)
@@ -73,7 +66,7 @@ export default function DashboardTheme({ children }) {
   }
 
   return (
-    <div className="dashboard-shell flex h-screen overflow-hidden" style={style}>
+    <div className="dashboard-shell flex flex-col md:flex-row min-h-screen md:h-screen md:overflow-hidden" style={style}>
       {children}
     </div>
   )

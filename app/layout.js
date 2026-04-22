@@ -18,7 +18,22 @@ const fraunces = Fraunces({
 
 export const metadata = {
   title: 'AgendaFlow Beauty',
-  description: 'Panel de gestión para salones de belleza',
+  description: 'Panel de gestión para salones de belleza, barberías, spas y nail studios. Agenda inteligente, bot WhatsApp, recordatorios automáticos.',
+  openGraph: {
+    title: 'AgendaFlow Beauty',
+    description: 'Tu agenda se llena sola con WhatsApp + IA',
+    type: 'website',
+    locale: 'es_LA',
+  },
+}
+
+// viewport separado en Next 16 — permite zoom, soporta safe-area (notch iOS)
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
+  themeColor: '#0B0A08',
 }
 
 // Workaround Vercel CLI 51 + Next.js 16: el adapter no encuentra lambdas

@@ -173,19 +173,19 @@ export default function DashboardPage() {
   const birthdaysWithoutAppt = birthdays.filter((c) => !appointmentClientIds.has(c.id))
 
   return (
-    <div className="min-h-screen p-10 space-y-10 animate-fade-up">
+    <div className="min-h-screen p-4 sm:p-6 md:p-10 space-y-6 md:space-y-10 animate-fade-up">
 
       {/* Header editorial */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1.5 md:space-y-2 min-w-0">
           <p
-            className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.24em]"
+            className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.24em] truncate"
             suppressHydrationWarning
           >
             {dateLabel} · {hourLabel}
           </p>
           <h1
-            className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+            className="text-[var(--dash-text)] text-3xl sm:text-4xl md:text-[44px] font-light leading-none tracking-tight"
             style={{ fontFamily: 'var(--font-display)' }}
             suppressHydrationWarning
           >
@@ -196,7 +196,8 @@ export default function DashboardPage() {
 
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 text-sm font-semibold px-5 py-3 rounded-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+          aria-label="Nueva cita"
+          className="flex items-center gap-2 text-sm font-semibold px-3 sm:px-5 py-2.5 sm:py-3 rounded-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shrink-0"
           style={{
             background: 'linear-gradient(135deg, var(--dash-primary), var(--dash-primary-deep))',
             color: 'var(--dash-ink)',
@@ -207,14 +208,15 @@ export default function DashboardPage() {
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Nueva cita
+          <span className="hidden sm:inline">Nueva cita</span>
+          <span className="sm:hidden">Nueva</span>
         </button>
       </div>
 
       <Hairline />
 
       {/* KPIs */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-6">
         <KPICard
           label="Citas hoy"
           value={loading ? '—' : stats.today}

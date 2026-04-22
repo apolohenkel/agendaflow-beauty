@@ -90,13 +90,13 @@ export default function WhatsAppPage() {
   const webhookUrl = `${APP_URL}/api/whatsapp/webhook`
 
   return (
-    <div className="min-h-screen p-10 space-y-8 max-w-3xl animate-fade-up">
+    <div className="min-h-screen p-4 sm:p-6 md:p-10 space-y-5 md:space-y-8 max-w-3xl animate-fade-up">
       <div className="space-y-2">
         <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.24em]">
           Tu asistente
         </p>
         <h1
-          className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+          className="text-[var(--dash-text)] text-3xl sm:text-4xl md:text-[44px] font-light leading-none tracking-tight"
           style={{ fontFamily: 'var(--font-display)' }}
         >
           Asistente WhatsApp

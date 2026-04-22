@@ -111,7 +111,7 @@ function ChatPreview({ vertical }) {
 function Testimonial({ initial, name, role, text, bg }) {
   return (
     <div
-      className="rounded-3xl p-7 space-y-4 flex flex-col"
+      className="rounded-3xl p-5 sm:p-7 space-y-4 flex flex-col"
       style={{
         backgroundColor: 'var(--surface)',
         borderWidth: 1,
@@ -147,29 +147,31 @@ function Testimonial({ initial, name, role, text, bg }) {
 
 function VerticalSelector({ value, onChange }) {
   return (
-    <div className="inline-flex items-center gap-1 p-1 rounded-full shadow-sm"
-      style={{ backgroundColor: 'var(--surface)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border)' }}
-    >
-      {VERTICAL_KEYS.map((key) => {
-        const v = VERTICALS[key]
-        const active = value === key
-        return (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onChange(key)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all"
-            style={
-              active
-                ? { backgroundColor: v.theme.primary, color: v.theme.onPrimary }
-                : { color: 'var(--text-soft)' }
-            }
-          >
-            <span>{v.emoji}</span>
-            <span>{v.shortLabel}</span>
-          </button>
-        )
-      })}
+    <div className="w-full sm:w-auto overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="inline-flex items-center gap-1 p-1 rounded-full shadow-sm"
+        style={{ backgroundColor: 'var(--surface)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border)' }}
+      >
+        {VERTICAL_KEYS.map((key) => {
+          const v = VERTICALS[key]
+          const active = value === key
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onChange(key)}
+              className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0"
+              style={
+                active
+                  ? { backgroundColor: v.theme.primary, color: v.theme.onPrimary }
+                  : { color: 'var(--text-soft)' }
+              }
+            >
+              <span>{v.emoji}</span>
+              <span>{v.shortLabel}</span>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -209,28 +211,29 @@ export default function LandingPage() {
     >
 
       {/* Nav */}
-      <nav className="px-4 sm:px-6 py-5">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5 min-w-0">
+      <nav className="px-4 sm:px-6 py-4 sm:py-5">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-md"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 shadow-md"
               style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.primaryHover})`, boxShadow: `0 4px 14px ${theme.primary}33` }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">
                 <path d="M4.5 20 L12 4 L19.5 20" /><path d="M7.8 13.8 C12 13 15 13.3 21 18.2" />
               </svg>
             </div>
-            <span className="text-lg tracking-wide" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>AgendaFlow</span>
+            <span className="text-base sm:text-lg tracking-wide" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>AgendaFlow</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-4 shrink-0">
             <Link href="/login" className="text-sm transition-colors px-3 py-2 hover:opacity-80" style={{ color: 'var(--text-soft)' }}>Entrar</Link>
             <Link
               href={signupHref}
               onClick={persistVertical}
-              className="text-sm font-medium px-4 sm:px-5 py-2.5 rounded-full transition-all whitespace-nowrap shadow-lg hover:brightness-110"
+              className="text-xs sm:text-sm font-medium px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all whitespace-nowrap shadow-lg hover:brightness-110"
               style={{ backgroundColor: 'var(--text)', color: 'var(--bg)', boxShadow: `0 8px 20px ${theme.text}20` }}
             >
-              Empezar gratis
+              <span className="sm:hidden">Empezar</span>
+              <span className="hidden sm:inline">Empezar gratis</span>
             </Link>
           </div>
         </div>
@@ -260,18 +263,18 @@ export default function LandingPage() {
               </span>
               <span className="text-xs" style={{ color: 'var(--text-soft)' }}>Bot de WhatsApp con IA · 14 días gratis</span>
             </div>
-            <h1 className="text-5xl sm:text-6xl md:text-[68px] leading-[1.05] font-light" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
+            <h1 className="text-[38px] sm:text-5xl md:text-[60px] lg:text-[68px] leading-[1.08] font-light tracking-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
               {v.copy.tagline}<br />
               <em style={{ color: 'var(--primary)', fontStyle: 'italic', fontWeight: 'normal' }}>{v.copy.taglineAccent}</em>
             </h1>
-            <p className="text-lg leading-relaxed max-w-lg" style={{ color: 'var(--text-soft)' }}>
+            <p className="text-base sm:text-lg leading-relaxed max-w-lg" style={{ color: 'var(--text-soft)' }}>
               {v.copy.heroLead}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Link
                 href={signupHref}
                 onClick={persistVertical}
-                className="group inline-flex items-center justify-center gap-2 text-base font-medium px-7 py-3.5 rounded-full transition-all shadow-xl hover:brightness-110"
+                className="group inline-flex items-center justify-center gap-2 text-base font-medium px-6 sm:px-7 py-3.5 rounded-full transition-all shadow-xl hover:brightness-110 w-full sm:w-auto"
                 style={{ backgroundColor: 'var(--text)', color: 'var(--bg)', boxShadow: `0 20px 40px ${theme.text}20` }}
               >
                 Probar gratis 14 días
@@ -279,7 +282,7 @@ export default function LandingPage() {
               </Link>
               <a
                 href="#como-funciona"
-                className="inline-flex items-center justify-center gap-2 text-base font-medium px-5 py-3.5 transition-all rounded-full"
+                className="inline-flex items-center justify-center gap-2 text-base font-medium px-5 py-3.5 transition-all rounded-full w-full sm:w-auto"
                 style={{ color: 'var(--text)', backgroundColor: 'var(--surface)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border)' }}
               >
                 Ver cómo funciona
@@ -310,7 +313,7 @@ export default function LandingPage() {
             <p className="text-xs uppercase tracking-[0.22em] font-medium" style={{ color: 'var(--primary)' }}>
               Si tienes {v.copy.salonWord === 'spa' ? 'un' : (v.copy.salonWord === 'nail studio' ? 'un' : 'una')} {v.copy.salonWord}, esto te suena
             </p>
-            <h2 className="text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
               Cada día pierdes dinero<br />sin darte cuenta
             </h2>
           </div>
@@ -327,7 +330,7 @@ export default function LandingPage() {
         <div className="grid md:grid-cols-[1fr_1.1fr] gap-16 items-start">
           <div className="space-y-3 md:sticky md:top-8">
             <p className="text-xs uppercase tracking-[0.22em] font-medium" style={{ color: 'var(--primary)' }}>La solución</p>
-            <h2 className="text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
               Una recepcionista<br />que <em style={{ color: 'var(--primary)' }}>nunca descansa</em>
             </h2>
             <p className="text-base leading-relaxed pt-2 max-w-md" style={{ color: 'var(--text-soft)' }}>
@@ -351,7 +354,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto space-y-14">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
             <p className="text-xs uppercase tracking-[0.22em] font-medium" style={{ color: 'var(--primary)' }}>Lo que recuperas</p>
-            <h2 className="text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
               Tu tiempo. Tu tranquilidad.<br />Tu ingreso.
             </h2>
           </div>
@@ -361,7 +364,7 @@ export default function LandingPage() {
               { stat: '24/7', title: 'Contesta siempre', body: 'Responde en segundos, incluso a las 11pm o el domingo. No pierdes clientes por demora.' },
               { stat: '+32%', title: 'Más ingresos', body: `${v.copy.salonWord === 'barbería' ? 'Barberías' : (v.copy.salonWord === 'spa' ? 'Spas' : 'Negocios')} que usan AgendaFlow llenan huecos antes muertos con clientes del booking público.` },
             ].map((b, i) => (
-              <div key={i} className="rounded-3xl p-8 space-y-3" style={{ backgroundColor: 'var(--surface)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border)' }}>
+              <div key={i} className="rounded-3xl p-6 sm:p-8 space-y-3" style={{ backgroundColor: 'var(--surface)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border)' }}>
                 <p className="text-5xl font-light tabular-nums" style={{ color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>{b.stat}</p>
                 <p className="text-base font-semibold" style={{ color: 'var(--text)' }}>{b.title}</p>
                 <p className="text-sm leading-relaxed" style={{ color: 'var(--text-soft)' }}>{b.body}</p>
@@ -375,7 +378,7 @@ export default function LandingPage() {
       <section className="px-5 sm:px-6 py-16 sm:py-24 max-w-6xl mx-auto">
         <div className="text-center space-y-3 max-w-2xl mx-auto mb-12">
           <p className="text-xs uppercase tracking-[0.22em] font-medium" style={{ color: 'var(--primary)' }}>Voces reales</p>
-          <h2 className="text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
             Gente como tú,<br />cambiando su día a día
           </h2>
         </div>
@@ -413,7 +416,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
             <p className="text-xs uppercase tracking-[0.22em] font-medium" style={{ color: 'var(--primary)' }}>Planes</p>
-            <h2 className="text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
               Empieza gratis, paga<br />cuando estés seguro
             </h2>
             <p className="text-base pt-2" style={{ color: 'var(--text-soft)' }}>14 días completos gratis. Sin tarjeta. Cancela cuando quieras.</p>
@@ -426,7 +429,7 @@ export default function LandingPage() {
               return (
                 <div
                   key={key}
-                  className="relative rounded-3xl p-7 flex flex-col gap-5 transition-all duration-300 hover:-translate-y-1"
+                  className="relative rounded-3xl p-5 sm:p-7 flex flex-col gap-5 transition-all duration-300 hover:-translate-y-1"
                   style={
                     highlighted
                       ? {
@@ -490,7 +493,7 @@ export default function LandingPage() {
 
       {/* CTA final */}
       <section className="px-5 sm:px-6 py-20 sm:py-28 max-w-3xl mx-auto text-center space-y-7">
-        <h2 className="text-4xl md:text-6xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
+        <h2 className="text-3xl sm:text-4xl md:text-6xl font-light leading-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
           Deja que tu agenda<br /><em style={{ color: 'var(--primary)' }}>se llene sola</em>
         </h2>
         <p className="text-lg leading-relaxed max-w-xl mx-auto" style={{ color: 'var(--text-soft)' }}>

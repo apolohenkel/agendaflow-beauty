@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useOrg } from '@/lib/org-context'
-import { PLANS, PUBLIC_PLANS } from '@/lib/plans'
+import { PLANS, PUBLIC_PLANS, formatPlanPrice } from '@/lib/plans'
 import { logger } from '@/lib/logger'
 
 function fmtDate(iso) {
@@ -30,6 +30,15 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(null)
   const [notice, setNotice] = useState(null)
+  const [currency, setCurrency] = useState('usd')
+
+  // Detectar moneda del usuario vía /api/locale (geo-IP)
+  useEffect(() => {
+    fetch('/api/locale', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => { if (d?.currency) setCurrency(d.currency) })
+      .catch(() => {})
+  }, [])
 
   const checkoutResult = search.get('checkout')
 
@@ -146,14 +155,14 @@ export default function BillingPage() {
   const periodEnd = sub?.current_period_end ?? trialEndsAt
 
   return (
-    <div className="min-h-screen p-10 space-y-8 animate-fade-up">
+    <div className="min-h-screen p-4 sm:p-6 md:p-10 space-y-5 md:space-y-8 animate-fade-up">
 
       <div className="space-y-2">
         <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.24em]">
           Tu suscripción
         </p>
         <h1
-          className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+          className="text-[var(--dash-text)] text-3xl sm:text-4xl md:text-[44px] font-light leading-none tracking-tight"
           style={{ fontFamily: 'var(--font-display)' }}
         >
           Facturación
@@ -188,8 +197,10 @@ export default function BillingPage() {
               </p>
             )}
           </div>
-          {currentPlan && currentPlan.price > 0 && (
-            <p className="text-[#C8A96E] text-2xl font-light tabular-nums">${currentPlan.price}<span className="text-[#A0A0A0] text-sm">/mes</span></p>
+          {currentPlan && currentPlan.price > 0 && currentPlanKey && (
+            <p className="text-[var(--dash-primary-soft)] text-2xl tabular-nums" style={{ fontFamily: 'var(--font-display)', fontWeight: 300 }}>
+              {formatPlanPrice(currentPlanKey, currency)}<span className="text-[var(--dash-text-muted)] text-sm">/mes</span>
+            </p>
           )}
         </div>
 
@@ -247,9 +258,9 @@ export default function BillingPage() {
                   </span>
                 )}
                 <div>
-                  <p className="text-[#E8E3DC] text-lg font-medium">{p.name}</p>
-                  <p className="text-[#C8A96E] text-3xl font-light mt-2 tabular-nums" style={{ fontFamily: 'var(--font-display)' }}>
-                    ${p.price}<span className="text-[#A0A0A0] text-sm">/mes</span>
+                  <p className="text-[var(--dash-text)] text-lg font-medium">{p.name}</p>
+                  <p className="text-[var(--dash-primary-soft)] text-3xl mt-2 tabular-nums" style={{ fontFamily: 'var(--font-display)', fontWeight: 300 }}>
+                    {formatPlanPrice(key, currency)}<span className="text-[var(--dash-text-muted)] text-sm">/mes</span>
                   </p>
                 </div>
 

@@ -83,7 +83,7 @@ function ClienteModal({ cliente, onClose, onSaved }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-sm bg-[#111] border border-[#222] rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#1A1A1A]">
@@ -510,7 +510,7 @@ export default function ClientesPage() {
   }
 
   return (
-    <div className="min-h-screen p-10 space-y-8 animate-fade-up">
+    <div className="min-h-screen p-4 sm:p-6 md:p-10 space-y-5 md:space-y-8 animate-fade-up">
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -519,7 +519,7 @@ export default function ClientesPage() {
             Tu base
           </p>
           <h1
-            className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+            className="text-[var(--dash-text)] text-3xl sm:text-4xl md:text-[44px] font-light leading-none tracking-tight"
             style={{ fontFamily: 'var(--font-display)' }}
           >
             Clientes

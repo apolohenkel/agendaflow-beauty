@@ -96,7 +96,7 @@ function PromocionModal({ regla, services, businessId, onClose, onSaved }) {
   const inputCls = 'w-full bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder:text-[var(--dash-text-dim)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
       <div className="absolute inset-0 scrim-glass animate-scrim-in" onClick={onClose} />
       <div
         className="relative w-full max-w-[520px] max-h-[90vh] overflow-auto scrollbar-hide rounded-[14px] animate-modal-in"
@@ -416,7 +416,7 @@ export default function PromocionesPage() {
   const activeCount = rules.filter((r) => r.active).length
 
   return (
-    <div className="min-h-screen p-10 space-y-8 animate-fade-up">
+    <div className="min-h-screen p-4 sm:p-6 md:p-10 space-y-5 md:space-y-8 animate-fade-up">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="space-y-2">
@@ -424,7 +424,7 @@ export default function PromocionesPage() {
             Tu programa de fidelidad
           </p>
           <h1
-            className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+            className="text-[var(--dash-text)] text-3xl sm:text-4xl md:text-[44px] font-light leading-none tracking-tight"
             style={{ fontFamily: 'var(--font-display)' }}
           >
             Promociones

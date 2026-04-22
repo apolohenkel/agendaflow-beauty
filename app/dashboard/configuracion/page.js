@@ -313,7 +313,7 @@ export default function ConfiguracionPage() {
   }
 
   return (
-    <div className="min-h-screen p-10 space-y-8 animate-fade-up">
+    <div className="min-h-screen p-4 sm:p-6 md:p-10 space-y-5 md:space-y-8 animate-fade-up">
 
       {/* Header */}
       <div className="space-y-2">
@@ -321,7 +321,7 @@ export default function ConfiguracionPage() {
           Tu negocio
         </p>
         <h1
-          className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+          className="text-[var(--dash-text)] text-3xl sm:text-4xl md:text-[44px] font-light leading-none tracking-tight"
           style={{ fontFamily: 'var(--font-display)' }}
         >
           Ajustes

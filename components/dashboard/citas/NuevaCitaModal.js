@@ -120,10 +120,10 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
+      <div className="absolute inset-0 scrim-glass animate-scrim-in" onClick={onClose} />
 
-      <div className="relative w-full max-w-md bg-[#111] border border-[#222] rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
+      <div className="relative w-full sm:max-w-md bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-t-3xl sm:rounded-2xl shadow-2xl shadow-black/50 overflow-hidden max-h-[92vh] overflow-y-auto animate-modal-in pb-safe">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#1A1A1A]">
