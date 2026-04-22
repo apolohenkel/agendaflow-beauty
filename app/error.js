@@ -1,16 +1,11 @@
 'use client'
 
 import { useEffect } from 'react'
+import { logger } from '@/lib/logger'
 
 export default function ErrorPage({ error, reset }) {
   useEffect(() => {
-    const payload = {
-      level: 'error',
-      scope: 'app_error_boundary',
-      err: { name: error?.name, message: error?.message, digest: error?.digest },
-      ts: new Date().toISOString(),
-    }
-    console.error(JSON.stringify(payload))
+    logger.error('app_error_boundary', error, { digest: error?.digest })
   }, [error])
 
   return (

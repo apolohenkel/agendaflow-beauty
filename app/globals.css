@@ -1,26 +1,201 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ─── Scheme base ──────────────────────────────────────────────────
+ * Sitio global (landing) usa fondo crema hospitality.
+ * Páginas con tema propio (dashboard dark, booking público por vertical)
+ * sobrescriben el background en sus wrappers.
+ * ──────────────────────────────────────────────────────────────── */
+html {
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #FAF6F0;
+  color: #2B1810;
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
+}
+
+/* ─── Dashboard theme (warm dark luxury) ──────────────────────────
+ * Aplicado via .dashboard-shell en app/dashboard/layout.js.
+ * --dash-primary se puede sobrescribir inline según el vertical
+ * del dueño (ver layout). Valor por defecto: oro champagne.
+ * ──────────────────────────────────────────────────────────────── */
+.dashboard-shell {
+  /* superficies (warm-blacks, nada azulado) */
+  --dash-ink:         #0B0A08;
+  --dash-ink-raised:  #151310;
+  --dash-ink-raised2: #1D1A15;
+  --dash-ink-sunken:  #060604;
+
+  /* textos (porcelain + warm grays) */
+  --dash-text:        #F5EFE4;
+  --dash-text-soft:   #C8C0B0;
+  --dash-text-muted:  #8A8271;
+  --dash-text-dim:    #5A5348;
+
+  /* acento primario del vertical (override inline en layout) */
+  --dash-primary:     #C8A96E;
+  --dash-primary-deep:#8A6A3B;
+  --dash-primary-soft:#E8D4A8;
+
+  /* bordes / hairlines */
+  --dash-hairline:    rgba(200, 169, 110, 0.25);
+  --dash-border:      rgba(255, 247, 232, 0.06);
+  --dash-border-hover:rgba(200, 169, 110, 0.18);
+
+  /* semántica */
+  --dash-success:     #7A9A6E;
+  --dash-warn:        #D4A85F;
+  --dash-danger:      #D45555;
+
+  /* superficies tonales para estado (se mezclan con primary) */
+  --dash-primary-bg-8:rgba(200, 169, 110, 0.08);
+  --dash-primary-bg-15:rgba(200, 169, 110, 0.15);
+
+  background: var(--dash-ink);
+  color: var(--dash-text);
+}
+
+/* ─── Motif: gold hairline ───────────────────────────────────────
+ * Línea de 1px gold con fade en los extremos. Uso en:
+ *  - separadores entre secciones (horizontal)
+ *  - bordes decorativos de cards activas
+ *  - subrayado de headings
+ * ──────────────────────────────────────────────────────────────── */
+.hairline-gold-h {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--dash-hairline) 18%,
+    var(--dash-hairline) 82%,
+    transparent 100%
+  );
+  width: 100%;
+}
+
+.hairline-gold-v {
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--dash-hairline) 18%,
+    var(--dash-hairline) 82%,
+    transparent 100%
+  );
+  align-self: stretch;
+}
+
+/* ─── Animaciones ─────────────────────────────────────────────── */
+@keyframes modal-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+.animate-modal-in {
+  animation: modal-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scrim-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-scrim-in {
+  animation: scrim-in 220ms ease-out;
+}
+
+@keyframes fade-up {
+  0%   { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes gold-sweep {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+
+/* Card con sweep dorado sutil al hover. Aplicar con .card-sweep:hover */
+.card-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.card-sweep::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 40%,
+    rgba(200, 169, 110, 0.10) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  background-position: -200% 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  opacity: 0;
+}
+.card-sweep:hover::before {
+  opacity: 1;
+  animation: gold-sweep 1.4s ease-out;
+}
+
+/* Link con underline dorado que se dibuja */
+.link-gold {
+  background-image: linear-gradient(var(--dash-primary), var(--dash-primary));
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 320ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+.link-gold:hover {
+  background-size: 100% 1px;
+}
+
+/* ─── Numerales KPI ──────────────────────────────────────────────
+ * Fraunces light, tabular-nums, optical-size grande.
+ * Aplicar en el <span> del número principal.
+ * ──────────────────────────────────────────────────────────────── */
+.kpi-number {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 300;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+/* Label eyebrow uppercase tracking amplio */
+.eyebrow {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--dash-text-muted);
+}
+
+/* ─── Scrollbar hide ─────────────────────────────────────────── */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Scrim glass para modales ─────────────────────────────────── */
+.scrim-glass {
+  background: rgba(11, 10, 8, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }

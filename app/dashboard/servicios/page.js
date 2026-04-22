@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useOrg } from '@/lib/org-context'
+import { logger } from '@/lib/logger'
 
 const CATEGORIAS = ['Corte', 'Color', 'Tratamiento', 'Uñas', 'Maquillaje', 'Spa', 'Otro']
 
@@ -27,6 +28,7 @@ function fmtDuration(min) {
 
 // ─── MODAL SERVICIO ───────────────────────────────────────────────────────────
 function ServicioModal({ servicio, businessId, depositCurrency, depositEnabled, onClose, onSaved }) {
+  const supabase = createClient()
   const isEdit = Boolean(servicio)
   const [form, setForm] = useState({
     name: servicio?.name || '',
@@ -237,6 +239,7 @@ function ServicioModal({ servicio, businessId, depositCurrency, depositEnabled, 
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function ServiciosPage() {
+  const supabase = createClient()
   const { businessId, business } = useOrg()
   const depositCurrency = business?.deposit_currency || 'usd'
   const depositEnabled = Boolean(business?.deposit_enabled)
@@ -250,13 +253,19 @@ export default function ServiciosPage() {
   const load = useCallback(async () => {
     if (!businessId) return
     setLoading(true)
-    const { data } = await supabase
-      .from('services')
-      .select('*')
-      .eq('business_id', businessId)
-      .order('name')
-    setServices(data || [])
-    setLoading(false)
+    try {
+      const { data, error: err } = await supabase
+        .from('services')
+        .select('*')
+        .eq('business_id', businessId)
+        .order('name')
+      if (err) throw err
+      setServices(data || [])
+    } catch (err) {
+      logger.error('servicios', err)
+    } finally {
+      setLoading(false)
+    }
   }, [businessId])
 
   useEffect(() => { load() }, [load])
@@ -278,21 +287,39 @@ export default function ServiciosPage() {
   const activeCount = services.filter((s) => s.active).length
 
   return (
-    <div className="min-h-screen bg-[#080808] p-8 space-y-6">
+    <div className="min-h-screen p-10 space-y-8 animate-fade-up">
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
-            Servicios
-          </h1>
-          <p className="text-[#777] text-xs mt-1">
-            {loading ? '...' : `${services.length} servicios · ${activeCount} activos`}
+        <div className="space-y-2">
+          <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.24em]">
+            Tu oferta
           </p>
+          <h1
+            className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
+            Servicios
+            {!loading && services.length > 0 && (
+              <span className="text-[var(--dash-primary)] text-2xl ml-3" style={{ fontStyle: 'italic' }}>
+                {services.length}
+              </span>
+            )}
+          </h1>
+          {!loading && (
+            <p className="text-[var(--dash-text-muted)] text-xs">
+              {activeCount} activos · {services.length - activeCount} pausados
+            </p>
+          )}
         </div>
         <button
           onClick={openNew}
-          className="flex items-center gap-2 bg-[#C8A96E] hover:bg-[#D4B87A] text-[#080808] text-sm font-semibold px-4 py-2.5 rounded-xl transition-all"
+          className="flex items-center gap-2 text-sm font-semibold px-5 py-3 rounded-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+          style={{
+            background: 'linear-gradient(135deg, var(--dash-primary), var(--dash-primary-deep))',
+            color: 'var(--dash-ink)',
+            boxShadow: '0 6px 24px -6px var(--dash-primary)',
+          }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -307,11 +334,13 @@ export default function ServiciosPage() {
           <button
             key={cat}
             onClick={() => setFilterCat(cat)}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-              filterCat === cat
-                ? 'bg-[#C8A96E]/15 text-[#C8A96E] border border-[#C8A96E]/30'
-                : 'text-[#555] border border-[#1E1E1E] hover:border-[#333]'
-            }`}
+            className={`
+              px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.12em] font-medium transition-all border
+              ${filterCat === cat
+                ? 'border-[var(--dash-primary)] bg-[var(--dash-primary-bg-15)] text-[var(--dash-primary-soft)]'
+                : 'border-[var(--dash-border)] text-[var(--dash-text-muted)] hover:border-[var(--dash-border-hover)] hover:text-[var(--dash-text-soft)]'
+              }
+            `}
           >
             {cat === 'all' ? 'Todos' : cat}
           </button>
@@ -321,24 +350,27 @@ export default function ServiciosPage() {
       {/* Lista de servicios */}
       {loading ? (
         <div className="flex items-center justify-center py-32">
-          <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
+          <div className="w-5 h-5 border border-[var(--dash-primary)]/20 border-t-[var(--dash-primary)] rounded-full animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl flex flex-col items-center justify-center py-24 gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-[#111] border border-[#1C1C1C] flex items-center justify-center">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E2E2E" strokeWidth="1.5" strokeLinecap="round">
+        <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl flex flex-col items-center justify-center py-24 gap-5">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+            style={{ background: 'var(--dash-ink-sunken)', border: '1px solid var(--dash-border)' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--dash-primary)" strokeOpacity="0.4" strokeWidth="1.2" strokeLinecap="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
             </svg>
           </div>
           <div className="text-center">
-            <p className="text-[#777] text-sm">Sin servicios aún</p>
-            <p className="text-[#222] text-xs mt-1">Agrega los servicios que ofrece tu negocio</p>
+            <p className="text-[var(--dash-text-soft)] text-base italic" style={{ fontFamily: 'var(--font-display)' }}>
+              Sin servicios todavía
+            </p>
+            <p className="text-[var(--dash-text-muted)] text-xs mt-1">Agrega los servicios que ofreces</p>
           </div>
           <button
             onClick={openNew}
-            className="mt-2 px-4 py-2 bg-[#C8A96E]/10 hover:bg-[#C8A96E]/15 text-[#C8A96E] text-xs font-medium rounded-xl border border-[#C8A96E]/20 transition-all"
+            className="text-[var(--dash-primary)] text-xs link-gold"
           >
-            Crear primer servicio
+            Crear primer servicio →
           </button>
         </div>
       ) : (
@@ -346,11 +378,12 @@ export default function ServiciosPage() {
           {filtered.map((s) => (
             <div
               key={s.id}
-              className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl px-6 py-5 flex items-center gap-5 hover:border-[#2A2A2A] transition-colors group"
+              className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl px-6 py-5 flex items-center gap-5 hover:border-[var(--dash-border-hover)] transition-all group card-sweep"
             >
               {/* Ícono / categoría */}
-              <div className="w-10 h-10 rounded-xl bg-[#111] border border-[#1C1C1C] flex items-center justify-center shrink-0">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" strokeWidth="1.5" strokeLinecap="round">
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: 'var(--dash-primary-bg-8)', border: '1px solid var(--dash-border-hover)' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--dash-primary)" strokeWidth="1.5" strokeLinecap="round">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
                 </svg>
               </div>
@@ -358,14 +391,14 @@ export default function ServiciosPage() {
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-[#E8E3DC] text-sm font-medium truncate">{s.name}</p>
+                  <p className="text-[var(--dash-text)] text-sm font-medium truncate">{s.name}</p>
                   {s.category && (
-                    <span className="text-[#9A9A9A] text-[10px] border border-[#1E1E1E] px-2 py-0.5 rounded-full shrink-0">
+                    <span className="text-[var(--dash-text-soft)] text-[9px] uppercase tracking-[0.1em] border border-[var(--dash-border)] px-2 py-0.5 rounded-full shrink-0">
                       {s.category}
                     </span>
                   )}
                   {depositEnabled && s.deposit_amount > 0 && (
-                    <span className="text-[10px] text-[#C8A96E] bg-[#C8A96E]/10 border border-[#C8A96E]/30 px-2 py-0.5 rounded-full shrink-0">
+                    <span className="text-[9px] uppercase tracking-[0.1em] text-[var(--dash-primary-soft)] bg-[var(--dash-primary-bg-8)] border border-[var(--dash-primary)]/30 px-2 py-0.5 rounded-full shrink-0">
                       Seña {(s.deposit_amount / 100).toFixed(2)} {depositCurrency.toUpperCase()}
                     </span>
                   )}

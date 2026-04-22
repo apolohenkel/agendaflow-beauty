@@ -1,11 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useOrg } from '@/lib/org-context'
+import { useToast } from '@/components/ui/Toast'
+import { localToUtcIso } from '@/lib/tz'
 
 export default function NuevaCitaModal({ onClose, onCreated }) {
-  const { businessId } = useOrg()
+  const { businessId, business } = useOrg()
+  const { toast } = useToast()
+  const supabase = createClient()
+
   const [form, setForm] = useState({
     clientName: '',
     clientPhone: '',
@@ -63,30 +68,37 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
       if (existingClient) {
         clientId = existingClient.id
       } else {
-        const { data: newClient } = await supabase
+        const { data: newClient, error: insertErr } = await supabase
           .from('clients')
           .insert({ business_id: businessId, name: form.clientName, phone: form.clientPhone, whatsapp_phone: form.clientPhone })
           .select('id').single()
+        if (insertErr) throw insertErr
         clientId = newClient?.id
+        // BUG 4 fix: propagar error explícito si el insert no retornó ID
+        if (!clientId) throw new Error('No se pudo registrar al cliente. Intenta de nuevo.')
       }
 
-      // Crear la cita
-      const startsAt = new Date(`${form.date}T${form.time}:00`)
-      const endsAt = new Date(startsAt.getTime() + duration * 60000)
+      // BUG 3 fix: convertir hora local del negocio a UTC correctamente
+      const [hh, mm] = form.time.split(':').map(Number)
+      const tz = business?.timezone || 'America/Guatemala'
+      const startsAtIso = localToUtcIso(form.date, hh, mm, tz)
+      const endsAtIso = new Date(new Date(startsAtIso).getTime() + duration * 60000).toISOString()
 
       const { error: bookErr } = await supabase.rpc('book_appointment', {
         p_business_id: businessId,
         p_client_id: clientId,
         p_service_id: form.serviceId || null,
         p_staff_id: form.staffId || null,
-        p_starts_at: startsAt.toISOString(),
-        p_ends_at: endsAt.toISOString(),
+        p_starts_at: startsAtIso,
+        p_ends_at: endsAtIso,
         p_status: 'confirmed',
         p_source: 'manual',
         p_notes: form.notes || null,
       })
       if (bookErr) throw bookErr
 
+      // OPP 3: confirmar creación antes de cerrar
+      toast('Cita creada correctamente', 'success')
       onCreated()
       onClose()
     } catch (err) {
@@ -97,6 +109,8 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
         setError('Alcanzaste el límite de citas de tu plan este mes. Actualiza tu plan en Facturación.')
       } else if (msg.includes('trial_expired') || msg.includes('no_active_plan')) {
         setError('Tu prueba terminó o no tienes plan activo. Ve a Facturación para suscribirte.')
+      } else if (msg.includes('No se pudo registrar')) {
+        setError(msg)
       } else {
         setError('Error al crear la cita. Intenta de nuevo.')
       }

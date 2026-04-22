@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
+import { STATUS_MAP } from '@/lib/status'
+import { useOrg } from '@/lib/org-context'
+import { calculateProgress, formatReward } from '@/lib/loyalty'
 
 function fmtDate(iso) {
   if (!iso) return '—'
@@ -30,16 +33,9 @@ function FilterChip({ active, onClick, tone, children }) {
   )
 }
 
-const STATUS_MAP = {
-  pending:   { dot: 'bg-amber-400',   label: 'Pendiente'  },
-  confirmed: { dot: 'bg-emerald-400', label: 'Confirmada' },
-  completed: { dot: 'bg-sky-400',     label: 'Completada' },
-  cancelled: { dot: 'bg-red-400',     label: 'Cancelada'  },
-  no_show:   { dot: 'bg-zinc-500',    label: 'No asistió' },
-}
-
 // ─── MODAL EDITAR CLIENTE ─────────────────────────────────────────────────────
 function ClienteModal({ cliente, onClose, onSaved }) {
+  const supabase = createClient()
   const [form, setForm] = useState({
     name: cliente.name || '',
     phone: cliente.phone || '',
@@ -185,22 +181,44 @@ function isBirthdayToday(iso) {
 }
 
 function ClienteDrawer({ cliente, onClose, onEdit }) {
+  const supabase = createClient()
+  const { businessId } = useOrg()
   const [appts, setAppts] = useState([])
+  const [rules, setRules] = useState([])
+  const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function loadAppts() {
-      const { data } = await supabase
-        .from('appointments')
-        .select('id, starts_at, ends_at, status, services(name, price), staff(name)')
-        .eq('client_id', cliente.id)
-        .order('starts_at', { ascending: false })
-        .limit(20)
-      setAppts(data || [])
+    async function loadAll() {
+      // Traemos appointments, reglas activas y servicios en paralelo
+      const [apptsRes, rulesRes, svcsRes] = await Promise.all([
+        supabase
+          .from('appointments')
+          .select('id, starts_at, ends_at, status, service_id, services(name, price), staff(name)')
+          .eq('client_id', cliente.id)
+          .order('starts_at', { ascending: false }),
+        businessId
+          ? supabase
+              .from('loyalty_rules')
+              .select('*')
+              .eq('business_id', businessId)
+              .eq('active', true)
+              .order('visits_required', { ascending: true })
+          : Promise.resolve({ data: [] }),
+        businessId
+          ? supabase
+              .from('services')
+              .select('id, name, price')
+              .eq('business_id', businessId)
+          : Promise.resolve({ data: [] }),
+      ])
+      setAppts(apptsRes.data || [])
+      setRules(rulesRes.data || [])
+      setServices(svcsRes.data || [])
       setLoading(false)
     }
-    loadAppts()
-  }, [cliente.id])
+    loadAll()
+  }, [cliente.id, businessId])
 
   const completedAppts = appts.filter((a) => a.status === 'completed')
   const completed = completedAppts.length
@@ -227,37 +245,55 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative w-full max-w-sm bg-[#0D0D0D] border-l border-[#1A1A1A] h-full flex flex-col shadow-2xl">
+      <div className="relative w-full max-w-sm bg-[var(--dash-ink-raised)] h-full flex flex-col shadow-2xl"
+        style={{ borderLeft: '1px solid var(--dash-border-hover)' }}>
+
+        {/* Hairline decorativo dorado top */}
+        <div
+          aria-hidden
+          className="absolute top-0 left-0 right-0 h-px"
+          style={{
+            background: 'linear-gradient(90deg, transparent, var(--dash-primary) 50%, transparent)',
+          }}
+        />
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#161616]">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--dash-border)]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#C8A96E]/10 border border-[#C8A96E]/20 flex items-center justify-center">
-              <span className="text-[#C8A96E] text-sm font-semibold">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center border"
+              style={{ background: 'var(--dash-primary-bg-8)', borderColor: 'var(--dash-border-hover)' }}
+            >
+              <span
+                className="text-[var(--dash-primary)] text-sm font-medium"
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
                 {cliente.name ? cliente.name[0].toUpperCase() : '?'}
               </span>
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <p className="text-[#E8E3DC] text-sm font-medium">{cliente.name}</p>
+                <p className="text-[var(--dash-text)] text-sm font-medium">{cliente.name}</p>
                 {birthdayToday && (
-                  <span className="text-xs" title="Hoy es su cumpleaños">🎂</span>
+                  <span className="text-xs select-none" title="Hoy es su cumpleaños" aria-label="Cumpleaños">✦</span>
                 )}
               </div>
-              <p className="text-[#888] text-xs">{cliente.phone || 'Sin teléfono'}</p>
-              {cliente.email && <p className="text-[#888] text-xs">{cliente.email}</p>}
+              <p className="text-[var(--dash-text-muted)] text-xs">{cliente.phone || 'Sin teléfono'}</p>
+              {cliente.email && <p className="text-[var(--dash-text-muted)] text-xs">{cliente.email}</p>}
             </div>
           </div>
           <div className="flex items-center gap-1">
             <button onClick={onEdit}
-              className="p-2 text-[#444] hover:text-[#C8A96E] hover:bg-[#C8A96E]/10 rounded-lg transition-all">
+              aria-label="Editar"
+              className="p-2 text-[var(--dash-text-dim)] hover:text-[var(--dash-primary)] hover:bg-[var(--dash-primary-bg-8)] rounded-lg transition-all">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
               </svg>
             </button>
             <button onClick={onClose}
-              className="p-2 text-[#444] hover:text-[#888] rounded-lg transition-all">
+              aria-label="Cerrar"
+              className="p-2 text-[var(--dash-text-dim)] hover:text-[var(--dash-text-soft)] rounded-lg transition-all">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -266,15 +302,15 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
         </div>
 
         {/* Stats rápidos */}
-        <div className="grid grid-cols-3 gap-px bg-[#161616] border-b border-[#161616]">
+        <div className="grid grid-cols-3 gap-px bg-[var(--dash-border)]">
           {[
             { label: 'Visitas', value: completed },
-            { label: 'No show', value: noShows },
+            { label: 'Ausencias', value: noShows },
             { label: 'Total gastado', value: `Q${totalSpent.toFixed(0)}` },
           ].map((s) => (
-            <div key={s.label} className="bg-[#0D0D0D] px-4 py-4 text-center">
-              <p className="text-[#C8A96E] text-lg font-light tabular-nums">{s.value}</p>
-              <p className="text-[#777] text-[10px] uppercase tracking-wider mt-0.5">{s.label}</p>
+            <div key={s.label} className="bg-[var(--dash-ink-raised)] px-4 py-4 text-center">
+              <p className="text-[var(--dash-primary)] text-xl tabular-nums" style={{ fontFamily: 'var(--font-display)', fontWeight: 300 }}>{s.value}</p>
+              <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.12em] mt-0.5">{s.label}</p>
             </div>
           ))}
         </div>
@@ -304,15 +340,60 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
 
         {/* Tags */}
         {Array.isArray(cliente.tags) && cliente.tags.length > 0 && (
-          <div className="px-6 py-3 border-b border-[#161616]">
-            <p className="text-[#888] text-[10px] uppercase tracking-widest mb-2">Etiquetas</p>
+          <div className="px-6 py-3 border-b border-[var(--dash-border)]">
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.14em] mb-2">Etiquetas</p>
             <div className="flex gap-1.5 flex-wrap">
               {cliente.tags.map((t) => (
-                <span key={t} className="text-[10px] text-[#C8A96E] bg-[#C8A96E]/8 border border-[#C8A96E]/20 px-2 py-0.5 rounded-full">
+                <span key={t} className="text-[10px] text-[var(--dash-primary-soft)] bg-[var(--dash-primary-bg-8)] border border-[var(--dash-primary)]/20 px-2 py-0.5 rounded-full uppercase tracking-[0.08em]">
                   {t}
                 </span>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Progreso de fidelidad */}
+        {rules.length > 0 && (
+          <div className="px-6 py-4 border-b border-[var(--dash-border)] space-y-3">
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.14em]">Progreso de fidelidad</p>
+            {rules.map((r) => {
+              const progress = calculateProgress(appts, r)
+              const pct = progress.required === 0
+                ? 0
+                : Math.round((progress.progressInCycle / progress.required) * 100)
+              const rewardService = r.reward_service_id ? services.find((s) => s.id === r.reward_service_id) : null
+              const rewardText = formatReward(r, rewardService?.name)
+              const canRedeem = progress.visits > 0 && progress.progressInCycle === 0
+              return (
+                <div key={r.id} className="space-y-1.5">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-[var(--dash-text-soft)] text-xs truncate">{r.name}</p>
+                    <p className="text-[var(--dash-text)] text-xs tabular-nums shrink-0" style={{ fontFamily: 'var(--font-display)' }}>
+                      {progress.progressInCycle}<span className="text-[var(--dash-text-dim)]">/{progress.required}</span>
+                    </p>
+                  </div>
+                  <div className="h-1.5 bg-[var(--dash-ink-sunken)] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: canRedeem ? '100%' : `${pct}%`,
+                        background: canRedeem
+                          ? 'linear-gradient(90deg, var(--dash-primary), var(--dash-primary-soft))'
+                          : 'var(--dash-primary)',
+                      }}
+                    />
+                  </div>
+                  <p className={`text-[10px] ${canRedeem ? 'text-[var(--dash-primary-soft)]' : 'text-[var(--dash-text-dim)]'}`}>
+                    {canRedeem
+                      ? `✦ Puede canjear: ${rewardText}`
+                      : `Faltan ${progress.remaining} para ${rewardText}`}
+                    {progress.redeemedCycles > 0 && (
+                      <span className="text-[var(--dash-text-dim)]"> · {progress.redeemedCycles} ciclo{progress.redeemedCycles > 1 ? 's' : ''} canjeado{progress.redeemedCycles > 1 ? 's' : ''}</span>
+                    )}
+                  </p>
+                </div>
+              )
+            })}
           </div>
         )}
 
@@ -370,6 +451,7 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
 const INACTIVITY_DAYS = 60
 
 export default function ClientesPage() {
+  const supabase = createClient()
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -428,23 +510,31 @@ export default function ClientesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080808] p-8 space-y-6">
+    <div className="min-h-screen p-10 space-y-8 animate-fade-up">
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
-            Clientes
-          </h1>
-          <p className="text-[#777] text-xs mt-1">
-            {loading ? '...' : `${clients.length} clientes registrados`}
+        <div className="space-y-2">
+          <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.24em]">
+            Tu base
           </p>
+          <h1
+            className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
+            Clientes
+            {!loading && clients.length > 0 && (
+              <span className="text-[var(--dash-primary)] text-2xl ml-3" style={{ fontStyle: 'italic' }}>
+                {clients.length}
+              </span>
+            )}
+          </h1>
         </div>
       </div>
 
       {/* Buscador */}
       <div className="relative">
-        <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-[#333]" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+        <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--dash-text-dim)]" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
           <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
         <input
@@ -452,7 +542,7 @@ export default function ClientesPage() {
           placeholder="Buscar por nombre, teléfono o correo..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-[#0D0D0D] border border-[#1E1E1E] rounded-xl pl-10 pr-4 py-3 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/40 transition-colors"
+          className="w-full bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-xl pl-10 pr-4 py-3 text-[var(--dash-text)] text-sm placeholder:text-[var(--dash-text-dim)] focus:outline-none focus:border-[var(--dash-primary)]/40 transition-colors"
         />
       </div>
 
@@ -486,25 +576,26 @@ export default function ClientesPage() {
           <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl flex flex-col items-center justify-center py-24 gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-[#111] border border-[#1C1C1C] flex items-center justify-center">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E2E2E" strokeWidth="1.5" strokeLinecap="round">
+        <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl flex flex-col items-center justify-center py-24 gap-4">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+            style={{ background: 'var(--dash-ink-sunken)', border: '1px solid var(--dash-border)' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--dash-primary)" strokeOpacity="0.4" strokeWidth="1.2" strokeLinecap="round">
               <circle cx="9" cy="7" r="4" />
               <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
             </svg>
           </div>
           <div className="text-center">
-            <p className="text-[#777] text-sm">
-              {search ? 'Sin resultados' : 'Sin clientes aún'}
+            <p className="text-[var(--dash-text-soft)] text-base italic" style={{ fontFamily: 'var(--font-display)' }}>
+              {search ? 'Sin resultados' : 'Aún no tienes clientes'}
             </p>
-            <p className="text-[#222] text-xs mt-1">
+            <p className="text-[var(--dash-text-muted)] text-xs mt-1">
               {search ? 'Prueba con otro nombre o teléfono' : 'Los clientes aparecen aquí cuando agendan una cita'}
             </p>
           </div>
         </div>
       ) : (
-        <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl overflow-hidden">
-          <div className="divide-y divide-[#111]">
+        <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl overflow-hidden">
+          <div className="divide-y divide-[var(--dash-border)]">
             {filtered.map((c) => {
               const daysAgo = c.last_visit ? Math.floor((now - new Date(c.last_visit).getTime()) / (1000 * 60 * 60 * 24)) : null
               const isInactive = daysAgo !== null && daysAgo > INACTIVITY_DAYS
@@ -513,12 +604,16 @@ export default function ClientesPage() {
               return (
                 <div
                   key={c.id}
-                  className="flex items-center gap-4 px-6 py-4 hover:bg-[#111] transition-colors group"
+                  className="flex items-center gap-4 px-6 py-4 hover:bg-[var(--dash-ink)]/60 transition-colors group"
                 >
                   <button onClick={() => setSelected(c)} className="flex items-center gap-4 flex-1 min-w-0 text-left">
                     {/* Avatar */}
-                    <div className="w-9 h-9 rounded-xl bg-[#C8A96E]/10 border border-[#C8A96E]/20 flex items-center justify-center shrink-0">
-                      <span className="text-[#C8A96E] text-sm font-semibold">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border"
+                      style={{
+                        background: 'var(--dash-primary-bg-8)',
+                        borderColor: 'var(--dash-border-hover)',
+                      }}>
+                      <span className="text-[var(--dash-primary)] text-sm font-medium" style={{ fontFamily: 'var(--font-display)' }}>
                         {c.name ? c.name[0].toUpperCase() : '?'}
                       </span>
                     </div>
@@ -526,15 +621,17 @@ export default function ClientesPage() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-[#E8E3DC] text-sm font-medium truncate">{c.name || '—'}</p>
-                        {birthday && <span className="text-xs" title="Cumpleaños hoy">🎂</span>}
+                        <p className="text-[var(--dash-text)] text-sm font-medium truncate">{c.name || '—'}</p>
+                        {birthday && (
+                          <span className="text-xs select-none" title="Cumpleaños hoy" aria-label="Cumpleaños">✦</span>
+                        )}
                         {Array.isArray(c.tags) && c.tags.slice(0, 2).map((t) => (
-                          <span key={t} className="text-[9px] text-[#C8A96E] bg-[#C8A96E]/8 border border-[#C8A96E]/20 px-1.5 py-0.5 rounded-full">
+                          <span key={t} className="text-[9px] text-[var(--dash-primary-soft)] bg-[var(--dash-primary-bg-8)] border border-[var(--dash-primary)]/20 px-1.5 py-0.5 rounded-full uppercase tracking-[0.1em]">
                             {t}
                           </span>
                         ))}
                       </div>
-                      <p className="text-[#888] text-xs mt-0.5 truncate">{c.phone || 'Sin teléfono'}</p>
+                      <p className="text-[var(--dash-text-muted)] text-xs mt-0.5 truncate">{c.phone || 'Sin teléfono'}</p>
                     </div>
                   </button>
 
@@ -542,13 +639,13 @@ export default function ClientesPage() {
                   <div className="text-right shrink-0">
                     {c.last_visit ? (
                       <>
-                        <p className={`text-xs ${isInactive ? 'text-[#E89B7A]' : 'text-[#888]'}`}>
+                        <p className={`text-xs ${isInactive ? 'text-[var(--dash-warn)]' : 'text-[var(--dash-text-soft)]'}`}>
                           {daysAgo === 0 ? 'Hoy' : daysAgo === 1 ? 'Ayer' : `hace ${daysAgo}d`}
                         </p>
-                        <p className="text-[#666] text-[10px] mt-0.5">última visita</p>
+                        <p className="text-[var(--dash-text-dim)] text-[10px] mt-0.5">última visita</p>
                       </>
                     ) : (
-                      <p className="text-[#666] text-xs">Sin visitas</p>
+                      <p className="text-[var(--dash-text-dim)] text-xs">Sin visitas</p>
                     )}
                   </div>
 

@@ -1,20 +1,15 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
+import { STATUS_MAP, STATUS_OPTIONS } from '@/lib/status'
 import { useOrg } from '@/lib/org-context'
+import { useToast } from '@/components/ui/Toast'
+import { logger } from '@/lib/logger'
+import Chip, { STATUS_TO_CHIP } from '@/components/ui/Chip'
+import Hairline from '@/components/ui/Hairline'
 import NuevaCitaModal from '@/components/dashboard/citas/NuevaCitaModal'
 
-const STATUS_MAP = {
-  pending:     { bg: 'bg-amber-500/10',   text: 'text-amber-400',   dot: 'bg-amber-400',   label: 'Pendiente'  },
-  confirmed:   { bg: 'bg-emerald-500/10', text: 'text-emerald-400', dot: 'bg-emerald-400', label: 'Confirmada' },
-  completed:   { bg: 'bg-sky-500/10',     text: 'text-sky-400',     dot: 'bg-sky-400',     label: 'Completada' },
-  cancelled:   { bg: 'bg-red-500/10',     text: 'text-red-400',     dot: 'bg-red-400',     label: 'Cancelada'  },
-  no_show:     { bg: 'bg-zinc-500/10',    text: 'text-zinc-500',    dot: 'bg-zinc-500',    label: 'No asistió' },
-  rescheduled: { bg: 'bg-purple-500/10',  text: 'text-purple-400',  dot: 'bg-purple-400',  label: 'Reprogramada'},
-}
-
-const STATUS_OPTIONS = ['pending', 'confirmed', 'completed', 'cancelled', 'no_show']
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 7)
 
 function fmt(iso) {
@@ -27,6 +22,8 @@ function fmtDate(date) {
 
 // ─── MODAL EDITAR CITA ────────────────────────────────────────────────────────
 function EditarCitaModal({ appt, onClose, onSaved }) {
+  const supabase = createClient()
+  const { toast } = useToast()
   const { businessId } = useOrg()
   const [services, setServices] = useState([])
   const [staff, setStaff]       = useState([])
@@ -69,17 +66,18 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
     setLoading(true)
     setError(null)
     try {
-      const startsAt = new Date(`${form.date}T${form.time}:00`)
-      const endsAt   = new Date(startsAt.getTime() + duration * 60000)
+      const startsAtL = new Date(`${form.date}T${form.time}:00`)
+      const endsAtL   = new Date(startsAtL.getTime() + duration * 60000)
       const { error: err } = await supabase.from('appointments').update({
-        starts_at:  startsAt.toISOString(),
-        ends_at:    endsAt.toISOString(),
+        starts_at:  startsAtL.toISOString(),
+        ends_at:    endsAtL.toISOString(),
         service_id: form.serviceId || null,
         staff_id:   form.staffId   || null,
         status:     form.status,
         notes:      form.notes.trim() || null,
       }).eq('id', appt.id)
       if (err) throw err
+      toast('Cita actualizada', 'success')
       onSaved()
       onClose()
     } catch {
@@ -91,75 +89,91 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
 
   async function handleCancel() {
     setLoading(true)
-    await supabase.from('appointments').update({ status: 'cancelled' }).eq('id', appt.id)
-    onSaved()
-    onClose()
+    const { error: cancelErr } = await supabase
+      .from('appointments')
+      .update({ status: 'cancelled' })
+      .eq('id', appt.id)
+    setLoading(false)
+    if (cancelErr) {
+      toast('Error al cancelar la cita.', 'error')
+    } else {
+      toast('Cita cancelada', 'info')
+      onSaved()
+      onClose()
+    }
   }
+
+  const inputCls = 'w-full bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder:text-[var(--dash-text-dim)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-[#111] border border-[#222] rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
+      <div className="absolute inset-0 scrim-glass animate-scrim-in" onClick={onClose} />
+      <div className="relative w-full max-w-[480px] rounded-[14px] overflow-hidden animate-modal-in"
+        style={{
+          background: 'var(--dash-ink-raised)',
+          border: '1px solid var(--dash-border)',
+          boxShadow: '0 1px 0 var(--dash-hairline) inset, 0 24px 64px -12px rgba(0,0,0,0.8)',
+        }}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#1A1A1A]">
+        <div className="flex items-center justify-between px-6 py-5">
           <div>
-            <h2 className="text-[#F0EBE3] text-lg font-light" style={{ fontFamily: 'var(--font-display)' }}>
+            <h2 className="text-[var(--dash-text)] text-xl tracking-tight" style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}>
               Editar cita
             </h2>
-            <p className="text-[#888] text-xs mt-0.5">{appt.clients?.name || 'Cliente'}</p>
+            <p className="text-[var(--dash-text-muted)] text-xs mt-1">{appt.clients?.name || 'Cliente'}</p>
           </div>
-          <button onClick={onClose} className="text-[#444] hover:text-[#888] transition-colors">
+          <button onClick={onClose} aria-label="Cerrar" className="text-[var(--dash-text-dim)] hover:text-[var(--dash-text-soft)] transition-colors">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
 
+        <Hairline className="mx-6" />
+
         {loadingData ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
+            <div className="w-5 h-5 border border-[var(--dash-primary)]/20 border-t-[var(--dash-primary)] rounded-full animate-spin" />
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
 
             {/* Fecha y Hora */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Fecha *</p>
-                <input type="date" value={form.date} onChange={(e) => set('date', e.target.value)}
-                  className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
+              <div className="space-y-1.5">
+                <p className="eyebrow">Fecha *</p>
+                <input type="date" value={form.date} onChange={(e) => set('date', e.target.value)} className={inputCls} />
               </div>
-              <div className="space-y-1">
-                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Hora *</p>
-                <input type="time" value={form.time} onChange={(e) => set('time', e.target.value)}
-                  className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
+              <div className="space-y-1.5">
+                <p className="eyebrow">Hora *</p>
+                <input type="time" value={form.time} onChange={(e) => set('time', e.target.value)} className={inputCls} />
               </div>
             </div>
 
             {/* Servicio y Staff */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Servicio</p>
+              <div className="space-y-1.5">
+                <p className="eyebrow">Servicio</p>
                 <select value={form.serviceId} onChange={(e) => set('serviceId', e.target.value)}
-                  className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors appearance-none"
-                  style={{ color: form.serviceId ? '#E8E3DC' : '#333' }}>
+                  className={`${inputCls} appearance-none cursor-pointer`}
+                  style={{ color: form.serviceId ? 'var(--dash-text)' : 'var(--dash-text-dim)' }}>
                   <option value="">Sin asignar</option>
                   {services.map((s) => (
-                    <option key={s.id} value={s.id} style={{ color: '#E8E3DC', background: '#111' }}>
+                    <option key={s.id} value={s.id} style={{ color: 'var(--dash-text)', background: 'var(--dash-ink-raised)' }}>
                       {s.name}
                     </option>
                   ))}
                 </select>
               </div>
-              <div className="space-y-1">
-                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Colaborador</p>
+              <div className="space-y-1.5">
+                <p className="eyebrow">Colaborador</p>
                 <select value={form.staffId} onChange={(e) => set('staffId', e.target.value)}
-                  className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors appearance-none"
-                  style={{ color: form.staffId ? '#E8E3DC' : '#333' }}>
+                  className={`${inputCls} appearance-none cursor-pointer`}
+                  style={{ color: form.staffId ? 'var(--dash-text)' : 'var(--dash-text-dim)' }}>
                   <option value="">Cualquiera</option>
                   {staff.map((m) => (
-                    <option key={m.id} value={m.id} style={{ color: '#E8E3DC', background: '#111' }}>
+                    <option key={m.id} value={m.id} style={{ color: 'var(--dash-text)', background: 'var(--dash-ink-raised)' }}>
                       {m.name}
                     </option>
                   ))}
@@ -168,16 +182,26 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
             </div>
 
             {/* Estado */}
-            <div className="space-y-1">
-              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Estado</p>
+            <div className="space-y-1.5">
+              <p className="eyebrow">Estado</p>
               <div className="flex gap-2 flex-wrap">
                 {STATUS_OPTIONS.map((st) => {
                   const s = STATUS_MAP[st]
+                  const selected = form.status === st
+                  const variant = STATUS_TO_CHIP[st] || 'muted'
                   return (
-                    <button key={st} type="button" onClick={() => set('status', st)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
-                        form.status === st ? `${s.bg} ${s.text} border-current/30` : 'text-[#555] border-[#1E1E1E] hover:border-[#333]'
-                      }`}>
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={() => set('status', st)}
+                      className={`
+                        flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-[0.12em] font-medium transition-all border
+                        ${selected
+                          ? 'border-[var(--dash-primary)] bg-[var(--dash-primary-bg-15)] text-[var(--dash-primary-soft)]'
+                          : 'border-[var(--dash-border)] text-[var(--dash-text-muted)] hover:border-[var(--dash-border-hover)] hover:text-[var(--dash-text-soft)]'
+                        }
+                      `}
+                    >
                       <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
                       {s.label}
                     </button>
@@ -187,25 +211,30 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
             </div>
 
             {/* Notas */}
-            <div className="space-y-1">
-              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Notas</p>
+            <div className="space-y-1.5">
+              <p className="eyebrow">Notas</p>
               <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={2}
                 placeholder="Indicaciones especiales..."
-                className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors resize-none" />
+                className={`${inputCls} resize-none`} />
             </div>
 
             {error && (
-              <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 px-4 py-2.5 rounded-xl">{error}</p>
+              <p className="text-[var(--dash-danger)] text-xs bg-[var(--dash-danger)]/10 border border-[var(--dash-danger)]/20 px-4 py-2.5 rounded-xl">{error}</p>
             )}
 
             {/* Acciones */}
-            <div className="flex gap-3 pt-1">
+            <div className="flex gap-3 pt-2">
               <button type="button" onClick={handleCancel} disabled={loading || appt.status === 'cancelled'}
-                className="px-4 py-2.5 rounded-xl text-sm font-medium text-red-400 border border-red-500/20 hover:bg-red-500/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                className="px-4 py-2.5 rounded-full text-xs font-medium text-[var(--dash-danger)] border border-[var(--dash-danger)]/30 hover:bg-[var(--dash-danger)]/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-[0.1em]">
                 Cancelar cita
               </button>
               <button type="submit" disabled={loading}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#C8A96E] hover:bg-[#D4B87A] text-[#080808] transition-all disabled:opacity-50">
+                className="flex-1 px-4 py-2.5 rounded-full text-sm font-semibold transition-all disabled:opacity-50 hover:scale-[1.01]"
+                style={{
+                  background: 'linear-gradient(135deg, var(--dash-primary), var(--dash-primary-deep))',
+                  color: 'var(--dash-ink)',
+                  boxShadow: '0 4px 16px -4px var(--dash-primary)',
+                }}>
                 {loading ? 'Guardando...' : 'Guardar cambios'}
               </button>
             </div>
@@ -216,96 +245,128 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
   )
 }
 
-// ─── STATUS BADGE ─────────────────────────────────────────────────────────────
-function StatusBadge({ status }) {
-  const s = STATUS_MAP[status] || STATUS_MAP.pending
-  return (
-    <span className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${s.bg} ${s.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-      {s.label}
-    </span>
-  )
-}
-
 // ─── VISTA LISTA ─────────────────────────────────────────────────────────────
-function ListView({ appointments, onStatusChange, filterStatus, setFilterStatus, onEdit }) {
+function ListView({ appointments, filterStatus, setFilterStatus, onEdit }) {
   return (
-    <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl overflow-hidden">
+    <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl overflow-hidden">
       {/* Filtros */}
-      <div className="flex items-center gap-2 px-6 py-4 border-b border-[#161616] flex-wrap">
+      <div className="flex items-center gap-2 px-6 py-4 flex-wrap">
         <button
           onClick={() => setFilterStatus('all')}
-          className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${filterStatus === 'all' ? 'bg-[#C8A96E]/15 text-[#C8A96E] border border-[#C8A96E]/30' : 'text-[#555] border border-[#1E1E1E] hover:border-[#333]'}`}
+          className={`
+            px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.12em] font-medium transition-all border
+            ${filterStatus === 'all'
+              ? 'border-[var(--dash-primary)] bg-[var(--dash-primary-bg-15)] text-[var(--dash-primary-soft)]'
+              : 'border-[var(--dash-border)] text-[var(--dash-text-muted)] hover:border-[var(--dash-border-hover)] hover:text-[var(--dash-text-soft)]'
+            }
+          `}
         >
           Todas
         </button>
         {STATUS_OPTIONS.map((st) => {
           const s = STATUS_MAP[st]
+          const selected = filterStatus === st
           return (
-            <button key={st} onClick={() => setFilterStatus(st)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${filterStatus === st ? `${s.bg} ${s.text} border border-current/30` : 'text-[#555] border border-[#1E1E1E] hover:border-[#333]'}`}>
+            <button
+              key={st}
+              onClick={() => setFilterStatus(st)}
+              className={`
+                flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.12em] font-medium transition-all border
+                ${selected
+                  ? 'border-[var(--dash-primary)] bg-[var(--dash-primary-bg-15)] text-[var(--dash-primary-soft)]'
+                  : 'border-[var(--dash-border)] text-[var(--dash-text-muted)] hover:border-[var(--dash-border-hover)] hover:text-[var(--dash-text-soft)]'
+                }
+              `}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
               {s.label}
             </button>
           )
         })}
       </div>
 
+      <Hairline className="mx-6" />
+
       {appointments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-[#111] border border-[#1C1C1C] flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E2E2E" strokeWidth="1.5" strokeLinecap="round">
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+            style={{ background: 'var(--dash-ink-sunken)', border: '1px solid var(--dash-border)' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--dash-primary)" strokeWidth="1.2" strokeLinecap="round" strokeOpacity="0.4">
               <rect x="3" y="4" width="18" height="18" rx="2" />
               <line x1="3" y1="9" x2="21" y2="9" />
             </svg>
           </div>
-          <p className="text-[#777] text-sm">Sin citas para este filtro</p>
+          <p className="text-[var(--dash-text-soft)] text-sm italic" style={{ fontFamily: 'var(--font-display)' }}>
+            Sin citas para este filtro
+          </p>
         </div>
       ) : (
-        <div className="divide-y divide-[#111]">
-          {appointments.map((appt) => (
-            <div key={appt.id} className="flex items-center gap-5 px-6 py-4 hover:bg-[#111] transition-colors group">
-              {/* Fecha y hora */}
-              <div className="w-24 shrink-0">
-                <p className="text-[#888] text-[10px] uppercase tracking-wider">
-                  {new Date(appt.starts_at).toLocaleDateString('es-GT', { day: 'numeric', month: 'short' })}
-                </p>
-                <p className="text-[#E8E3DC] text-sm font-medium tabular-nums">{fmt(appt.starts_at)}</p>
-                <p className="text-[#666] text-xs tabular-nums">{fmt(appt.ends_at)}</p>
-              </div>
-
-              {/* Cliente */}
-              <div className="flex-1 min-w-0">
-                <p className="text-[#E8E3DC] text-sm font-medium truncate">{appt.clients?.name || '—'}</p>
-                <p className="text-[#888] text-xs truncate mt-0.5">
-                  {appt.clients?.phone || ''}
-                  {appt.services?.name ? ` · ${appt.services.name}` : ''}
-                  {appt.staff?.name    ? ` · ${appt.staff.name}`    : ''}
-                </p>
-              </div>
-
-              {/* Precio */}
-              {appt.services?.price != null && (
-                <p className="text-[#C8A96E] text-sm font-medium shrink-0 tabular-nums">
-                  Q{Number(appt.services.price).toFixed(2)}
-                </p>
-              )}
-
-              {/* Estado */}
-              <StatusBadge status={appt.status} />
-
-              {/* Botón editar — aparece al hover */}
-              <button
-                onClick={() => onEdit(appt)}
-                className="shrink-0 opacity-0 group-hover:opacity-100 p-2 text-[#444] hover:text-[#C8A96E] hover:bg-[#C8A96E]/10 rounded-lg transition-all"
-                title="Editar cita"
+        <div className="divide-y divide-[var(--dash-border)]">
+          {appointments.map((appt) => {
+            const chipVariant = STATUS_TO_CHIP[appt.status] || 'muted'
+            const label = STATUS_MAP[appt.status]?.label || 'Pendiente'
+            return (
+              <div
+                key={appt.id}
+                className="flex items-center gap-4 px-6 py-4 hover:bg-[var(--dash-ink)]/60 transition-colors group"
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-              </button>
-            </div>
-          ))}
+                {/* Fecha y hora */}
+                <div className="w-24 shrink-0">
+                  <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.14em]">
+                    {new Date(appt.starts_at).toLocaleDateString('es-GT', { day: 'numeric', month: 'short' })}
+                  </p>
+                  <p
+                    className="text-[var(--dash-text)] text-base leading-none tabular-nums mt-1"
+                    style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}
+                  >
+                    {fmt(appt.starts_at)}
+                  </p>
+                  <p className="text-[var(--dash-text-dim)] text-[10px] tabular-nums mt-1">
+                    hasta {fmt(appt.ends_at)}
+                  </p>
+                </div>
+
+                {/* Hairline divisor */}
+                <div className="w-px self-stretch my-2" style={{ background: 'var(--dash-border)' }} />
+
+                {/* Cliente */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[var(--dash-text)] text-sm font-medium truncate">{appt.clients?.name || '—'}</p>
+                  <p className="text-[var(--dash-text-muted)] text-xs truncate mt-0.5">
+                    {appt.clients?.phone || ''}
+                    {appt.services?.name ? ` · ${appt.services.name}` : ''}
+                    {appt.staff?.name    ? ` · ${appt.staff.name}`    : ''}
+                  </p>
+                </div>
+
+                {/* Precio */}
+                {appt.services?.price != null && (
+                  <p
+                    className="text-[var(--dash-primary-soft)] text-sm shrink-0 tabular-nums tracking-tight"
+                    style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}
+                  >
+                    Q{Number(appt.services.price).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                )}
+
+                {/* Estado */}
+                <Chip variant={chipVariant} size="sm">{label}</Chip>
+
+                {/* Botón editar */}
+                <button
+                  onClick={() => onEdit(appt)}
+                  className="shrink-0 opacity-0 group-hover:opacity-100 p-2 text-[var(--dash-text-dim)] hover:text-[var(--dash-primary)] hover:bg-[var(--dash-primary-bg-8)] rounded-lg transition-all"
+                  aria-label="Editar cita"
+                  title="Editar cita"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
@@ -334,21 +395,24 @@ function CalendarView({ appointments, weekStart, onEdit }) {
   const today = new Date()
 
   return (
-    <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl overflow-hidden">
+    <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl overflow-hidden">
       {/* Cabecera días */}
-      <div className="grid grid-cols-8 border-b border-[#161616]">
-        <div className="px-3 py-3 border-r border-[#161616]" />
+      <div className="grid grid-cols-8">
+        <div className="px-3 py-4" />
         {days.map((day, i) => {
           const isToday =
             day.getDate()     === today.getDate()     &&
             day.getMonth()    === today.getMonth()    &&
             day.getFullYear() === today.getFullYear()
           return (
-            <div key={i} className={`px-2 py-3 text-center border-r border-[#161616] last:border-r-0 ${isToday ? 'bg-[#C8A96E]/5' : ''}`}>
-              <p className={`text-[10px] uppercase tracking-wider ${isToday ? 'text-[#C8A96E]' : 'text-[#444]'}`}>
+            <div key={i} className={`px-2 py-4 text-center ${isToday ? 'bg-[var(--dash-primary-bg-8)]' : ''}`}>
+              <p className={`text-[9px] uppercase tracking-[0.2em] ${isToday ? 'text-[var(--dash-primary)]' : 'text-[var(--dash-text-muted)]'}`}>
                 {day.toLocaleDateString('es-GT', { weekday: 'short' })}
               </p>
-              <p className={`text-sm font-medium mt-0.5 ${isToday ? 'text-[#C8A96E]' : 'text-[#888]'}`}>
+              <p
+                className={`text-lg mt-1 tabular-nums ${isToday ? 'text-[var(--dash-primary)]' : 'text-[var(--dash-text-soft)]'}`}
+                style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}
+              >
                 {day.getDate()}
               </p>
             </div>
@@ -356,27 +420,29 @@ function CalendarView({ appointments, weekStart, onEdit }) {
         })}
       </div>
 
+      <Hairline />
+
       {/* Grid de horas */}
-      <div className="overflow-auto max-h-[500px]">
+      <div className="overflow-auto max-h-[560px]">
         {HOURS.map((hour) => (
-          <div key={hour} className="grid grid-cols-8 border-b border-[#111] min-h-[56px]">
-            <div className="px-3 py-2 border-r border-[#161616] flex items-start justify-end">
-              <span className="text-[#666] text-[10px] tabular-nums">{hour.toString().padStart(2, '0')}:00</span>
+          <div key={hour} className="grid grid-cols-8 border-b border-[var(--dash-border)] min-h-[56px]">
+            <div className="px-3 py-2 flex items-start justify-end border-r border-[var(--dash-border)]">
+              <span className="text-[var(--dash-text-dim)] text-[10px] tabular-nums">{hour.toString().padStart(2, '0')}:00</span>
             </div>
             {days.map((day, di) => {
               const dayAppts = getAppts(day).filter((a) => new Date(a.starts_at).getHours() === hour)
               return (
-                <div key={di} className="border-r border-[#111] last:border-r-0 p-1 space-y-1">
+                <div key={di} className="border-r border-[var(--dash-border)] last:border-r-0 p-1 space-y-1">
                   {dayAppts.map((appt) => {
                     const s = STATUS_MAP[appt.status] || STATUS_MAP.pending
                     return (
                       <button
                         key={appt.id}
                         onClick={() => onEdit(appt)}
-                        className={`w-full ${s.bg} rounded-lg px-2 py-1.5 text-left hover:brightness-110 transition-all`}
+                        className={`w-full ${s.bg} rounded-lg px-2 py-1.5 text-left hover:brightness-125 transition-all border border-transparent hover:border-[var(--dash-primary)]/30`}
                       >
-                        <p className={`text-[10px] font-semibold ${s.text} truncate`}>{fmt(appt.starts_at)}</p>
-                        <p className="text-[#888] text-[9px] truncate">{appt.clients?.name || '—'}</p>
+                        <p className={`text-[10px] font-semibold ${s.text} tabular-nums`}>{fmt(appt.starts_at)}</p>
+                        <p className="text-[var(--dash-text-muted)] text-[9px] truncate">{appt.clients?.name || '—'}</p>
                       </button>
                     )
                   })}
@@ -392,9 +458,12 @@ function CalendarView({ appointments, weekStart, onEdit }) {
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function CitasPage() {
+  const supabase = createClient()
+
   const [view, setView]               = useState('lista')
   const [appointments, setAppointments] = useState([])
   const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState(null)
   const [showModal, setShowModal]     = useState(false)
   const [editTarget, setEditTarget]   = useState(null)
   const [filterStatus, setFilterStatus] = useState('all')
@@ -407,18 +476,26 @@ export default function CitasPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('appointments')
-      .select(`
-        id, starts_at, ends_at, status, notes, source,
-        service_id, staff_id,
-        clients(name, phone),
-        services(name, duration_minutes, price),
-        staff(name)
-      `)
-      .order('starts_at', { ascending: false })
-    setAppointments(data || [])
-    setLoading(false)
+    setError(null)
+    try {
+      const { data, error: fetchErr } = await supabase
+        .from('appointments')
+        .select(`
+          id, starts_at, ends_at, status, notes, source,
+          service_id, staff_id,
+          clients(name, phone),
+          services(name, duration_minutes, price),
+          staff(name)
+        `)
+        .order('starts_at', { ascending: false })
+      if (fetchErr) throw fetchErr
+      setAppointments(data || [])
+    } catch (err) {
+      logger.error('citas', err)
+      setError('No se pudieron cargar las citas.')
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -438,34 +515,58 @@ export default function CitasPage() {
   function nextWeek() { setWeekStart((d) => { const n = new Date(d); n.setDate(n.getDate() + 7); return n }) }
 
   return (
-    <div className="min-h-screen bg-[#080808] p-8 space-y-6">
+    <div className="min-h-screen p-10 space-y-8 animate-fade-up">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
-            Citas
-          </h1>
-          <p className="text-[#777] text-xs mt-1">
-            {loading ? '...' : `${appointments.length} citas en total`}
+        <div className="space-y-2">
+          <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.24em]">
+            Agenda
           </p>
+          <h1
+            className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
+            Citas
+            {!loading && appointments.length > 0 && (
+              <span className="text-[var(--dash-primary)] text-2xl ml-3" style={{ fontStyle: 'italic' }}>
+                {appointments.length}
+              </span>
+            )}
+          </h1>
         </div>
 
         <div className="flex items-center gap-3">
           {/* Toggle vista */}
-          <div className="flex bg-[#111] border border-[#1E1E1E] rounded-xl p-1">
-            <button onClick={() => setView('lista')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${view === 'lista' ? 'bg-[#1E1E1E] text-[#E8E3DC]' : 'text-[#444] hover:text-[#888]'}`}>
+          <div className="flex bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-full p-1">
+            <button
+              onClick={() => setView('lista')}
+              className={`
+                px-4 py-1.5 rounded-full text-[11px] uppercase tracking-[0.14em] font-medium transition-all
+                ${view === 'lista' ? 'bg-[var(--dash-primary-bg-15)] text-[var(--dash-primary-soft)]' : 'text-[var(--dash-text-muted)] hover:text-[var(--dash-text-soft)]'}
+              `}
+            >
               Lista
             </button>
-            <button onClick={() => setView('calendario')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${view === 'calendario' ? 'bg-[#1E1E1E] text-[#E8E3DC]' : 'text-[#444] hover:text-[#888]'}`}>
+            <button
+              onClick={() => setView('calendario')}
+              className={`
+                px-4 py-1.5 rounded-full text-[11px] uppercase tracking-[0.14em] font-medium transition-all
+                ${view === 'calendario' ? 'bg-[var(--dash-primary-bg-15)] text-[var(--dash-primary-soft)]' : 'text-[var(--dash-text-muted)] hover:text-[var(--dash-text-soft)]'}
+              `}
+            >
               Calendario
             </button>
           </div>
 
-          {/* Nueva cita */}
-          <button onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-[#C8A96E] hover:bg-[#D4B87A] text-[#080808] text-sm font-semibold px-4 py-2.5 rounded-xl transition-all">
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 text-sm font-semibold px-5 py-3 rounded-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            style={{
+              background: 'linear-gradient(135deg, var(--dash-primary), var(--dash-primary-deep))',
+              color: 'var(--dash-ink)',
+              boxShadow: '0 6px 24px -6px var(--dash-primary)',
+            }}
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
             </svg>
@@ -474,19 +575,32 @@ export default function CitasPage() {
         </div>
       </div>
 
+      <Hairline />
+
       {/* Navegación semana */}
       {view === 'calendario' && (
         <div className="flex items-center gap-4">
-          <button onClick={prevWeek} className="text-[#555] hover:text-[#888] transition-colors p-1">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <button
+            onClick={prevWeek}
+            aria-label="Semana anterior"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--dash-text-muted)] hover:text-[var(--dash-primary)] hover:bg-[var(--dash-primary-bg-8)] transition-all"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-          <p className="text-[#C8C3BC] text-sm font-medium">
+          <p
+            className="text-[var(--dash-text-soft)] text-sm"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
             {fmtDate(weekStart)} — {fmtDate(new Date(weekEnd.getTime() - 86400000))}
           </p>
-          <button onClick={nextWeek} className="text-[#555] hover:text-[#888] transition-colors p-1">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <button
+            onClick={nextWeek}
+            aria-label="Siguiente semana"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--dash-text-muted)] hover:text-[var(--dash-primary)] hover:bg-[var(--dash-primary-bg-8)] transition-all"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </button>
@@ -496,12 +610,33 @@ export default function CitasPage() {
       {/* Contenido */}
       {loading ? (
         <div className="flex items-center justify-center py-32">
-          <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
+          <div className="w-5 h-5 border border-[var(--dash-primary)]/20 border-t-[var(--dash-primary)] rounded-full animate-spin" />
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center py-32 gap-4">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+            style={{ background: 'var(--dash-ink-sunken)', border: '1px solid var(--dash-border)' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--dash-text-muted)" strokeWidth="1.5" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <div className="text-center">
+            <p
+              className="text-[var(--dash-text-soft)] text-sm italic"
+              style={{ fontFamily: 'var(--font-display)' }}
+            >
+              {error}
+            </p>
+            <button onClick={load} className="text-[var(--dash-primary)] text-xs mt-2 link-gold">
+              Reintentar
+            </button>
+          </div>
         </div>
       ) : view === 'lista' ? (
         <ListView
           appointments={filtered}
-          onStatusChange={load}
           filterStatus={filterStatus}
           setFilterStatus={setFilterStatus}
           onEdit={setEditTarget}
@@ -514,12 +649,10 @@ export default function CitasPage() {
         />
       )}
 
-      {/* Modal nueva cita */}
       {showModal && (
         <NuevaCitaModal onClose={() => setShowModal(false)} onCreated={load} />
       )}
 
-      {/* Modal editar cita */}
       {editTarget && (
         <EditarCitaModal
           appt={editTarget}

@@ -1,15 +1,40 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '../../lib/supabase/client'
 
+const RESEND_COOLDOWN = 60 // segundos
+
 export default function SignupPage() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [sent, setSent] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [resendDone, setResendDone] = useState(false)
+  const [cooldown, setCooldown] = useState(0) // segundos restantes
+
+  // Cuenta regresiva del cooldown
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [cooldown])
+
+  async function handleResend() {
+    if (cooldown > 0 || resending) return
+    setResending(true)
+    setResendDone(false)
+    const supabase = createClient()
+    await supabase.auth.resend({ type: 'signup', email: email.trim().toLowerCase() })
+    setResending(false)
+    setResendDone(true)
+    setCooldown(RESEND_COOLDOWN)
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -18,15 +43,14 @@ export default function SignupPage() {
     setError(null)
 
     const supabase = createClient()
-    const { error: signupError } = await supabase.auth.signUp({
+    const { data, error: signupError } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
       options: { emailRedirectTo: `${window.location.origin}/onboarding` },
     })
 
-    setLoading(false)
-
     if (signupError) {
+      setLoading(false)
       const msg = signupError.message?.toLowerCase() || ''
       if (msg.includes('already') || msg.includes('registered')) {
         setError('Ya existe una cuenta con ese correo. Inicia sesión.')
@@ -38,6 +62,15 @@ export default function SignupPage() {
       return
     }
 
+    // Si Supabase devolvió sesión activa, "Confirm email" está desactivado
+    // en el dashboard. El usuario ya está autenticado — mandarlo al onboarding.
+    if (data?.session) {
+      router.push('/onboarding')
+      return
+    }
+
+    // Si no hay sesión, se requiere verificación por correo.
+    setLoading(false)
     setSent(true)
   }
 
@@ -72,7 +105,43 @@ export default function SignupPage() {
               <p className="text-[#6B5A4F] text-sm leading-relaxed">
                 Te enviamos un enlace a <span className="text-[#B8824B] font-medium">{email}</span>. Ábrelo para activar tu cuenta.
               </p>
-              <Link href="/login" className="inline-block text-[#B8824B] hover:text-[#8C5E35] text-sm font-medium mt-2 transition-colors">
+              <p className="text-[#A89582] text-xs">
+                ¿No llegó? Revisa la carpeta de spam.
+              </p>
+
+              {/* Reenviar */}
+              <div className="pt-2 border-t border-[#EDE5DB]">
+                {resendDone && cooldown > 0 ? (
+                  <p className="text-[#6B9E6B] text-sm font-medium">
+                    ✓ Correo reenviado · puedes reintentar en {cooldown}s
+                  </p>
+                ) : (
+                  <button
+                    onClick={handleResend}
+                    disabled={resending || cooldown > 0}
+                    className="w-full flex items-center justify-center gap-2 border border-[#EDE5DB] hover:border-[#D4C4B5] text-[#6B5A4F] hover:text-[#2B1810] text-sm font-medium py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {resending ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border border-[#B8824B]/30 border-t-[#B8824B] rounded-full animate-spin" />
+                        Reenviando…
+                      </>
+                    ) : cooldown > 0 ? (
+                      `Reenviar en ${cooldown}s`
+                    ) : (
+                      <>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                          <polyline points="23 4 23 10 17 10" />
+                          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                        </svg>
+                        Reenviar correo de activación
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              <Link href="/login" className="inline-block text-[#A89582] hover:text-[#6B5A4F] text-xs transition-colors mt-1">
                 Volver al inicio de sesión →
               </Link>
             </div>

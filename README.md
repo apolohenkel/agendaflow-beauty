@@ -1,7 +1,7 @@
 # AgendaFlow Beauty
 
-SaaS multi-tenant de gestión de citas para salones de belleza, barberías y spas.
-Stack: Next.js 16 (App Router) + React 19 + Supabase (Postgres + Auth + Storage) + Tailwind 4 + Stripe + WhatsApp Cloud API + Claude.
+SaaS multi-tenant de gestión de citas para salones de belleza, barberías, estudios de uñas y spas.
+Stack: Next.js 16 (App Router) + React 19 + Supabase (Postgres + Auth + Storage) + Tailwind 4 + Recurrente (suscripciones, GTQ nativo) + Stripe (señas de booking, opcional) + WhatsApp Cloud API + Claude.
 
 ## Setup local
 
@@ -39,10 +39,18 @@ Pasos necesarios para que `npm run dev` funcione end-to-end. Todo lo marcado *(o
 3. Dashboard → Auth → Policies: activar **Leaked Password Protection**.
 4. *(recomendado para prod)* Settings → Backups: activar **PITR**.
 
-### Stripe (test mode en dev)
-1. Dashboard Stripe → crear 3 productos + precios mensuales: Starter (USD 19), Pro (USD 49), Business (USD 99). Guardar los 3 `price_id` en `.env.local` como `NEXT_PUBLIC_STRIPE_PRICE_STARTER`, `NEXT_PUBLIC_STRIPE_PRICE_PRO`, `NEXT_PUBLIC_STRIPE_PRICE_BUSINESS` (son `NEXT_PUBLIC_*` porque la UI de billing los usa para detectar planes configurados; no son sensibles). Si tienes `.cursor` o el MCP de Stripe, los `create_product`/`create_price` automatizan esto.
-2. Dashboard → Developers → Webhooks: añadir endpoint `https://<tu-dominio>/api/stripe/webhook` (en local usa `stripe listen --forward-to localhost:3000/api/stripe/webhook`). Eventos mínimos: `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`. Copiar el signing secret a `STRIPE_WEBHOOK_SECRET`.
-3. Copiar `STRIPE_SECRET_KEY` y `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` desde API keys.
+### Recurrente (suscripciones — procesador principal)
+Procesador guatemalteco que acepta GTQ nativo y permite cuentas de persona individual con RTU (requisito para el perfil legal del proyecto). Docs: [docs.recurrente.com](https://docs.recurrente.com).
+
+1. Crear cuenta en [app.recurrente.com](https://app.recurrente.com) → Settings → API Keys. Copiar a `.env.local`: `NEXT_PUBLIC_RECURRENTE_PUBLIC_KEY`, `RECURRENTE_SECRET_KEY`.
+2. Dashboard → Products: crear 3 productos recurrentes mensuales — **Starter**, **Pro**, **Business** — con los precios de `lib/plans.js` (GTQ 149 / 379 / 749 como referencia, el checkout detecta moneda del visitante vía `/api/locale`). Capturar los 3 `product_id` (aparecen en la URL del checkout hosted) y guardarlos como `RECURRENTE_PRODUCT_STARTER`, `RECURRENTE_PRODUCT_PRO`, `RECURRENTE_PRODUCT_BUSINESS`.
+3. Dashboard → Webhooks: añadir endpoint `https://<tu-dominio>/api/recurrente/webhook`. Eventos mínimos: `subscription.create`, `subscription.update`, `subscription.cancel`, `subscription.past_due`, `payment_intent.succeeded`, `payment_intent.failed`. Copiar el signing secret a `RECURRENTE_WEBHOOK_SECRET`. En dev, si no puedes exponer localhost, define `RECURRENTE_SKIP_SIGNATURE=true` para saltar la verificación HMAC (nunca en prod).
+
+### Stripe *(opcional — sólo si vas a cobrar señas/depósitos en el booking público)*
+El booking público `/b/[slug]` puede pedir una seña cuando el negocio tiene `business.deposit_enabled=true` y algún servicio tiene `deposit_amount > 0`. El cobro va por Stripe Checkout en modo `payment` (no suscripción). Si no vas a usar señas, puedes saltarte esta sección entera.
+
+1. Stripe → API keys: copiar `STRIPE_SECRET_KEY` y `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
+2. Dashboard → Developers → Webhooks: añadir endpoint `https://<tu-dominio>/api/stripe/webhook` (o `stripe listen --forward-to localhost:3000/api/stripe/webhook` en dev). Evento mínimo para señas: `checkout.session.completed` (con `metadata.type=booking_deposit`). Copiar el signing secret a `STRIPE_WEBHOOK_SECRET`.
 
 ### Resend (email)
 1. [resend.com](https://resend.com) → crear API key → guardar en `RESEND_API_KEY`.
@@ -63,7 +71,7 @@ Pasos necesarios para que `npm run dev` funcione end-to-end. Todo lo marcado *(o
 `CRON_SECRET=<string aleatorio>` en Vercel. Vercel envía `Authorization: Bearer ${CRON_SECRET}` a `/api/cron/*` según `vercel.json`. En dev los crons no se disparan automáticamente; invócalos manualmente con `curl -H "Authorization: Bearer ..."` si necesitas probarlos.
 
 ### `APP_URL`
-En prod, definir `APP_URL=https://tu-dominio.com`. Sin esta variable los links de emails y Stripe checkout apuntarán a `http://localhost:3000`.
+En prod, definir `APP_URL=https://agendaes.com`. Sin esta variable los links de emails, el `success_url`/`cancel_url` de Recurrente y el checkout de señas apuntarán a `http://localhost:3000`.
 
 ## Rutas principales
 
@@ -78,9 +86,10 @@ Dashboard (`/dashboard`):
 - `/` panel del día · `/citas` · `/clientes` · `/servicios` · `/personal` · `/reportes` · `/whatsapp` · `/billing` · `/configuracion`.
 
 API (`/api`):
-- `POST /bookings/create` — reserva server-side (rate-limit por IP, anti-overbooking, notificación email/WA).
+- `POST /bookings/create` — reserva server-side (rate-limit por IP, anti-overbooking, notificación email/WA). Si el negocio tiene señas habilitadas, devuelve `checkout_url` de Stripe en modo `payment`.
 - `POST /onboarding` — crea org + opcional seed de servicios.
-- Stripe: `POST /stripe/{checkout,portal,cancel,resume,webhook}`.
+- Recurrente (suscripciones): `POST /recurrente/{checkout,cancel}` + `POST /recurrente/webhook` (HMAC-SHA256).
+- Stripe (señas de booking, opcional): `POST /stripe/webhook` para confirmar `checkout.session.completed` con `metadata.type=booking_deposit`.
 - WhatsApp: `GET|POST /whatsapp/webhook` (handshake + mensajes con HMAC-SHA256).
 - Cron (Vercel): `GET /cron/reminders` (24h y 2h), `GET /cron/enforce-plans` (downgrade trial expirado).
 
@@ -89,7 +98,7 @@ API (`/api`):
 - **Multi-tenant**: `organizations` → `organization_members` (RLS: miembros sólo ven su org). Todas las tablas tienen RLS tenant-scoped vía la helper `auth_org_ids()`.
 - **Booking atómico**: RPC `book_appointment` con `pg_advisory_xact_lock` + chequeo de plan + anti-overbooking. Todas las creaciones de cita (dashboard, booking público, bot WhatsApp) van por esta RPC.
 - **Planes y enforcement**: `lib/plan-access.js` (puro) resuelve plan efectivo desde `{plan, subscription, trialEndsAt}`. Límites (`appointmentsPerMonth`, feature `whatsapp`) se validan tanto client (UI) como DB (RPC).
-- **Rate limiting**: tabla `rate_limits` + RPC `rate_limit_check`; aplicado en webhook WA, booking público, onboarding, stripe checkout/portal/cancel/resume. Fail-closed si el RPC falla.
+- **Rate limiting**: tabla `rate_limits` + RPC `rate_limit_check`; aplicado en webhook WA, booking público, onboarding, recurrente checkout/cancel. Fail-closed si el RPC falla.
 - **Observabilidad**: `lib/logger.js` emite JSON estructurado con captura opcional a Sentry si el SDK está cargado.
 - **Bot WhatsApp**: agente Claude Haiku con 7 tools (`list_services`, `get_business_info`, `check_availability`, `create_appointment`, `reschedule_appointment`, `list_my_appointments`, `cancel_appointment`). Verifica firma HMAC de Meta.
 - **Cron Vercel**: `reminders` (hourly, envía 24h y 2h antes por WA con query batched), `enforce-plans` (daily 03:00, downgrade batch de trials expirados sin sub activa).
@@ -98,8 +107,8 @@ API (`/api`):
   - `app/` — App Router (páginas, API routes, middleware en `proxy.js`).
   - `lib/supabase/{client,server,admin}.js` — clientes por contexto.
   - `lib/whatsapp/` — agent + tools + send.
+  - `lib/recurrente.js` — cliente HTTP para Recurrente (checkout, cancel, webhook helpers).
   - `lib/{plan-access,limits,plans,rate-limit,email,logger,env,tz,error-codes}.js`.
-  - `lib/stripe/subscription-action.js` — helper compartido cancel/resume.
   - `supabase/migrations/` — esquema versionado.
 
 ## Notas operativas

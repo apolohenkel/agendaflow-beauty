@@ -46,7 +46,8 @@ export async function POST(request) {
     return NextResponse.json({ error: 'cancel_failed' }, { status: 500 })
   }
 
-  // Notificar al dueño vía WhatsApp si hay cuenta conectada
+  // Notificar al dueño vía WhatsApp si hay cuenta conectada (fire-and-forget,
+  // pero con .catch() adicional por si algo rechaza fuera del try interno)
   ;(async () => {
     try {
       const orgId = appt.businesses?.organization_id
@@ -71,7 +72,7 @@ export async function POST(request) {
     } catch (err) {
       logger.error('bookings_cancel_notify', err, { appointment_id })
     }
-  })()
+  })().catch((err) => logger.error('bookings_cancel_notify_outer', err, { appointment_id }))
 
   return NextResponse.json({ ok: true })
 }

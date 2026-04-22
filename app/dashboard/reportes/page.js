@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
+import Hairline from '@/components/ui/Hairline'
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 function pct(num, den) {
@@ -23,20 +25,26 @@ function startOf(date, unit) {
 // ─── STAT CARD ────────────────────────────────────────────────────────────────
 function StatCard({ label, value, sub, gold, trend }) {
   return (
-    <div className="bg-[#0F0F0F] border border-[#1C1C1C] rounded-2xl p-6 flex flex-col gap-2 hover:border-[#2A2A2A] transition-colors">
-      <p className="text-[#888] text-[10px] uppercase tracking-[0.18em] font-medium">{label}</p>
+    <div
+      className={`rounded-2xl p-6 flex flex-col gap-2 transition-colors card-sweep
+        ${gold
+          ? 'bg-gradient-to-br from-[var(--dash-primary-bg-15)] via-[var(--dash-ink-raised)] to-[var(--dash-ink-raised)] border border-[var(--dash-border-hover)]'
+          : 'bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] hover:border-[var(--dash-border-hover)]'
+        }
+      `}
+    >
+      <p className="eyebrow">{label}</p>
       <p
-        className={`text-4xl font-light leading-none ${gold ? 'text-[#C8A96E]' : 'text-[#F0EBE3]'}`}
-        style={{ fontFamily: 'var(--font-display)' }}
+        className={`kpi-number text-4xl leading-none ${gold ? 'text-[var(--dash-primary-soft)]' : 'text-[var(--dash-text)]'}`}
       >
         {value}
       </p>
       {(sub || trend != null) && (
         <div className="flex items-center gap-2 mt-1">
-          {sub && <p className="text-[#777] text-xs">{sub}</p>}
+          {sub && <p className="text-[var(--dash-text-muted)] text-xs">{sub}</p>}
           {trend != null && (
-            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md ${trend >= 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'}`}>
-              {trend >= 0 ? '+' : ''}{trend}%
+            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${trend >= 0 ? 'text-[var(--dash-success)] bg-[var(--dash-success)]/12' : 'text-[var(--dash-danger)] bg-[var(--dash-danger)]/12'}`}>
+              {trend >= 0 ? '↑' : '↓'}{Math.abs(trend)}%
             </span>
           )}
         </div>
@@ -103,6 +111,7 @@ const PERIODOS = [
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function ReportesPage() {
+  const supabase = createClient()
   const [periodo, setPeriodo] = useState(30)
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -110,6 +119,7 @@ export default function ReportesPage() {
   useEffect(() => {
     async function load() {
       setLoading(true)
+      try {
 
       const now = new Date()
       const periodoStart = new Date(now.getTime() - periodo * 24 * 60 * 60 * 1000)
@@ -209,33 +219,46 @@ export default function ReportesPage() {
         topServices, dailyData, statusDist,
         totalClients: clients.length,
       })
-      setLoading(false)
+      } catch (err) {
+        logger.error('reportes', err)
+      } finally {
+        setLoading(false)
+      }
     }
 
     load()
   }, [periodo])
 
   return (
-    <div className="min-h-screen bg-[#080808] p-8 space-y-8">
+    <div className="min-h-screen p-10 space-y-8 animate-fade-up">
 
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
+        <div className="space-y-2">
+          <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.24em]">
+            Tu negocio en números
+          </p>
+          <h1
+            className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
             Reportes
           </h1>
-          <p className="text-[#777] text-xs mt-1">Métricas de tu negocio</p>
         </div>
 
         {/* Selector período */}
-        <div className="flex bg-[#111] border border-[#1E1E1E] rounded-xl p-1">
+        <div className="flex bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-full p-1">
           {PERIODOS.map((p) => (
             <button
               key={p.days}
               onClick={() => setPeriodo(p.days)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                periodo === p.days ? 'bg-[#1E1E1E] text-[#E8E3DC]' : 'text-[#444] hover:text-[#888]'
-              }`}
+              className={`
+                px-4 py-1.5 rounded-full text-[11px] uppercase tracking-[0.14em] font-medium transition-all
+                ${periodo === p.days
+                  ? 'bg-[var(--dash-primary-bg-15)] text-[var(--dash-primary-soft)]'
+                  : 'text-[var(--dash-text-muted)] hover:text-[var(--dash-text-soft)]'
+                }
+              `}
             >
               {p.label}
             </button>
@@ -243,9 +266,11 @@ export default function ReportesPage() {
         </div>
       </div>
 
+      <Hairline />
+
       {loading ? (
         <div className="flex items-center justify-center py-40">
-          <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
+          <div className="w-5 h-5 border border-[var(--dash-primary)]/20 border-t-[var(--dash-primary)] rounded-full animate-spin" />
         </div>
       ) : (
         <>
@@ -259,7 +284,7 @@ export default function ReportesPage() {
               gold
             />
             <StatCard
-              label="Tasa no-show"
+              label="Ausencias"
               value={`${data.noShowRate}%`}
               sub={`${data.noShows} de ${data.total} citas`}
             />
@@ -269,16 +294,21 @@ export default function ReportesPage() {
               sub={`de ${data.totalClients} totales`}
             />
             {/* Tarjeta de ingresos con realizados y proyectados */}
-            <div className="bg-[#0F0F0F] border border-[#1C1C1C] rounded-2xl p-6 flex flex-col gap-2 hover:border-[#2A2A2A] transition-colors">
-              <p className="text-[#888] text-[10px] uppercase tracking-[0.18em] font-medium">Ingresos</p>
-              <p className="text-[#C8A96E] text-4xl font-light leading-none" style={{ fontFamily: 'var(--font-display)' }}>
+            <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl p-6 flex flex-col gap-2 hover:border-[var(--dash-border-hover)] transition-colors">
+              <p className="eyebrow">Ingresos</p>
+              <p
+                className="kpi-number text-4xl leading-none"
+                style={{ color: 'var(--dash-primary-soft)' }}
+              >
                 {fmtCurrency(data.revenue)}
               </p>
-              <p className="text-[#777] text-xs">realizados ({data.completed} completadas)</p>
+              <p className="text-[var(--dash-text-muted)] text-xs">realizados · {data.completed} completadas</p>
               {data.revenueProjected > 0 && (
-                <div className="mt-1 pt-2 border-t border-[#1C1C1C]">
-                  <p className="text-[#686460] text-sm font-light tabular-nums">{fmtCurrency(data.revenueProjected)}</p>
-                  <p className="text-[#2E2E2E] text-[10px] mt-0.5">proyectados (confirmadas/pendientes)</p>
+                <div className="mt-2 pt-3" style={{ borderTop: '1px solid var(--dash-border)' }}>
+                  <p className="text-[var(--dash-text-soft)] text-sm tabular-nums" style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}>
+                    + {fmtCurrency(data.revenueProjected)}
+                  </p>
+                  <p className="text-[var(--dash-text-dim)] text-[10px] mt-0.5">proyectados · confirmadas y pendientes</p>
                 </div>
               )}
             </div>

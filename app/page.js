@@ -338,7 +338,7 @@ export default function LandingPage() {
             <Step n="1" primary={theme.primary} title="Crea tu cuenta en 2 minutos" body={`Registras tu ${v.copy.salonWord}, nos dices qué servicios ofreces y a qué hora atiendes. Te sugerimos plantillas para que no empieces de cero.`} />
             <Step n="2" primary={theme.primary} title="Conectas tu WhatsApp" body="Vinculamos tu número de WhatsApp Business. El bot aprende tu menú de servicios, precios y agenda. Empieza a contestar de inmediato." />
             <Step n="3" primary={theme.primary} title="Contesta 24/7, incluso cuando duermes" body={`Tus ${v.copy.clientTerm} agendan, reagendan, cancelan y pagan desde WhatsApp. Tú ves todo en un panel limpio. Recibes recordatorios antes de cada cita.`} />
-            <Step n="4" primary={theme.primary} title="Tu agenda se llena sola" body="Activamos recordatorios 24h y 2h antes — reduces no-shows hasta 70%. Compartes tu link de reservas en Instagram y recibes clientes nuevos." />
+            <Step n="4" primary={theme.primary} title="Tu agenda se llena sola" body="Activamos recordatorios 24h y 2h antes — reduces ausencias hasta 70%. Compartes tu link de reservas en Instagram y recibes clientes nuevos." />
           </div>
         </div>
       </section>
@@ -357,7 +357,7 @@ export default function LandingPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { stat: '70%', title: 'Menos no-shows', body: 'Recordatorios automáticos 24h y 2h antes. Confirman o cancelan con un toque.' },
+              { stat: '70%', title: 'Menos ausencias', body: 'Recordatorios automáticos 24h y 2h antes. Confirman o cancelan con un toque.' },
               { stat: '24/7', title: 'Contesta siempre', body: 'Responde en segundos, incluso a las 11pm o el domingo. No pierdes clientes por demora.' },
               { stat: '+32%', title: 'Más ingresos', body: `${v.copy.salonWord === 'barbería' ? 'Barberías' : (v.copy.salonWord === 'spa' ? 'Spas' : 'Negocios')} que usan AgendaFlow llenan huecos antes muertos con clientes del booking público.` },
             ].map((b, i) => (
@@ -398,7 +398,7 @@ export default function LandingPage() {
             initial="L"
             name="Laura Gómez"
             role="Spa Harmonía — Guatemala"
-            text="Mis clientas ven mi logo, mis colores, mi link propio. Se siente súper profesional. Y los recordatorios bajaron los no-shows a casi cero."
+            text="Mis clientas ven mi logo, mis colores, mi link propio. Se siente súper profesional. Y los recordatorios bajaron las ausencias a casi cero."
             bg="linear-gradient(135deg, #7A9A6E, #4E6A44)"
           />
         </div>

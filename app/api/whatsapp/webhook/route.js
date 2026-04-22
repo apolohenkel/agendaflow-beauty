@@ -8,9 +8,11 @@ import { logger } from '../../../../lib/logger'
 
 function verifyMetaSignature(rawBody, signatureHeader) {
   const secret = process.env.WHATSAPP_APP_SECRET
+  // Fail-closed: sin secret nunca aceptamos firmas (ni en dev). Si no hay
+  // secret configurado, el webhook no puede ser confiado y debe rechazarse.
   if (!secret) {
-    if (process.env.NODE_ENV === 'production') return false
-    return true
+    logger.warn('whatsapp_webhook', 'missing_app_secret')
+    return false
   }
   if (!signatureHeader || !signatureHeader.startsWith('sha256=')) return false
   const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(rawBody).digest('hex')

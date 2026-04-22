@@ -1,32 +1,63 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
+
+const RESEND_COOLDOWN = 60
 
 export default function LoginPage() {
   const router = useRouter()
   const [form, setForm]     = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError]   = useState(null)
+  const [needsConfirm, setNeedsConfirm] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [resendDone, setResendDone] = useState(false)
+  const [cooldown, setCooldown] = useState(0)
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [cooldown])
+
+  async function handleResend() {
+    if (cooldown > 0 || resending) return
+    setResending(true)
+    setResendDone(false)
+    const supabase = createClient()
+    await supabase.auth.resend({ type: 'signup', email: form.email.trim().toLowerCase() })
+    setResending(false)
+    setResendDone(true)
+    setCooldown(RESEND_COOLDOWN)
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
     if (!form.email || !form.password) { setError('Completa todos los campos.'); return }
     setLoading(true)
     setError(null)
+    setNeedsConfirm(false)
 
+    const supabase = createClient()
     const { error: err } = await supabase.auth.signInWithPassword({
       email:    form.email.trim().toLowerCase(),
       password: form.password,
     })
 
     if (err) {
-      setError('Correo o contraseña incorrectos.')
       setLoading(false)
+      const msg = err.message?.toLowerCase() || ''
+      if (msg.includes('email not confirmed') || msg.includes('not confirmed')) {
+        setNeedsConfirm(true)
+        setError('Confirma tu correo antes de iniciar sesión. Revisa tu bandeja o reenvía el enlace.')
+      } else {
+        setError('Correo o contraseña incorrectos.')
+      }
       return
     }
 
@@ -92,6 +123,26 @@ export default function LoginPage() {
                   <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
                 <p className="text-[#C44646] text-xs">{error}</p>
+              </div>
+            )}
+
+            {/* Reenvío de verificación cuando Supabase pide confirmar */}
+            {needsConfirm && (
+              <div className="pt-1">
+                {resendDone && cooldown > 0 ? (
+                  <p className="text-[#6B9E6B] text-xs font-medium text-center">
+                    ✓ Correo reenviado · puedes reintentar en {cooldown}s
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={resending || cooldown > 0}
+                    className="w-full flex items-center justify-center gap-2 border border-[#B8824B]/40 hover:border-[#B8824B] text-[#B8824B] text-xs font-medium py-2.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {resending ? 'Reenviando…' : cooldown > 0 ? `Reenviar en ${cooldown}s` : 'Reenviar correo de verificación'}
+                  </button>
+                )}
               </div>
             )}
 

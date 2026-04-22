@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useOrg } from '@/lib/org-context'
 import { VERTICALS, VERTICAL_KEYS, DEFAULT_VERTICAL } from '@/lib/verticals'
+import { logger } from '@/lib/logger'
 
 const DIAS = [
   { key: 0, label: 'Domingo' },
@@ -76,6 +77,7 @@ function SaveButton({ saving, saved, label = 'Guardar cambios' }) {
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function ConfiguracionPage() {
+  const supabase = createClient()
   const { orgId, business: orgBusiness, refresh: refreshOrg, loading: orgLoading } = useOrg()
   const [business, setBusiness]   = useState(null)
   const [loading, setLoading]     = useState(true)
@@ -135,19 +137,25 @@ export default function ConfiguracionPage() {
       enabled: Boolean(orgBusiness.deposit_enabled),
       currency: orgBusiness.deposit_currency || 'usd',
     })
-    const { data: org } = await supabase
-      .from('organizations')
-      .select('primary_color, logo_url, vertical')
-      .eq('id', orgId)
-      .maybeSingle()
-    if (org) {
-      setBrandForm({
-        primary_color: org.primary_color || '#C8A96E',
-        logo_url: org.logo_url,
-      })
-      if (VERTICAL_KEYS.includes(org.vertical)) setVertical(org.vertical)
+    try {
+      const { data: org, error: err } = await supabase
+        .from('organizations')
+        .select('primary_color, logo_url, vertical')
+        .eq('id', orgId)
+        .maybeSingle()
+      if (err) throw err
+      if (org) {
+        setBrandForm({
+          primary_color: org.primary_color || '#C8A96E',
+          logo_url: org.logo_url,
+        })
+        if (VERTICAL_KEYS.includes(org.vertical)) setVertical(org.vertical)
+      }
+    } catch (err) {
+      logger.error('configuracion', err)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [orgBusiness, orgId])
 
   useEffect(() => {
@@ -298,19 +306,25 @@ export default function ConfiguracionPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#080808] flex items-center justify-center">
-        <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-5 h-5 border border-[var(--dash-primary)]/20 border-t-[var(--dash-primary)] rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#080808] p-8 space-y-6">
+    <div className="min-h-screen p-10 space-y-8 animate-fade-up">
 
       {/* Header */}
-      <div>
-        <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
-          Configuración
+      <div className="space-y-2">
+        <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.24em]">
+          Tu negocio
+        </p>
+        <h1
+          className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+          style={{ fontFamily: 'var(--font-display)' }}
+        >
+          Ajustes
         </h1>
         <p className="text-[#777] text-xs mt-1">Personaliza tu negocio y preferencias</p>
       </div>
@@ -523,7 +537,7 @@ export default function ConfiguracionPage() {
       </Section>
 
       {/* ── Seña (depósito) ── */}
-      <Section title="Seña / depósito" description="Cobra un anticipo sólo en los servicios que elijas. Reduces no-shows sin pedirle seña al corte rápido.">
+      <Section title="Seña / depósito" description="Cobra un anticipo sólo en los servicios que elijas. Reduces ausencias sin pedirle seña al corte rápido.">
         <form onSubmit={handleSaveDeposit} className="space-y-4">
           <label className="flex items-start gap-3 px-4 py-3 bg-[#111] border border-[#1E1E1E] rounded-xl cursor-pointer hover:border-[#2A2A2A] transition-colors">
             <input

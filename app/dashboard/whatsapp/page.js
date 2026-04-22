@@ -2,12 +2,14 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useOrg } from '@/lib/org-context'
+import { logger } from '@/lib/logger'
 
 const APP_URL = typeof window !== 'undefined' ? window.location.origin : ''
 
 export default function WhatsAppPage() {
+  const supabase = createClient()
   const { orgId, canUseWhatsApp, loading: orgLoading } = useOrg()
   const [account, setAccount] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -18,23 +20,29 @@ export default function WhatsAppPage() {
 
   const load = useCallback(async () => {
     if (!orgId) return
-    const { data } = await supabase
-      .from('whatsapp_accounts')
-      .select('phone_number_id, display_phone, access_token, verify_token, enabled')
-      .eq('org_id', orgId)
-      .maybeSingle()
-    if (data) {
-      setAccount(data)
-      setForm({
-        phone_number_id: data.phone_number_id,
-        access_token: data.access_token,
-        display_phone: data.display_phone || '',
-        verify_token: data.verify_token,
-      })
-    } else {
-      setForm((f) => ({ ...f, verify_token: 'wa_' + Math.random().toString(36).slice(2, 14) }))
+    try {
+      const { data, error: err } = await supabase
+        .from('whatsapp_accounts')
+        .select('phone_number_id, display_phone, access_token, verify_token, enabled')
+        .eq('org_id', orgId)
+        .maybeSingle()
+      if (err) throw err
+      if (data) {
+        setAccount(data)
+        setForm({
+          phone_number_id: data.phone_number_id,
+          access_token: data.access_token,
+          display_phone: data.display_phone || '',
+          verify_token: data.verify_token,
+        })
+      } else {
+        setForm((f) => ({ ...f, verify_token: 'wa_' + Math.random().toString(36).slice(2, 14) }))
+      }
+    } catch (err) {
+      logger.error('whatsapp', err)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [orgId])
 
   useEffect(() => { load() }, [load])
@@ -73,8 +81,8 @@ export default function WhatsAppPage() {
 
   if (orgLoading || loading) {
     return (
-      <div className="min-h-screen bg-[#080808] flex items-center justify-center">
-        <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-5 h-5 border border-[var(--dash-primary)]/20 border-t-[var(--dash-primary)] rounded-full animate-spin" />
       </div>
     )
   }
@@ -82,10 +90,16 @@ export default function WhatsAppPage() {
   const webhookUrl = `${APP_URL}/api/whatsapp/webhook`
 
   return (
-    <div className="min-h-screen bg-[#080808] p-8 space-y-6 max-w-3xl">
-      <div>
-        <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
-          WhatsApp Bot
+    <div className="min-h-screen p-10 space-y-8 max-w-3xl animate-fade-up">
+      <div className="space-y-2">
+        <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.24em]">
+          Tu asistente
+        </p>
+        <h1
+          className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+          style={{ fontFamily: 'var(--font-display)' }}
+        >
+          Asistente WhatsApp
         </h1>
         <p className="text-[#777] text-xs mt-1">Conecta tu número de WhatsApp Business para que el bot agende por ti.</p>
       </div>

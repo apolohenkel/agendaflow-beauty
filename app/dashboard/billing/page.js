@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useOrg } from '@/lib/org-context'
 import { PLANS, PUBLIC_PLANS } from '@/lib/plans'
+import { logger } from '@/lib/logger'
 
 function fmtDate(iso) {
   if (!iso) return '—'
@@ -21,6 +22,7 @@ function StatusBadge({ status, trialActive }) {
 }
 
 export default function BillingPage() {
+  const supabase = createClient()
   const router = useRouter()
   const search = useSearchParams()
   const { orgId, plan: orgPlan, trialEndsAt, loading: orgLoading } = useOrg()
@@ -38,13 +40,19 @@ export default function BillingPage() {
 
   const load = useCallback(async () => {
     if (!orgId) return
-    const { data } = await supabase
-      .from('subscriptions')
-      .select('status, plan, current_period_end, cancel_at_period_end')
-      .eq('org_id', orgId)
-      .maybeSingle()
-    setSub(data)
-    setLoading(false)
+    try {
+      const { data, error: err } = await supabase
+        .from('subscriptions')
+        .select('status, plan, current_period_end, cancel_at_period_end')
+        .eq('org_id', orgId)
+        .maybeSingle()
+      if (err) throw err
+      setSub(data)
+    } catch (err) {
+      logger.error('billing', err)
+    } finally {
+      setLoading(false)
+    }
   }, [orgId])
 
   useEffect(() => { load() }, [load])
@@ -125,7 +133,7 @@ export default function BillingPage() {
 
   if (orgLoading || loading) {
     return (
-      <div className="min-h-screen bg-[#080808] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
       </div>
     )
@@ -138,13 +146,18 @@ export default function BillingPage() {
   const periodEnd = sub?.current_period_end ?? trialEndsAt
 
   return (
-    <div className="min-h-screen bg-[#080808] p-8 space-y-8">
+    <div className="min-h-screen p-10 space-y-8 animate-fade-up">
 
-      <div>
-        <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
+      <div className="space-y-2">
+        <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.24em]">
+          Tu suscripción
+        </p>
+        <h1
+          className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+          style={{ fontFamily: 'var(--font-display)' }}
+        >
           Facturación
         </h1>
-        <p className="text-[#777] text-xs mt-1">Tu plan y suscripción</p>
       </div>
 
       {notice && (

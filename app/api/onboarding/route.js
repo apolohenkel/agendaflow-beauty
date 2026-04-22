@@ -3,6 +3,7 @@ import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 import { sendWelcomeEmail } from '../../../lib/email'
 import { rateLimit } from '../../../lib/rate-limit'
+import { logger } from '../../../lib/logger'
 import { VERTICAL_KEYS, DEFAULT_VERTICAL } from '../../../lib/verticals'
 
 const OPENING_HOURS_DEFAULT = {
@@ -93,7 +94,8 @@ export async function POST(request) {
     await admin.from('services').insert(services.map((s) => ({ ...s, business_id: businessId, active: true })))
   }
 
-  sendWelcomeEmail({ to: user.email, orgName: name, slug, vertical: verticalKey }).catch(() => {})
+  sendWelcomeEmail({ to: user.email, orgName: name, slug, vertical: verticalKey })
+    .catch((err) => logger.error('onboarding_email', err, { user_id: user.id, slug }))
 
   return NextResponse.json({ ok: true, orgId: row?.org_id, slug })
 }

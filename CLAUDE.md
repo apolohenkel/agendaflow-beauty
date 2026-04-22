@@ -25,13 +25,15 @@ Migraciones Supabase: `supabase db push` aplica `supabase/migrations/*.sql`, o v
 
 **Plan efectivo**: `lib/plan-access.js → effectivePlan({ plan, subscription, trialEndsAt })` es puro y se usa idénticamente en cliente (vía `useOrg`) y server (vía `lib/limits.js`). Los límites se validan tanto en UI como en la RPC — duplicación intencional.
 
-**Rate limiting**: tabla `rate_limits` + RPC `rate_limit_check` (sliding window). Fail-closed si el RPC falla. Aplicado en webhook WA, booking público, onboarding, stripe checkout/portal/cancel/resume.
+**Rate limiting**: tabla `rate_limits` + RPC `rate_limit_check` (sliding window). Fail-closed si el RPC falla. Aplicado en webhook WA, booking público, onboarding, recurrente checkout/cancel.
 
 **Observabilidad**: `lib/logger.js` emite JSON estructurado; si hay Sentry cargado en `globalThis.Sentry` lo captura también. Handlers críticos (webhooks, crons, endpoints públicos) usan `logger.{info,warn,error}(scope, msgOrErr, extra)` — nunca `console.*` en código nuevo.
 
 **Bot WhatsApp**: agente Claude Haiku en `lib/whatsapp/agent.js` con 7 tools registradas (list_services, get_business_info, check_availability, create_appointment, reschedule_appointment, list_my_appointments, cancel_appointment). El webhook `/api/whatsapp/webhook` verifica firma HMAC-SHA256 de Meta con `timingSafeEqual`.
 
 **Cron Vercel** (`vercel.json`): `reminders` (hourly, 24h+2h antes por WA), `enforce-plans` (daily 03:00, downgrade batch de trials expirados). Ambos exigen `Authorization: Bearer ${CRON_SECRET}`.
+
+**Suscripciones (Recurrente)**: procesador guatemalteco (GTQ nativo) con cuenta persona individual + RTU. Cliente en `lib/recurrente.js`. Endpoints: `POST /api/recurrente/checkout` (crea checkout hosted con `product_id` mapeado desde `RECURRENTE_PRODUCT_{STARTER,PRO,BUSINESS}`), `POST /api/recurrente/cancel` (cancel at period end — mismo endpoint reanuda si `cancel_at_period_end=true`), `POST /api/recurrente/webhook` (HMAC-SHA256, prueba headers `recurrente-signature` / `x-recurrente-signature` / `x-signature` / `signature`). Stripe sólo queda activo para el checkout de señas en `/api/bookings/create` (modo `payment`, metadata `type=booking_deposit`).
 
 ## Reglas del proyecto
 
@@ -49,6 +51,6 @@ Migraciones Supabase: `supabase db push` aplica `supabase/migrations/*.sql`, o v
 
 **Timezone**: Usar `lib/tz.js` (`dayOfWeekInTz`, `localToUtcIso`, `dayBoundsUtcIso`) para convertir entre wall-clock del negocio y UTC. Nunca aritmética de `ms` local sin saber el TZ — rompe con DST y cuando el server corre en UTC.
 
-**Env vars**: Rutas que dependen de servicios externos usan `lib/env.js → requireEnv(group, scope)` para fallar temprano con log explícito si falta alguna var (grupos: `supabase`, `stripe`, `stripe_prices`, `anthropic`, `whatsapp`, `resend`, `cron`).
+**Env vars**: Rutas que dependen de servicios externos usan `lib/env.js → requireEnv(group, scope)` para fallar temprano con log explícito si falta alguna var (grupos: `supabase`, `recurrente`, `recurrente_products`, `stripe`, `anthropic`, `whatsapp`, `resend`, `cron`). `stripe` es opcional — sólo se usa para el checkout de señas del booking público.
 
 **Clientes Supabase**: `lib/supabase/client.js` (browser), `lib/supabase/server.js` (SSR con cookies), `lib/supabase/admin.js` (service_role, sólo server — webhooks/crons/endpoints públicos).

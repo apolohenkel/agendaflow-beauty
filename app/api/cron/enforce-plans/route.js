@@ -27,9 +27,8 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    ok: true,
+    ok: !trialErr,
     trialExpiredChecked: (trialExpired || []).length,
     downgraded: idsToDowngrade.length,
-    error: trialErr?.message,
   })
 }

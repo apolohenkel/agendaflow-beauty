@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useOrg } from '@/lib/org-context'
+import { logger } from '@/lib/logger'
 
 const ROLES = ['Estilista', 'Colorista', 'Manicurista', 'Barbero', 'Esteticista', 'Admin', 'Otro']
 
@@ -20,6 +21,7 @@ const DEFAULT_HORARIO = { start: '09:00', end: '18:00' }
 
 // ─── MODAL PERSONAL ───────────────────────────────────────────────────────────
 function PersonalModal({ miembro, businessId, orgId, onClose, onSaved }) {
+  const supabase = createClient()
   const isEdit = Boolean(miembro)
   const [form, setForm] = useState({
     name: miembro?.name || '',
@@ -374,6 +376,7 @@ function HorarioChips({ schedule }) {
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function PersonalPage() {
+  const supabase = createClient()
   const { businessId, orgId } = useOrg()
   const [staff, setStaff] = useState([])
   const [loading, setLoading] = useState(true)
@@ -384,13 +387,19 @@ export default function PersonalPage() {
   const load = useCallback(async () => {
     if (!businessId) return
     setLoading(true)
-    const { data } = await supabase
-      .from('staff')
-      .select('*')
-      .eq('business_id', businessId)
-      .order('name')
-    setStaff(data || [])
-    setLoading(false)
+    try {
+      const { data, error: err } = await supabase
+        .from('staff')
+        .select('*')
+        .eq('business_id', businessId)
+        .order('name')
+      if (err) throw err
+      setStaff(data || [])
+    } catch (err) {
+      logger.error('personal', err)
+    } finally {
+      setLoading(false)
+    }
   }, [businessId])
 
   useEffect(() => { load() }, [load])
@@ -407,21 +416,39 @@ export default function PersonalPage() {
   const activeCount = staff.filter((s) => s.active).length
 
   return (
-    <div className="min-h-screen bg-[#080808] p-8 space-y-6">
+    <div className="min-h-screen p-10 space-y-8 animate-fade-up">
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[#F0EBE3] text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
-            Personal
-          </h1>
-          <p className="text-[#777] text-xs mt-1">
-            {loading ? '...' : `${staff.length} colaboradores · ${activeCount} activos`}
+        <div className="space-y-2">
+          <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.24em]">
+            Tu equipo
           </p>
+          <h1
+            className="text-[var(--dash-text)] text-[44px] font-light leading-none tracking-tight"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
+            Personal
+            {!loading && staff.length > 0 && (
+              <span className="text-[var(--dash-primary)] text-2xl ml-3" style={{ fontStyle: 'italic' }}>
+                {staff.length}
+              </span>
+            )}
+          </h1>
+          {!loading && staff.length > 0 && (
+            <p className="text-[var(--dash-text-muted)] text-xs">
+              {activeCount} activos · {staff.length - activeCount} pausados
+            </p>
+          )}
         </div>
         <button
           onClick={openNew}
-          className="flex items-center gap-2 bg-[#C8A96E] hover:bg-[#D4B87A] text-[#080808] text-sm font-semibold px-4 py-2.5 rounded-xl transition-all"
+          className="flex items-center gap-2 text-sm font-semibold px-5 py-3 rounded-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+          style={{
+            background: 'linear-gradient(135deg, var(--dash-primary), var(--dash-primary-deep))',
+            color: 'var(--dash-ink)',
+            boxShadow: '0 6px 24px -6px var(--dash-primary)',
+          }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -433,25 +460,25 @@ export default function PersonalPage() {
       {/* Lista */}
       {loading ? (
         <div className="flex items-center justify-center py-32">
-          <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
+          <div className="w-5 h-5 border border-[var(--dash-primary)]/20 border-t-[var(--dash-primary)] rounded-full animate-spin" />
         </div>
       ) : staff.length === 0 ? (
-        <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl flex flex-col items-center justify-center py-24 gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-[#111] border border-[#1C1C1C] flex items-center justify-center">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E2E2E" strokeWidth="1.5" strokeLinecap="round">
+        <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl flex flex-col items-center justify-center py-24 gap-5">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+            style={{ background: 'var(--dash-ink-sunken)', border: '1px solid var(--dash-border)' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--dash-primary)" strokeOpacity="0.4" strokeWidth="1.2" strokeLinecap="round">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
             </svg>
           </div>
           <div className="text-center">
-            <p className="text-[#777] text-sm">Sin colaboradores aún</p>
-            <p className="text-[#222] text-xs mt-1">Agrega a tu equipo de trabajo</p>
+            <p className="text-[var(--dash-text-soft)] text-base italic" style={{ fontFamily: 'var(--font-display)' }}>
+              Tu equipo empieza aquí
+            </p>
+            <p className="text-[var(--dash-text-muted)] text-xs mt-1">Agrega a tu primer colaborador</p>
           </div>
-          <button
-            onClick={openNew}
-            className="mt-2 px-4 py-2 bg-[#C8A96E]/10 hover:bg-[#C8A96E]/15 text-[#C8A96E] text-xs font-medium rounded-xl border border-[#C8A96E]/20 transition-all"
-          >
-            Agregar primer colaborador
+          <button onClick={openNew} className="text-[var(--dash-primary)] text-xs link-gold">
+            Agregar primer colaborador →
           </button>
         </div>
       ) : (
@@ -459,38 +486,38 @@ export default function PersonalPage() {
           {staff.map((m) => (
             <div
               key={m.id}
-              className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl px-6 py-5 flex items-start gap-5 hover:border-[#2A2A2A] transition-colors group"
+              className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl px-6 py-5 flex items-start gap-5 hover:border-[var(--dash-border-hover)] transition-all group card-sweep"
             >
               <Avatar name={m.name} photoUrl={m.photo_url} />
 
               <div className="flex-1 min-w-0 space-y-2">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-[#E8E3DC] text-sm font-medium truncate">{m.name}</p>
+                  <p className="text-[var(--dash-text)] text-sm font-medium truncate">{m.name}</p>
                   {m.role && (
-                    <span className="text-[#9A9A9A] text-[10px] border border-[#1E1E1E] px-2 py-0.5 rounded-full shrink-0">
+                    <span className="text-[var(--dash-text-soft)] text-[9px] uppercase tracking-[0.1em] border border-[var(--dash-border)] px-2 py-0.5 rounded-full shrink-0">
                       {m.role}
                     </span>
                   )}
                   {!m.active && (
-                    <span className="text-[#888] text-[10px] bg-[#111] border border-[#1E1E1E] px-2 py-0.5 rounded-full shrink-0">
-                      Inactivo
+                    <span className="text-[var(--dash-text-muted)] text-[9px] uppercase tracking-[0.1em] bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] px-2 py-0.5 rounded-full shrink-0">
+                      Pausado
                     </span>
                   )}
                 </div>
                 {m.bio && (
-                  <p className="text-[#888] text-xs leading-relaxed line-clamp-2">{m.bio}</p>
+                  <p className="text-[var(--dash-text-muted)] text-xs leading-relaxed line-clamp-2">{m.bio}</p>
                 )}
                 {Array.isArray(m.specialties) && m.specialties.length > 0 && (
                   <div className="flex gap-1 flex-wrap">
                     {m.specialties.slice(0, 6).map((t) => (
-                      <span key={t} className="text-[10px] text-[#C8A96E] bg-[#C8A96E]/8 border border-[#C8A96E]/20 px-2 py-0.5 rounded-full">
+                      <span key={t} className="text-[9px] uppercase tracking-[0.1em] text-[var(--dash-primary-soft)] bg-[var(--dash-primary-bg-8)] border border-[var(--dash-primary)]/20 px-2 py-0.5 rounded-full">
                         {t}
                       </span>
                     ))}
                   </div>
                 )}
                 {m.phone && (
-                  <p className="text-[#888] text-xs">{m.phone}</p>
+                  <p className="text-[var(--dash-text-muted)] text-xs">{m.phone}</p>
                 )}
                 <HorarioChips schedule={m.schedule_config} />
               </div>

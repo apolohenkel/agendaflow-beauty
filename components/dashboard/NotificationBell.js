@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 
 const STATUS_MAP = {
   pending:   { bg: 'bg-amber-500/10',   text: 'text-amber-400',   dot: 'bg-amber-400',   label: 'Pendiente'  },
@@ -16,6 +16,7 @@ function fmt(iso) {
 }
 
 export default function NotificationBell() {
+  const supabase = createClient()
   const [open, setOpen]           = useState(false)
   const [items, setItems]         = useState([])
   const [loading, setLoading]     = useState(true)
