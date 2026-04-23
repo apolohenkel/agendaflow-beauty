@@ -51,12 +51,12 @@ function Field({ label, children }) {
   )
 }
 
-function SaveButton({ saving, saved, label = 'Guardar cambios' }) {
+function SaveButton({ saving, saved, label = 'Guardar cambios', disabled = false }) {
   return (
     <button
       type="submit"
-      disabled={saving}
-      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#C8A96E] hover:bg-[#D4B87A] text-[#080808] transition-all disabled:opacity-60"
+      disabled={saving || disabled}
+      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#C8A96E] hover:bg-[#D4B87A] text-[#080808] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
     >
       {saving ? (
         <>
@@ -78,7 +78,7 @@ function SaveButton({ saving, saved, label = 'Guardar cambios' }) {
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function ConfiguracionPage() {
   const supabase = createClient()
-  const { orgId, business: orgBusiness, refresh: refreshOrg, loading: orgLoading } = useOrg()
+  const { orgId, slug: orgSlug, business: orgBusiness, refresh: refreshOrg, loading: orgLoading } = useOrg()
   const [business, setBusiness]   = useState(null)
   const [loading, setLoading]     = useState(true)
   const [savingInfo, setSavingInfo]       = useState(false)
@@ -102,6 +102,63 @@ export default function ConfiguracionPage() {
   const [depositForm, setDepositForm] = useState({ enabled: false, currency: 'usd' })
   const [savingDeposit, setSavingDeposit] = useState(false)
   const [savedDeposit, setSavedDeposit] = useState(false)
+
+  // Link público (slug)
+  const [slugDraft, setSlugDraft] = useState('')
+  const [slugState, setSlugState] = useState('idle') // idle|checking|available|taken|invalid|same
+  const [savingSlug, setSavingSlug] = useState(false)
+  const [savedSlug, setSavedSlug] = useState(false)
+  const [slugError, setSlugError] = useState(null)
+
+  // Inicializar slugDraft cuando cargue el orgSlug
+  useEffect(() => {
+    if (orgSlug && !slugDraft) setSlugDraft(orgSlug)
+  }, [orgSlug]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Validación live con debounce 400ms
+  useEffect(() => {
+    if (!slugDraft) { setSlugState('idle'); return }
+    const clean = slugDraft.toLowerCase().trim()
+    if (clean === orgSlug) { setSlugState('same'); return }
+    if (!/^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/.test(clean)) {
+      setSlugState('invalid'); return
+    }
+    setSlugState('checking')
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase.rpc('check_slug_available', { p_slug: clean })
+      if (error) { setSlugState('invalid'); return }
+      setSlugState(data ? 'available' : 'taken')
+    }, 400)
+    return () => clearTimeout(t)
+  }, [slugDraft, orgSlug, supabase])
+
+  async function handleSaveSlug(e) {
+    e.preventDefault()
+    setSlugError(null)
+    if (slugState !== 'available') return
+    setSavingSlug(true)
+    const { error: err } = await supabase.rpc('rename_org_slug', { p_new_slug: slugDraft.toLowerCase().trim() })
+    setSavingSlug(false)
+    if (err) {
+      const msg = err.message || ''
+      if (msg.includes('slug_taken')) setSlugError('Ese link ya está en uso. Prueba otro.')
+      else if (msg.includes('invalid_slug')) setSlugError('El link sólo puede tener letras, números y guiones.')
+      else if (msg.includes('not_owner')) setSlugError('Sólo el dueño puede cambiar el link.')
+      else if (msg.includes('same_slug')) setSlugError('Elige un nombre distinto al actual.')
+      else setSlugError('No se pudo cambiar el link. Intenta de nuevo.')
+      return
+    }
+    setSavedSlug(true)
+    await refreshOrg()
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        const bc = new BroadcastChannel('af:org')
+        bc.postMessage({ type: 'slug_changed', value: slugDraft.toLowerCase().trim() })
+        bc.close()
+      } catch {}
+    }
+    setTimeout(() => setSavedSlug(false), 2500)
+  }
 
   const [infoForm, setInfoForm] = useState({
     name:             '',
@@ -249,6 +306,14 @@ export default function ConfiguracionPage() {
       return
     }
     await refreshOrg()
+    // Broadcast a otras pestañas abiertas del mismo dashboard
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        const bc = new BroadcastChannel('af:org')
+        bc.postMessage({ type: 'primary_color_changed', value: brandForm.primary_color })
+        bc.close()
+      } catch {}
+    }
     setSavingBrand(false)
     setSavedBrand(true)
     setTimeout(() => setSavedBrand(false), 2500)
@@ -285,6 +350,13 @@ export default function ConfiguracionPage() {
     await supabase.from('organizations').update({ vertical: newVertical }).eq('id', orgId)
     setVertical(newVertical)
     await refreshOrg()
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        const bc = new BroadcastChannel('af:org')
+        bc.postMessage({ type: 'vertical_changed', value: newVertical })
+        bc.close()
+      } catch {}
+    }
     setSavingVertical(false)
     setSavedVertical(true)
     setTimeout(() => setSavedVertical(false), 2500)
@@ -328,6 +400,93 @@ export default function ConfiguracionPage() {
         </h1>
         <p className="text-[#777] text-xs mt-1">Personaliza tu negocio y preferencias</p>
       </div>
+
+      {/* ── Link público ── */}
+      <Section
+        title="Tu link público"
+        description="La dirección donde tus clientes reservan. Cámbialo cuando quieras — valida que no esté en uso."
+      >
+        <form onSubmit={handleSaveSlug} className="space-y-3">
+          <div className="flex items-stretch rounded-xl overflow-hidden border border-[#222] bg-[#0D0D0D]">
+            <span className="px-3 py-3 text-xs flex items-center whitespace-nowrap text-[#888] bg-[#111]">
+              agendaflow.beauty/b/
+            </span>
+            <input
+              type="text"
+              value={slugDraft}
+              onChange={(e) => setSlugDraft(e.target.value.toLowerCase())}
+              pattern="[a-z0-9-]+"
+              placeholder="tu-negocio"
+              className="flex-1 px-3 py-3 text-sm bg-transparent text-[#E8E3DC] placeholder-[#333] focus:outline-none"
+            />
+            <div className="flex items-center px-3 shrink-0">
+              {slugState === 'checking' && (
+                <span className="w-3.5 h-3.5 border border-[#888]/30 border-t-[#888] rounded-full animate-spin" />
+              )}
+              {slugState === 'available' && (
+                <span className="flex items-center gap-1 text-emerald-400 text-xs">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Disponible
+                </span>
+              )}
+              {slugState === 'taken' && (
+                <span className="text-red-400 text-xs">Ocupado</span>
+              )}
+              {slugState === 'invalid' && (
+                <span className="text-[#E89B7A] text-xs">Inválido</span>
+              )}
+              {slugState === 'same' && (
+                <span className="text-[#888] text-xs">Actual</span>
+              )}
+            </div>
+          </div>
+
+          {orgSlug && (
+            <div className="flex items-center gap-3 flex-wrap">
+              <a
+                href={`/b/${orgSlug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--dash-primary)] text-xs hover:underline"
+              >
+                Abrir tu link actual →
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                    const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/b/${orgSlug}`
+                    navigator.clipboard.writeText(url).catch(() => {})
+                  }
+                }}
+                className="text-[#888] text-xs hover:text-[#C8C3BC]"
+              >
+                Copiar URL
+              </button>
+            </div>
+          )}
+
+          <p className="text-[#666] text-[11px] leading-relaxed">
+            Solo letras minúsculas, números y guiones. 2 a 40 caracteres. Ejemplo: <code className="text-[#C8A96E]">salon-bella</code>
+          </p>
+
+          {slugError && (
+            <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 px-4 py-2.5 rounded-xl">{slugError}</p>
+          )}
+
+          <SaveButton saving={savingSlug} saved={savedSlug} label="Cambiar link" disabled={slugState !== 'available'} />
+          {slugState !== 'available' && slugDraft && slugDraft !== orgSlug && (
+            <p className="text-[#666] text-[11px]">
+              {slugState === 'checking' ? 'Verificando disponibilidad...'
+                : slugState === 'taken' ? 'Elige otro link.'
+                : slugState === 'invalid' ? 'Usa letras, números o guiones.'
+                : ''}
+            </p>
+          )}
+        </form>
+      </Section>
 
       {/* ── Información del negocio ── */}
       <Section title="Información del negocio" description="Datos generales de tu salón">

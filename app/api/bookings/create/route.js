@@ -7,6 +7,7 @@ import { logger } from '../../../../lib/logger'
 import { ApiError, BookingError } from '../../../../lib/error-codes'
 import { signCancelToken } from '../../../../lib/booking-tokens'
 import { getStripe } from '../../../../lib/stripe'
+import { getAppUrlFromRequest } from '../../../../lib/app-url'
 
 export async function POST(request) {
   const ip = clientIp(request)
@@ -110,7 +111,7 @@ export async function POST(request) {
   if (totalDeposit > 0) {
     try {
       const stripe = getStripe()
-      const appUrl = process.env.APP_URL || 'http://localhost:3000'
+      const appUrl = getAppUrlFromRequest(request)
       const session = await stripe.checkout.sessions.create({
         mode: 'payment',
         line_items: [{

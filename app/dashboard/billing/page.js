@@ -81,7 +81,6 @@ export default function BillingPage() {
   async function handleCheckout(planKey) {
     setBusy(planKey)
     setNotice(null)
-    // Detecta moneda del visitante vía endpoint liviano (Vercel geo header).
     let currency
     try {
       const locale = await fetch('/api/locale').then((r) => r.json()).catch(() => null)
@@ -92,9 +91,23 @@ export default function BillingPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ plan: planKey, currency }),
     })
-    const data = await res.json()
+    const data = await res.json().catch(() => ({}))
     if (!res.ok) {
-      setNotice({ type: 'error', text: data.error || 'No se pudo iniciar checkout.' })
+      let msg = data.error || 'No se pudo iniciar checkout.'
+      // Mensajes específicos para escenarios comunes
+      if (msg === 'Plan no configurado en Recurrente') {
+        msg = 'El procesador de pagos aún no está configurado. Estamos trabajando en ello — intenta más tarde o escríbenos por WhatsApp.'
+      } else if (msg === 'Error en procesador de pagos') {
+        msg = 'El procesador de pagos rechazó la solicitud. Espera unos minutos e intenta de nuevo. Si persiste, contáctanos.'
+      } else if (msg === 'Sin organización') {
+        msg = 'Tu cuenta aún no está vinculada a un negocio. Completa el registro primero.'
+      }
+      setNotice({ type: 'error', text: msg })
+      setBusy(null)
+      return
+    }
+    if (!data.url) {
+      setNotice({ type: 'error', text: 'Respuesta inválida del procesador. Intenta de nuevo.' })
       setBusy(null)
       return
     }

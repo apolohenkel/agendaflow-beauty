@@ -5,10 +5,10 @@ import { createCheckout, variantIdForPlan } from '../../../../lib/lemonsqueezy'
 import { PUBLIC_PLANS } from '../../../../lib/plans'
 import { rateLimit } from '../../../../lib/rate-limit'
 import { logger } from '../../../../lib/logger'
-
-const APP_URL = process.env.APP_URL || 'http://localhost:3000'
+import { getAppUrlFromRequest } from '../../../../lib/app-url'
 
 export async function POST(request) {
+  const APP_URL = getAppUrlFromRequest(request)
   const supa = await createClient()
   const { data: { user } } = await supa.auth.getUser()
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })

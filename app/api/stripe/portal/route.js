@@ -3,10 +3,10 @@ import { createClient } from '../../../../lib/supabase/server'
 import { createAdminClient } from '../../../../lib/supabase/admin'
 import { getStripe } from '../../../../lib/stripe'
 import { rateLimit } from '../../../../lib/rate-limit'
-
-const APP_URL = process.env.APP_URL || 'http://localhost:3000'
+import { getAppUrl } from '../../../../lib/app-url'
 
 export async function POST() {
+  const APP_URL = getAppUrl()
   const supa = await createClient()
   const { data: { user } } = await supa.auth.getUser()
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })

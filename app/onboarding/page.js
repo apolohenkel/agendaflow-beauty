@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { VERTICALS, VERTICAL_KEYS, DEFAULT_VERTICAL, getVertical, themeCssVars } from '@/lib/verticals'
+import { createClient } from '@/lib/supabase/client'
 
 const TIMEZONES = [
   { value: 'America/Mexico_City', label: 'México' },
@@ -39,10 +40,27 @@ export default function OnboardingPage() {
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [slugTouched, setSlugTouched] = useState(false)
+  const [slugState, setSlugState] = useState('idle') // idle|checking|available|taken|invalid
   const [timezone, setTimezone] = useState('America/Mexico_City')
   const [seed, setSeed] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  // Validación live del slug con debounce
+  useEffect(() => {
+    if (!slug) { setSlugState('idle'); return }
+    if (!/^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/.test(slug)) {
+      setSlugState('invalid'); return
+    }
+    setSlugState('checking')
+    const supa = createClient()
+    const t = setTimeout(async () => {
+      const { data, error } = await supa.rpc('check_slug_available', { p_slug: slug })
+      if (error) { setSlugState('invalid'); return }
+      setSlugState(data ? 'available' : 'taken')
+    }, 400)
+    return () => clearTimeout(t)
+  }, [slug])
 
   // Recupera vertical de localStorage si no viene en query
   useEffect(() => {
@@ -62,6 +80,14 @@ export default function OnboardingPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (slugState === 'taken') {
+      setError('Ese link ya está en uso. Elige otro.')
+      return
+    }
+    if (slugState === 'invalid') {
+      setError('El link no es válido. Usa solo letras minúsculas, números y guiones (2-40 caracteres).')
+      return
+    }
     setLoading(true)
     setError(null)
 
@@ -185,20 +211,47 @@ export default function OnboardingPage() {
                   className="px-3 py-3 text-xs flex items-center whitespace-nowrap"
                   style={{ backgroundColor: 'var(--border-soft)', color: 'var(--text-soft)' }}
                 >
-                  agendaes.com/b/
+                  agendaflow.beauty/b/
                 </span>
                 <input
                   type="text"
                   required
                   pattern="[a-z0-9-]+"
                   value={slug}
-                  onChange={(e) => { setSlug(e.target.value); setSlugTouched(true) }}
+                  onChange={(e) => { setSlug(e.target.value.toLowerCase()); setSlugTouched(true) }}
                   placeholder="salon-bella"
                   className="flex-1 px-3 py-3 text-sm focus:outline-none"
                   style={{ backgroundColor: 'var(--surface-soft)', color: 'var(--text)' }}
                 />
+                <div className="flex items-center px-3 shrink-0">
+                  {slugState === 'checking' && (
+                    <span
+                      className="w-3.5 h-3.5 border border-current/30 rounded-full animate-spin"
+                      style={{ borderTopColor: v.theme.primary }}
+                    />
+                  )}
+                  {slugState === 'available' && (
+                    <span className="flex items-center gap-1 text-xs" style={{ color: v.theme.success }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      Libre
+                    </span>
+                  )}
+                  {slugState === 'taken' && (
+                    <span className="text-xs" style={{ color: v.theme.error }}>Ocupado</span>
+                  )}
+                  {slugState === 'invalid' && (
+                    <span className="text-xs" style={{ color: v.theme.error }}>Inválido</span>
+                  )}
+                </div>
               </div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Solo letras, números y guiones.</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {slugState === 'available' ? '¡Ese link está disponible!' :
+                 slugState === 'taken' ? 'Ese link ya está en uso. Prueba otro.' :
+                 slugState === 'invalid' ? 'Solo letras minúsculas, números y guiones. 2-40 caracteres.' :
+                 'Solo letras, números y guiones. Ejemplo: salon-bella'}
+              </p>
             </div>
 
             {/* Timezone */}

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -140,9 +141,21 @@ const navGroups = [
 export default function Sidebar() {
   const pathname  = usePathname()
   const router    = useRouter()
-  const { business, user, whatsappConnected } = useOrg()
+  const { business, user, whatsappConnected, slug } = useOrg()
   const bizName = business?.name || 'Mi negocio'
   const userEmail = user?.email || ''
+  const [copied, setCopied] = useState(false)
+
+  function copyPublicLink() {
+    if (!slug || typeof window === 'undefined') return
+    const url = `${window.location.origin}/b/${slug}`
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1800)
+      }).catch(() => {})
+    }
+  }
 
   async function handleLogout() {
     const supabase = createClient()
@@ -242,6 +255,43 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
+
+      {/* Link público */}
+      {slug && (
+        <div className="px-3 mb-2">
+          <div className="px-3 py-2.5 rounded-xl bg-[var(--dash-ink)]/70 border border-[var(--dash-border)] hover:border-[var(--dash-border-hover)] transition-all group">
+            <div className="flex items-center justify-between gap-2">
+              <p className="eyebrow truncate">Tu link</p>
+              <button
+                onClick={copyPublicLink}
+                aria-label="Copiar link"
+                title="Copiar link"
+                className="text-[var(--dash-text-dim)] hover:text-[var(--dash-primary)] transition-colors shrink-0"
+              >
+                {copied ? (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--dash-primary)" strokeWidth="2.5" strokeLinecap="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            <a
+              href={`/b/${slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block mt-0.5 text-[var(--dash-primary-soft)] text-[11px] truncate hover:underline"
+              style={{ fontFamily: 'var(--font-display)' }}
+            >
+              /b/{slug}
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Notificaciones + WhatsApp */}
       <div className="px-3 space-y-2">
