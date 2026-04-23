@@ -81,7 +81,7 @@ function StepDot({ n, current, label, theme }) {
       </div>
       <p
         className="text-[10px] uppercase tracking-wider hidden sm:block font-medium"
-        style={{ color: active ? theme.primary : done ? theme.textSoft : theme.textMuted }}
+        style={{ color: active ? theme.text : done ? theme.textSoft : theme.textMuted }}
       >
         {label}
       </p>
@@ -957,13 +957,13 @@ export default function BookPage({ params }) {
                         borderColor: isSelected ? theme.primary : theme.border,
                       }}
                     >
-                      <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: isSelected ? theme.primary : theme.textSoft }}>
+                      <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: isSelected ? theme.text : theme.textSoft }}>
                         {d.toLocaleDateString('es-MX', { weekday: 'short' })}
                       </p>
-                      <p className="text-xl font-medium mt-0.5 tabular-nums" style={{ color: isSelected ? theme.primary : theme.text, fontFamily: 'var(--font-display)' }}>
+                      <p className="text-xl font-medium mt-0.5 tabular-nums" style={{ color: theme.text, fontFamily: 'var(--font-display)' }}>
                         {d.getDate()}
                       </p>
-                      <p className="text-[9px] mt-0.5" style={{ color: isSelected ? `${theme.primary}B3` : theme.textMuted }}>
+                      <p className="text-[9px] mt-0.5" style={{ color: isSelected ? theme.textSoft : theme.textMuted }}>
                         {d.toLocaleDateString('es-MX', { month: 'short' })}
                       </p>
                     </button>
@@ -999,9 +999,11 @@ export default function BookPage({ params }) {
                               backgroundColor: taken
                                 ? theme.borderSoft
                                 : isActive ? `${theme.primary}0D` : theme.surface,
+                              // Siempre theme.text para tiempos seleccionados/normales — primary como texto
+                              // podía ser ilegible con temas claros (cream, light gold).
                               color: taken
                                 ? theme.textMuted
-                                : isActive ? theme.primary : theme.text,
+                                : theme.text,
                               borderWidth: 1,
                               borderStyle: 'solid',
                               borderColor: taken
