@@ -141,7 +141,7 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
           <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
 
             {/* Fecha y Hora */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <p className="eyebrow">Fecha *</p>
                 <input type="date" value={form.date} onChange={(e) => set('date', e.target.value)} className={inputCls} />
@@ -153,7 +153,7 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
             </div>
 
             {/* Servicio y Staff */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <p className="eyebrow">Servicio</p>
                 <select value={form.serviceId} onChange={(e) => set('serviceId', e.target.value)}

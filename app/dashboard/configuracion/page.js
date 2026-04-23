@@ -90,6 +90,16 @@ export default function ConfiguracionPage() {
   const [savedPw, setSavedPw]     = useState(false)
   const [errorPw, setErrorPw]     = useState(null)
   const [brandForm, setBrandForm] = useState({ primary_color: '#C8A96E', logo_url: null })
+  // Helper inline: detecta si un hex color es "oscuro" para decidir texto contrastante.
+  function isDarkColor(hex) {
+    if (!hex || !hex.startsWith('#') || hex.length !== 7) return true
+    const r = parseInt(hex.slice(1, 3), 16)
+    const g = parseInt(hex.slice(3, 5), 16)
+    const b = parseInt(hex.slice(5, 7), 16)
+    // Luma Rec. 709
+    const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    return luma < 140
+  }
   const [savingBrand, setSavingBrand] = useState(false)
   const [savedBrand, setSavedBrand] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
@@ -743,7 +753,11 @@ export default function ConfiguracionPage() {
                 />
                 <div
                   className="flex-1 h-10 rounded-xl border border-[var(--dash-border)] flex items-center justify-center text-xs font-semibold"
-                  style={{ backgroundColor: brandForm.primary_color, color: 'var(--dash-ink)' }}
+                  style={{
+                    backgroundColor: brandForm.primary_color,
+                    // Calcular contrast — si el color es oscuro usamos blanco, si es claro usamos navy
+                    color: isDarkColor(brandForm.primary_color) ? '#FFFFFF' : '#17384A',
+                  }}
                 >
                   Vista previa
                 </div>
