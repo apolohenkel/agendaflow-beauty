@@ -1,52 +1,36 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-const STATUS_MAP = {
-  pending:   { bg: 'bg-amber-500/10',   text: 'text-amber-400',   dot: 'bg-amber-400',   label: 'Pendiente'  },
-  confirmed: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', dot: 'bg-emerald-400', label: 'Confirmada' },
-  completed: { bg: 'bg-sky-500/10',     text: 'text-sky-400',     dot: 'bg-sky-400',     label: 'Completada' },
-  cancelled: { bg: 'bg-red-500/10',     text: 'text-red-400',     dot: 'bg-red-400',     label: 'Cancelada'  },
-  no_show:   { bg: 'bg-zinc-500/10',    text: 'text-zinc-500',    dot: 'bg-zinc-500',    label: 'No asistió' },
-}
-
-function fmt(iso) {
-  return new Date(iso).toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' })
-}
-
+// Indicador de notificaciones. Navega a /dashboard/notificaciones —
+// antes abría un drawer lateral que en mobile era poco usable/descubrible.
+// Ahora: link normal con badge; funciona igual en desktop (sidebar) y
+// mobile (top bar).
 export default function NotificationBell() {
   const supabase = createClient()
-  const [open, setOpen]           = useState(false)
-  const [items, setItems]         = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [lastSeen, setLastSeen]   = useState(() => {
+  const pathname = usePathname()
+  const [items, setItems]   = useState([])
+  const [lastSeen, setLastSeen] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('notif_last_seen') || ''
     return ''
   })
 
   const load = useCallback(async () => {
-    setLoading(true)
-    const now      = new Date()
+    const now = new Date()
     const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
     const dayEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
-
     const { data } = await supabase
       .from('appointments')
-      .select(`
-        id, starts_at, ends_at, status, notes,
-        clients(name, phone),
-        services(name, price),
-        staff(name)
-      `)
+      .select('id, starts_at, ends_at, status')
       .gte('starts_at', dayStart)
       .lt('starts_at', dayEnd)
       .in('status', ['pending', 'confirmed'])
       .order('starts_at')
-
     setItems(data || [])
-    setLoading(false)
-  }, [])
+  }, [supabase])
 
   useEffect(() => { load() }, [load])
 
@@ -56,198 +40,79 @@ export default function NotificationBell() {
     return () => clearInterval(t)
   }, [load])
 
-  function markSeen() {
-    const ts = new Date().toISOString()
-    setLastSeen(ts)
-    localStorage.setItem('notif_last_seen', ts)
-  }
+  // Si el usuario ya está en /dashboard/notificaciones marcamos todo visto
+  useEffect(() => {
+    if (pathname === '/dashboard/notificaciones' && typeof window !== 'undefined') {
+      const ts = new Date().toISOString()
+      localStorage.setItem('notif_last_seen', ts)
+      setLastSeen(ts)
+    }
+  }, [pathname])
 
-  function handleOpen() {
-    setOpen(true)
-    markSeen()
-  }
+  // Escuchar broadcast desde la página (cuando carga sus datos marca visto)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return
+    let bc = null
+    try {
+      bc = new BroadcastChannel('af:notif')
+      bc.onmessage = (e) => {
+        if (e?.data?.type === 'seen') {
+          const ts = new Date().toISOString()
+          setLastSeen(ts)
+        }
+      }
+    } catch {}
+    return () => { try { bc?.close() } catch {} }
+  }, [])
 
   const now = new Date()
-
-  // Clasificar citas
-  const active    = items.filter(a => new Date(a.starts_at) <= now && new Date(a.ends_at) >= now)
-  const upcoming  = items.filter(a => {
+  const active   = items.filter(a => new Date(a.starts_at) <= now && new Date(a.ends_at) >= now)
+  const upcoming = items.filter(a => {
     const diff = (new Date(a.starts_at) - now) / 60000
     return diff > 0 && diff <= 60
   })
-  const pending   = items.filter(a => a.status === 'pending' && new Date(a.starts_at) > now)
-  const later     = items.filter(a => {
-    const diff = (new Date(a.starts_at) - now) / 60000
-    return diff > 60
-  })
-
-  // Nuevas desde la última vez visto
   const newCount = lastSeen
     ? items.filter(a => new Date(a.starts_at) > new Date(lastSeen)).length
     : items.length
-
   const badge = newCount + active.length + upcoming.length
 
+  const isActive = pathname === '/dashboard/notificaciones'
+
   return (
-    <>
-      {/* Campana — en Sidebar (md+) es un row con texto; en MobileTopBar es un icono compacto */}
-      <button
-        onClick={handleOpen}
-        aria-label="Notificaciones"
-        className="relative w-auto md:w-full flex items-center gap-3 p-2 md:px-3 md:py-2.5 rounded-lg text-sm transition-all duration-150 text-[var(--dash-text-muted)] hover:text-[var(--dash-text)] hover:bg-[var(--dash-border)] group"
-      >
-        <span className="relative text-[var(--dash-text-dim)] group-hover:text-[var(--dash-text-soft)] transition-colors shrink-0">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          {/* Badge en mobile va absolute encima del icono (sin texto) */}
-          {badge > 0 && (
-            <span className="md:hidden absolute -top-1 -right-1.5 min-w-[16px] h-[16px] flex items-center justify-center bg-[var(--dash-primary)] text-[var(--dash-ink)] text-[9px] font-bold rounded-full px-1">
-              {badge > 9 ? '9+' : badge}
-            </span>
-          )}
-        </span>
-        <span className="hidden md:inline font-medium">Notificaciones</span>
-        {/* Badge en desktop al final de la fila (junto al texto) */}
+    <Link
+      href="/dashboard/notificaciones"
+      aria-label={badge > 0 ? `Notificaciones (${badge})` : 'Notificaciones'}
+      className={`relative w-auto md:w-full flex items-center gap-3 p-2 md:px-3 md:py-2.5 rounded-lg text-sm transition-all duration-150 group
+        ${isActive
+          ? 'md:bg-[var(--dash-border)] text-[var(--dash-text)]'
+          : 'text-[var(--dash-text-muted)] hover:text-[var(--dash-text)] hover:bg-[var(--dash-border)]'
+        }`}
+    >
+      <span className="relative text-[var(--dash-text-dim)] group-hover:text-[var(--dash-text-soft)] transition-colors shrink-0">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+        {/* Badge en mobile — flota arriba-derecha del icono */}
         {badge > 0 && (
-          <span className="hidden md:flex ml-auto min-w-[18px] h-[18px] items-center justify-center bg-[var(--dash-primary)] text-[var(--dash-ink)] text-[9px] font-bold rounded-full px-1">
+          <span
+            className="md:hidden absolute -top-1 -right-1.5 min-w-[16px] h-[16px] flex items-center justify-center bg-[var(--dash-primary)] text-[var(--dash-ink)] text-[9px] font-bold rounded-full px-1"
+            aria-hidden="true"
+          >
             {badge > 9 ? '9+' : badge}
           </span>
         )}
-      </button>
-
-      {/* Panel lateral */}
-      {open && (
-        <>
-          {/* Overlay */}
-          <div
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
-            onClick={() => setOpen(false)}
-          />
-
-          {/* Panel — full-width en mobile, 320px fijo en sm+ */}
-          <div className="fixed right-0 top-0 h-full w-full sm:w-80 max-w-full z-50 bg-[var(--dash-ink-raised)] border-l border-[var(--dash-border)] flex flex-col shadow-2xl shadow-black/60">
-
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-5 border-b border-[var(--dash-border)]">
-              <div>
-                <h2 className="text-[var(--dash-text)] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
-                  Notificaciones
-                </h2>
-                <p className="text-[var(--dash-text-muted)] text-[10px] mt-0.5">Citas activas y próximas de hoy</p>
-              </div>
-              <button
-                onClick={() => setOpen(false)}
-                className="text-[var(--dash-text-dim)] hover:text-[var(--dash-text-muted)] transition-colors p-1"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Contenido */}
-            <div className="flex-1 overflow-y-auto">
-              {loading ? (
-                <div className="flex items-center justify-center py-20">
-                  <div className="w-5 h-5 border border-[var(--dash-primary)]/20 border-t-[var(--dash-primary)] rounded-full animate-spin" />
-                </div>
-              ) : items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-3 px-5 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] flex items-center justify-center">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--dash-text-muted)" strokeWidth="1.5" strokeLinecap="round">
-                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                    </svg>
-                  </div>
-                  <p className="text-[var(--dash-text-soft)] text-sm">Sin citas pendientes hoy</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-[var(--dash-ink-sunken)]">
-
-                  {/* En curso ahora */}
-                  {active.length > 0 && (
-                    <NotifGroup label="En curso ahora" accent="text-[var(--dash-primary)]">
-                      {active.map(a => <NotifCard key={a.id} appt={a} highlight />)}
-                    </NotifGroup>
-                  )}
-
-                  {/* Próximas 1h */}
-                  {upcoming.length > 0 && (
-                    <NotifGroup label="Próximas — en menos de 1 hora" accent="text-emerald-400">
-                      {upcoming.map(a => <NotifCard key={a.id} appt={a} />)}
-                    </NotifGroup>
-                  )}
-
-                  {/* Pendientes de confirmar */}
-                  {pending.length > 0 && (
-                    <NotifGroup label="Sin confirmar" accent="text-amber-400">
-                      {pending.map(a => <NotifCard key={a.id} appt={a} />)}
-                    </NotifGroup>
-                  )}
-
-                  {/* Resto del día */}
-                  {later.length > 0 && (
-                    <NotifGroup label="Resto del día">
-                      {later.map(a => <NotifCard key={a.id} appt={a} />)}
-                    </NotifGroup>
-                  )}
-
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="px-5 py-4 border-t border-[var(--dash-border)]">
-              <button
-                onClick={() => { load(); markSeen() }}
-                className="w-full text-center text-[var(--dash-text-dim)] hover:text-[var(--dash-text-muted)] text-xs transition-colors py-1"
-              >
-                Actualizar
-              </button>
-            </div>
-          </div>
-        </>
+      </span>
+      <span className="hidden md:inline font-medium">Notificaciones</span>
+      {/* Badge en desktop — al final del row, junto al texto */}
+      {badge > 0 && (
+        <span
+          className="hidden md:flex ml-auto min-w-[18px] h-[18px] items-center justify-center bg-[var(--dash-primary)] text-[var(--dash-ink)] text-[9px] font-bold rounded-full px-1"
+          aria-hidden="true"
+        >
+          {badge > 9 ? '9+' : badge}
+        </span>
       )}
-    </>
-  )
-}
-
-// ─── SUB-COMPONENTES ──────────────────────────────────────────────────────────
-function NotifGroup({ label, accent = 'text-[var(--dash-text-dim)]', children }) {
-  return (
-    <div>
-      <p className={`px-5 pt-4 pb-2 text-[10px] uppercase tracking-widest font-medium ${accent}`}>
-        {label}
-      </p>
-      {children}
-    </div>
-  )
-}
-
-function NotifCard({ appt, highlight = false }) {
-  const s = STATUS_MAP[appt.status] || STATUS_MAP.pending
-  return (
-    <div className={`px-5 py-3.5 hover:bg-[var(--dash-ink-sunken)] transition-colors ${highlight ? 'border-l-2 border-[var(--dash-primary)]' : 'border-l-2 border-transparent'}`}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[var(--dash-text)] text-sm font-medium truncate">
-            {appt.clients?.name || '—'}
-          </p>
-          <p className="text-[var(--dash-text-dim)] text-xs mt-0.5 truncate">
-            {appt.services?.name || 'Sin servicio'}
-            {appt.staff?.name ? ` · ${appt.staff.name}` : ''}
-          </p>
-        </div>
-        <div className="text-right shrink-0">
-          <p className="text-[var(--dash-text-muted)] text-xs tabular-nums">{fmt(appt.starts_at)}</p>
-          <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9px] font-medium ${s.bg} ${s.text}`}>
-            <span className={`w-1 h-1 rounded-full ${s.dot}`} />
-            {s.label}
-          </span>
-        </div>
-      </div>
-    </div>
+    </Link>
   )
 }

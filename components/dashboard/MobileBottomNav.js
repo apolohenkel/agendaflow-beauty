@@ -55,12 +55,13 @@ const PRIMARY = [
 ]
 
 const OVERFLOW = [
-  { label: 'Personal',      href: '/dashboard/personal' },
-  { label: 'Promociones',   href: '/dashboard/promociones' },
-  { label: 'Reportes',      href: '/dashboard/reportes' },
-  { label: 'WhatsApp',      href: '/dashboard/whatsapp' },
-  { label: 'Facturación',   href: '/dashboard/billing' },
-  { label: 'Ajustes',       href: '/dashboard/configuracion' },
+  { label: 'Notificaciones', href: '/dashboard/notificaciones' },
+  { label: 'Personal',       href: '/dashboard/personal' },
+  { label: 'Promociones',    href: '/dashboard/promociones' },
+  { label: 'Reportes',       href: '/dashboard/reportes' },
+  { label: 'WhatsApp',       href: '/dashboard/whatsapp' },
+  { label: 'Facturación',    href: '/dashboard/billing' },
+  { label: 'Ajustes',        href: '/dashboard/configuracion' },
 ]
 
 export default function MobileBottomNav() {
