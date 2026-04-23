@@ -272,7 +272,8 @@ function PersonalModal({ miembro, businessId, orgId, onClose, onSaved }) {
                 const active = Boolean(schedule[key])
                 return (
                   <div key={key} className={`rounded-xl border transition-colors ${active ? 'border-[var(--dash-border)] bg-[var(--dash-ink-raised)]' : 'border-[var(--dash-border)] bg-transparent'}`}>
-                    <div className="flex items-center gap-3 px-4 py-2.5">
+                    {/* Mobile: toggle+día en linea; horas wrap debajo. Desktop: todo inline. */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 sm:px-4 py-2.5">
                       <button
                         type="button"
                         onClick={() => toggleDia(key)}
@@ -280,21 +281,21 @@ function PersonalModal({ miembro, businessId, orgId, onClose, onSaved }) {
                       >
                         <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${active ? 'left-3.5' : 'left-0.5'}`} />
                       </button>
-                      <p className={`text-xs font-medium w-8 ${active ? 'text-[var(--dash-text-soft)]' : 'text-[var(--dash-border)]'}`}>{label}</p>
+                      <p className={`text-xs font-medium flex-1 min-w-0 sm:flex-none sm:w-8 ${active ? 'text-[var(--dash-text-soft)]' : 'text-[var(--dash-border)]'}`}>{label}</p>
                       {active && (
-                        <div className="flex items-center gap-2 ml-auto">
+                        <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
                           <input
                             type="time"
                             value={schedule[key]?.start || '09:00'}
                             onChange={(e) => setHorario(key, 'start', e.target.value)}
-                            className="bg-[var(--dash-border)] border border-[var(--dash-border)] rounded-lg px-2 py-1 text-[var(--dash-text)] text-xs focus:outline-none focus:border-[var(--dash-primary)]/50 w-24"
+                            className="bg-[var(--dash-border)] border border-[var(--dash-border)] rounded-lg px-2 py-1 text-[var(--dash-text)] text-xs focus:outline-none focus:border-[var(--dash-primary)]/50 flex-1 sm:w-24 sm:flex-none min-w-0"
                           />
-                          <span className="text-[var(--dash-text-dim)] text-xs">—</span>
+                          <span className="text-[var(--dash-text-dim)] text-xs shrink-0">—</span>
                           <input
                             type="time"
                             value={schedule[key]?.end || '18:00'}
                             onChange={(e) => setHorario(key, 'end', e.target.value)}
-                            className="bg-[var(--dash-border)] border border-[var(--dash-border)] rounded-lg px-2 py-1 text-[var(--dash-text)] text-xs focus:outline-none focus:border-[var(--dash-primary)]/50 w-24"
+                            className="bg-[var(--dash-border)] border border-[var(--dash-border)] rounded-lg px-2 py-1 text-[var(--dash-text)] text-xs focus:outline-none focus:border-[var(--dash-primary)]/50 flex-1 sm:w-24 sm:flex-none min-w-0"
                           />
                         </div>
                       )}

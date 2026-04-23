@@ -643,11 +643,27 @@ export default function CitasPage() {
           currency={currency}
         />
       ) : (
-        <CalendarView
-          appointments={weekAppts}
-          weekStart={weekStart}
-          onEdit={setEditTarget}
-        />
+        <>
+          {/* En mobile el calendario semanal (7 columnas + 13 horas) no cabe
+              y fuerza scroll horizontal poco usable — mostramos la lista
+              filtrada a la semana en su lugar. En desktop va el grid. */}
+          <div className="md:hidden">
+            <ListView
+              appointments={weekAppts}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
+              onEdit={setEditTarget}
+              currency={currency}
+            />
+          </div>
+          <div className="hidden md:block">
+            <CalendarView
+              appointments={weekAppts}
+              weekStart={weekStart}
+              onEdit={setEditTarget}
+            />
+          </div>
+        </>
       )}
 
       {showModal && (

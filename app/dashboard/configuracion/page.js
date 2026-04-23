@@ -538,7 +538,7 @@ export default function ConfiguracionPage() {
       <Section title="Información del negocio" description="Datos generales de tu salón">
         <form onSubmit={handleSaveInfo} className="space-y-4">
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Nombre del negocio *">
               <input
                 type="text"
@@ -560,7 +560,7 @@ export default function ConfiguracionPage() {
             </Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Número de WhatsApp">
               <input
                 type="text"
@@ -814,7 +814,10 @@ export default function ConfiguracionPage() {
                   active ? 'border-[var(--dash-border)] bg-[var(--dash-ink-sunken)]' : 'border-[var(--dash-border)] bg-transparent'
                 }`}
               >
-                <div className="flex items-center gap-4 px-4 py-3">
+                {/* En mobile stackeamos toggle+día arriba y hours abajo; en desktop todo inline.
+                    Antes en < 400px las horas se cortaban porque w-28 + w-28 + separador + w-24 día
+                    no cabía en viewport. */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 sm:px-4 py-3">
                   {/* Toggle */}
                   <button
                     type="button"
@@ -830,30 +833,30 @@ export default function ConfiguracionPage() {
                     />
                   </button>
 
-                  {/* Día */}
-                  <p className={`text-sm font-medium w-24 ${active ? 'text-[var(--dash-text-soft)]' : 'text-[var(--dash-border)]'}`}>
+                  {/* Día — flex-1 para ocupar espacio disponible en mobile */}
+                  <p className={`text-sm font-medium flex-1 min-w-0 sm:w-24 sm:flex-none ${active ? 'text-[var(--dash-text-soft)]' : 'text-[var(--dash-border)]'}`}>
                     {label}
                   </p>
 
-                  {/* Horas */}
+                  {/* Horas — en mobile pasan abajo al wrap; en sm+ van a la derecha */}
                   {active ? (
-                    <div className="flex items-center gap-2 ml-auto">
+                    <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
                       <input
                         type="time"
                         value={schedule[key]?.start || '09:00'}
                         onChange={(e) => setHorario(key, 'start', e.target.value)}
-                        className="bg-[var(--dash-border)] border border-[var(--dash-border)] rounded-lg px-3 py-1.5 text-[var(--dash-text)] text-xs focus:outline-none focus:border-[var(--dash-primary)]/50 w-28"
+                        className="bg-[var(--dash-border)] border border-[var(--dash-border)] rounded-lg px-2 sm:px-3 py-1.5 text-[var(--dash-text)] text-xs focus:outline-none focus:border-[var(--dash-primary)]/50 flex-1 sm:w-28 sm:flex-none min-w-0"
                       />
-                      <span className="text-[#2E2E2E] text-sm">—</span>
+                      <span className="text-[var(--dash-text-muted)] text-sm shrink-0">—</span>
                       <input
                         type="time"
                         value={schedule[key]?.end || '18:00'}
                         onChange={(e) => setHorario(key, 'end', e.target.value)}
-                        className="bg-[var(--dash-border)] border border-[var(--dash-border)] rounded-lg px-3 py-1.5 text-[var(--dash-text)] text-xs focus:outline-none focus:border-[var(--dash-primary)]/50 w-28"
+                        className="bg-[var(--dash-border)] border border-[var(--dash-border)] rounded-lg px-2 sm:px-3 py-1.5 text-[var(--dash-text)] text-xs focus:outline-none focus:border-[var(--dash-primary)]/50 flex-1 sm:w-28 sm:flex-none min-w-0"
                       />
                     </div>
                   ) : (
-                    <p className="ml-auto text-[#2E2E2E] text-xs">Cerrado</p>
+                    <p className="ml-auto text-[var(--dash-text-muted)] text-xs">Cerrado</p>
                   )}
                 </div>
               </div>
@@ -869,7 +872,7 @@ export default function ConfiguracionPage() {
       {/* ── Cuenta ── */}
       <Section title="Cuenta" description="Credenciales de acceso al panel">
         <form onSubmit={handleSavePassword} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Nueva contraseña">
               <input
                 type="password"

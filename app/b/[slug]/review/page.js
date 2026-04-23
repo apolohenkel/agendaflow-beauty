@@ -47,9 +47,9 @@ export default function ReviewPage({ params }) {
     >
       <div className="max-w-md w-full space-y-6">
         <div className="text-center space-y-2">
-          <p className="text-xs uppercase tracking-[0.22em] font-medium" style={{ color: theme.primary }}>Tu opinión</p>
-          <h1 className="text-4xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
-            {status === 'done' ? '¡Gracias!' : <>¿Cómo fue tu visita a<br /><em style={{ color: theme.primary }}>{org?.name || 'tu salón'}</em>?</>}
+          <p className="text-xs uppercase tracking-[0.22em] font-medium" style={{ color: theme.primaryHover || theme.primary }}>Tu opinión</p>
+          <h1 className="text-4xl font-light" style={{ fontFamily: 'var(--font-display)', color: theme.text }}>
+            {status === 'done' ? '¡Gracias!' : <>¿Cómo fue tu visita a<br /><em style={{ color: theme.text }}>{org?.name || 'tu salón'}</em>?</>}
           </h1>
           {status !== 'done' && <p className="text-sm" style={{ color: theme.textSoft }}>Tu experiencia nos importa. Toma menos de un minuto.</p>}
           {status === 'done' && <p className="text-sm" style={{ color: theme.textSoft }}>Tu review nos ayuda a crecer y a que más personas conozcan este lugar.</p>}
