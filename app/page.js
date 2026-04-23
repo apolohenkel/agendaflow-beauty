@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { PLANS, PUBLIC_PLANS, formatPlanPrice, CURRENCY_LOCALES } from '@/lib/plans'
 import { VERTICALS, VERTICAL_KEYS, DEFAULT_VERTICAL, getVertical, themeCssVars } from '@/lib/verticals'
+import LandingJsonLd from '@/components/LandingJsonLd'
 
 function PainCard({ emoji, title, body }) {
   return (
@@ -534,6 +535,8 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      <LandingJsonLd />
     </div>
   )
 }

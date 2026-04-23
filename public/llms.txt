@@ -1,0 +1,70 @@
+# AgendaFlow Beauty
+
+> Software de agendamiento con bot de WhatsApp IA para salones de belleza, barberías, spas y nail studios en Latinoamérica. Automatiza la agenda, reduce ausencias con recordatorios, cobra señas y ofrece un booking público con la marca del negocio. Procesador de pagos en GTQ (Recurrente) y multi-moneda internacional.
+
+AgendaFlow Beauty es un SaaS multi-tenant operado por Szofa en Guatemala. El servicio incluye un panel de gestión para el dueño, una página pública de reservas para sus clientes (agendaes.com/b/[slug]), y un asistente de WhatsApp con inteligencia artificial (Claude Haiku) que contesta mensajes, agenda, reprograma y cancela citas en nombre del negocio.
+
+## Para quién es
+
+- Salones de belleza (servicios: corte, tinte, peinado, manicure)
+- Barberías (corte caballero, barba, combo)
+- Nail studios / salones de uñas (manicure, pedicure, acrílicas, diseño)
+- Spas (masajes, faciales, rituales)
+
+## Planes y precios (GTQ)
+
+- **Starter** — Q160/mes — 1 negocio, 1 usuario, 100 citas/mes, booking público
+- **Pro** — Q399/mes — 5 usuarios, citas ilimitadas, bot WhatsApp con IA, recordatorios automáticos
+- **Business** — Q799/mes — hasta 3 sucursales, usuarios ilimitados, analytics avanzado, soporte prioritario
+
+Precios equivalentes en USD/EUR/MXN/COP/PEN/CLP/ARS según país del visitante.
+
+Todos los planes: 14 días gratis, sin tarjeta al registrarse, cancelable en cualquier momento.
+
+## Características principales
+
+- Agenda con vista lista y calendario semanal.
+- Booking público con tema personalizado (logo, color primario, vertical del negocio).
+- Bot de WhatsApp con IA que agenda, reagenda, cancela y consulta disponibilidad en lenguaje natural.
+- Recordatorios automáticos 24h y 2h antes de cada cita (WhatsApp + correo).
+- CRM con historial por cliente, etiquetas, cumpleaños, clientes inactivos.
+- Programa de fidelidad configurable (ej: "10 cortes = 1 gratis").
+- Reportes: ingresos, ausencias, clientes nuevos, servicios más solicitados.
+- Seña/depósito configurable por servicio (cobro con Stripe/Recurrente).
+- Multi-vertical con theming dinámico (salón=terracotta, barbería=dorado, uñas=rosa, spa=sage).
+- Multi-timezone, multi-moneda.
+
+## Documentación
+
+- [Landing](https://agendaes.com/)
+- [Términos de servicio](https://agendaes.com/legal/terminos)
+- [Política de privacidad](https://agendaes.com/legal/privacidad)
+- [Crear cuenta](https://agendaes.com/signup)
+- [Iniciar sesión](https://agendaes.com/login)
+
+## Ejemplos de booking público (marca blanca)
+
+- [Szofa](https://agendaes.com/b/szofa) — salón de belleza
+
+## Casos de uso comunes que resuelve
+
+1. **Dueña pierde clientas porque no contesta WhatsApp rápido** → el bot contesta en segundos 24/7 y agenda solo.
+2. **Ausencias (no-shows) que cuestan el día** → recordatorios automáticos 24h y 2h antes confirman o liberan el slot.
+3. **Agenda fragmentada entre WhatsApp, cuaderno y Excel** → todo en un panel con sincronía en tiempo real.
+4. **Falta de profesionalismo frente a salones grandes** → link público con marca propia (agendaes.com/b/tu-nombre).
+5. **No saber qué servicios rinden más** → reportes de ingresos, top servicios, tendencias.
+
+## Stack técnico (para contexto de desarrolladores)
+
+- Next.js 16 (App Router)
+- Supabase (Postgres + Auth + Storage + RLS multi-tenant)
+- Tailwind CSS v4
+- Recurrente (procesador de pagos guatemalteco)
+- WhatsApp Business Cloud API (Meta)
+- Anthropic Claude (bot de WhatsApp)
+
+## Contacto
+
+- Sitio: https://agendaes.com
+- Email: no-reply@agendaes.com
+- Operado por: Szofa (Guatemala, registrado en SAT)

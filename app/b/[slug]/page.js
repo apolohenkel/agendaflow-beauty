@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { composeTheme, themeCssVars, DEFAULT_VERTICAL } from '@/lib/verticals'
+import BusinessJsonLd from '@/components/BusinessJsonLd'
 
 function fmtDuration(min) {
   if (!min) return ''
@@ -1435,6 +1436,8 @@ export default function BookPage({ params }) {
           </div>
         </div>
       )}
+
+      <BusinessJsonLd org={org} business={business} services={services} />
     </div>
   )
 }
