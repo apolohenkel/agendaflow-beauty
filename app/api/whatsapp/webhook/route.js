@@ -124,9 +124,18 @@ export async function POST(request) {
       }
     }
 
-    const rl = await rateLimit(`wa:${orgId}:${customerPhone}`, 30, 60)
-    if (!rl.allowed) {
-      return NextResponse.json({ ok: true, ignored: 'rate_limited' })
+    // Rate limit dos capas:
+    //   - por cliente: 30 msgs/min (evita loops/spammers individuales)
+    //   - por org:    300 msgs/min (evita que un flood contra una org nos
+    //                 queme los tokens de Anthropic).
+    const rlClient = await rateLimit(`wa:${orgId}:${customerPhone}`, 30, 60)
+    if (!rlClient.allowed) {
+      return NextResponse.json({ ok: true, ignored: 'rate_limited_client' })
+    }
+    const rlOrg = await rateLimit(`wa:${orgId}`, 300, 60)
+    if (!rlOrg.allowed) {
+      logger.warn('wa_webhook', 'org_rate_limited', { orgId })
+      return NextResponse.json({ ok: true, ignored: 'rate_limited_org' })
     }
 
     // Lookup business + name + tz + slug del org para la conversación
