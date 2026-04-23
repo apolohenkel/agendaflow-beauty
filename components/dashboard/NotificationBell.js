@@ -90,20 +90,28 @@ export default function NotificationBell() {
 
   return (
     <>
-      {/* Campana */}
+      {/* Campana — en Sidebar (md+) es un row con texto; en MobileTopBar es un icono compacto */}
       <button
         onClick={handleOpen}
-        className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 text-[var(--dash-text-muted)] hover:text-[var(--dash-text)] hover:bg-[var(--dash-border)] group"
+        aria-label="Notificaciones"
+        className="relative w-auto md:w-full flex items-center gap-3 p-2 md:px-3 md:py-2.5 rounded-lg text-sm transition-all duration-150 text-[var(--dash-text-muted)] hover:text-[var(--dash-text)] hover:bg-[var(--dash-border)] group"
       >
-        <span className="text-[var(--dash-text-dim)] group-hover:text-[var(--dash-text-soft)] transition-colors">
+        <span className="relative text-[var(--dash-text-dim)] group-hover:text-[var(--dash-text-soft)] transition-colors shrink-0">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
+          {/* Badge en mobile va absolute encima del icono (sin texto) */}
+          {badge > 0 && (
+            <span className="md:hidden absolute -top-1 -right-1.5 min-w-[16px] h-[16px] flex items-center justify-center bg-[var(--dash-primary)] text-[var(--dash-ink)] text-[9px] font-bold rounded-full px-1">
+              {badge > 9 ? '9+' : badge}
+            </span>
+          )}
         </span>
-        <span className="font-medium">Notificaciones</span>
+        <span className="hidden md:inline font-medium">Notificaciones</span>
+        {/* Badge en desktop al final de la fila (junto al texto) */}
         {badge > 0 && (
-          <span className="ml-auto min-w-[18px] h-[18px] flex items-center justify-center bg-[var(--dash-primary)] text-[var(--dash-ink)] text-[9px] font-bold rounded-full px-1">
+          <span className="hidden md:flex ml-auto min-w-[18px] h-[18px] items-center justify-center bg-[var(--dash-primary)] text-[var(--dash-ink)] text-[9px] font-bold rounded-full px-1">
             {badge > 9 ? '9+' : badge}
           </span>
         )}
