@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { STATUS_MAP } from '@/lib/status'
 import { useOrg } from '@/lib/org-context'
 import { calculateProgress, formatReward } from '@/lib/loyalty'
+import { formatServicePrice } from '@/lib/plans'
 
 function fmtDate(iso) {
   if (!iso) return '—'
@@ -182,7 +183,8 @@ function isBirthdayToday(iso) {
 
 function ClienteDrawer({ cliente, onClose, onEdit }) {
   const supabase = createClient()
-  const { businessId } = useOrg()
+  const { businessId, business } = useOrg()
+  const currency = business?.currency || 'gtq'
   const [appts, setAppts] = useState([])
   const [rules, setRules] = useState([])
   const [services, setServices] = useState([])
@@ -306,7 +308,7 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
           {[
             { label: 'Visitas', value: completed },
             { label: 'Ausencias', value: noShows },
-            { label: 'Total gastado', value: `Q${totalSpent.toFixed(0)}` },
+            { label: 'Total gastado', value: formatServicePrice(totalSpent, currency) },
           ].map((s) => (
             <div key={s.label} className="bg-[var(--dash-ink-raised)] px-4 py-4 text-center">
               <p className="text-[var(--dash-primary)] text-xl tabular-nums" style={{ fontFamily: 'var(--font-display)', fontWeight: 300 }}>{s.value}</p>
@@ -428,7 +430,7 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
                       </div>
                       <div className="text-right shrink-0">
                         {a.services?.price != null && (
-                          <p className="text-[var(--dash-primary)] text-sm tabular-nums">Q{Number(a.services.price).toFixed(2)}</p>
+                          <p className="text-[var(--dash-primary)] text-sm tabular-nums">{formatServicePrice(a.services.price, currency)}</p>
                         )}
                         <div className="flex items-center gap-1 mt-1 justify-end">
                           <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />

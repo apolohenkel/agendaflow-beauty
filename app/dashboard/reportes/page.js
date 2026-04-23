@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/logger'
+import { useOrg } from '@/lib/org-context'
+import { formatServicePrice } from '@/lib/plans'
 import Hairline from '@/components/ui/Hairline'
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -11,8 +13,8 @@ function pct(num, den) {
   return Math.round((num / den) * 100)
 }
 
-function fmtCurrency(n) {
-  return `Q${Number(n || 0).toLocaleString('es-GT', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+function fmtCurrency(n, currency = 'gtq') {
+  return formatServicePrice(n, currency)
 }
 
 function startOf(date, unit) {
@@ -112,6 +114,8 @@ const PERIODOS = [
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function ReportesPage() {
   const supabase = createClient()
+  const { business } = useOrg()
+  const currency = business?.currency || 'gtq'
   const [periodo, setPeriodo] = useState(30)
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -300,13 +304,13 @@ export default function ReportesPage() {
                 className="kpi-number text-4xl leading-none"
                 style={{ color: 'var(--dash-primary-soft)' }}
               >
-                {fmtCurrency(data.revenue)}
+                {fmtCurrency(data.revenue, currency)}
               </p>
               <p className="text-[var(--dash-text-muted)] text-xs">realizados · {data.completed} completadas</p>
               {data.revenueProjected > 0 && (
                 <div className="mt-2 pt-3" style={{ borderTop: '1px solid var(--dash-border)' }}>
                   <p className="text-[var(--dash-text-soft)] text-sm tabular-nums" style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}>
-                    + {fmtCurrency(data.revenueProjected)}
+                    + {fmtCurrency(data.revenueProjected, currency)}
                   </p>
                   <p className="text-[var(--dash-text-dim)] text-[10px] mt-0.5">proyectados · confirmadas y pendientes</p>
                 </div>

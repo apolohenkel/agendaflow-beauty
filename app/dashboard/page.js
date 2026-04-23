@@ -5,12 +5,14 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { STATUS_MAP } from '@/lib/status'
 import { logger } from '@/lib/logger'
+import { formatServicePrice } from '@/lib/plans'
+import { useOrg } from '@/lib/org-context'
 import KPICard from '@/components/ui/KPICard'
 import Chip, { STATUS_TO_CHIP } from '@/components/ui/Chip'
 import Hairline from '@/components/ui/Hairline'
 import NuevaCitaModal from '@/components/dashboard/citas/NuevaCitaModal'
 
-function AppointmentRow({ appt, isActive, birthdayIds }) {
+function AppointmentRow({ appt, isActive, birthdayIds, currency }) {
   const chipVariant = STATUS_TO_CHIP[appt.status] || 'muted'
   const label = STATUS_MAP[appt.status]?.label || 'Pendiente'
   const isBirthday = appt.clients?.id && birthdayIds?.has(appt.clients.id)
@@ -71,7 +73,7 @@ function AppointmentRow({ appt, isActive, birthdayIds }) {
           className="text-[var(--dash-primary-soft)] text-sm shrink-0 tabular-nums tracking-tight"
           style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}
         >
-          Q{Number(appt.services.price).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {formatServicePrice(appt.services.price, currency)}
         </p>
       )}
 
@@ -83,6 +85,8 @@ function AppointmentRow({ appt, isActive, birthdayIds }) {
 
 export default function DashboardPage() {
   const supabase = createClient()
+  const { business } = useOrg()
+  const currency = business?.currency || 'gtq'
 
   const [appointments, setAppointments] = useState([])
   const [birthdays, setBirthdays] = useState([])
@@ -402,7 +406,7 @@ export default function DashboardPage() {
             {appointments.map((appt) => {
               const isActive =
                 new Date(appt.starts_at) <= now && new Date(appt.ends_at) >= now
-              return <AppointmentRow key={appt.id} appt={appt} isActive={isActive} birthdayIds={birthdayIdSet} />
+              return <AppointmentRow key={appt.id} appt={appt} isActive={isActive} birthdayIds={birthdayIdSet} currency={currency} />
             })}
           </div>
         )}

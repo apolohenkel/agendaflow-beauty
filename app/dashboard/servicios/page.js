@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useOrg } from '@/lib/org-context'
 import { logger } from '@/lib/logger'
+import { formatServicePrice } from '@/lib/plans'
 
 const CATEGORIAS = ['Corte', 'Color', 'Tratamiento', 'Uñas', 'Maquillaje', 'Spa', 'Otro']
 
@@ -423,7 +424,7 @@ export default function ServiciosPage() {
               <div className="text-right shrink-0 w-20">
                 {s.price != null ? (
                   <>
-                    <p className="text-[var(--dash-primary)] text-base font-medium tabular-nums">Q{Number(s.price).toFixed(2)}</p>
+                    <p className="text-[var(--dash-primary)] text-base font-medium tabular-nums">{formatServicePrice(s.price, business?.currency)}</p>
                   </>
                 ) : (
                   <p className="text-[var(--dash-border)] text-sm">—</p>

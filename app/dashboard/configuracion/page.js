@@ -166,6 +166,7 @@ export default function ConfiguracionPage() {
     whatsapp_number:  '',
     address:          '',
     timezone:         'America/Guatemala',
+    currency:         'gtq',
   })
 
   const [schedule, setSchedule] = useState({
@@ -186,6 +187,7 @@ export default function ConfiguracionPage() {
       whatsapp_number: orgBusiness.whatsapp_number || '',
       address:         orgBusiness.address         || '',
       timezone:        orgBusiness.timezone        || 'America/Guatemala',
+      currency:        orgBusiness.currency        || 'gtq',
     })
     if (orgBusiness.opening_hours) {
       setSchedule(orgBusiness.opening_hours)
@@ -246,6 +248,7 @@ export default function ConfiguracionPage() {
       whatsapp_number: infoForm.whatsapp_number.trim() || null,
       address:         infoForm.address.trim()         || null,
       timezone:        infoForm.timezone,
+      currency:        infoForm.currency,
     }).eq('id', business.id)
     await refreshOrg()
     setSavingInfo(false)
@@ -547,6 +550,26 @@ export default function ConfiguracionPage() {
               placeholder="Ej: 5a Av 10-05, Zona 1, Guatemala"
               className="w-full bg-[var(--dash-ink-sunken)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors"
             />
+          </Field>
+
+          <Field label="Moneda de tus servicios">
+            <select
+              value={infoForm.currency}
+              onChange={(e) => setInfo('currency', e.target.value)}
+              className="w-full bg-[var(--dash-ink-sunken)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors appearance-none cursor-pointer"
+            >
+              <option value="gtq" style={{ background: 'var(--dash-ink-sunken)' }}>Q — Quetzal guatemalteco (GTQ)</option>
+              <option value="usd" style={{ background: 'var(--dash-ink-sunken)' }}>$ — Dólar (USD)</option>
+              <option value="mxn" style={{ background: 'var(--dash-ink-sunken)' }}>$ — Peso mexicano (MXN)</option>
+              <option value="cop" style={{ background: 'var(--dash-ink-sunken)' }}>$ — Peso colombiano (COP)</option>
+              <option value="pen" style={{ background: 'var(--dash-ink-sunken)' }}>S/ — Sol peruano (PEN)</option>
+              <option value="clp" style={{ background: 'var(--dash-ink-sunken)' }}>$ — Peso chileno (CLP)</option>
+              <option value="ars" style={{ background: 'var(--dash-ink-sunken)' }}>$ — Peso argentino (ARS)</option>
+              <option value="eur" style={{ background: 'var(--dash-ink-sunken)' }}>€ — Euro (EUR)</option>
+            </select>
+            <p className="text-[var(--dash-text-dim)] text-[11px] mt-1">
+              Se usa en los precios de servicios, señas, citas y en tu link público de reservas.
+            </p>
           </Field>
 
           <div className="flex justify-end pt-1">

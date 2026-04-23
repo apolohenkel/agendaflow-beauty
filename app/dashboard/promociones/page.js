@@ -6,6 +6,7 @@ import { useOrg } from '@/lib/org-context'
 import { useToast } from '@/components/ui/Toast'
 import { logger } from '@/lib/logger'
 import { summarizeRule, formatReward } from '@/lib/loyalty'
+import { formatServicePrice } from '@/lib/plans'
 import Hairline from '@/components/ui/Hairline'
 import Chip from '@/components/ui/Chip'
 
@@ -16,7 +17,7 @@ const REWARD_TYPES = [
 ]
 
 // ─── MODAL EDITAR/CREAR ──────────────────────────────────────────────────────
-function PromocionModal({ regla, services, businessId, onClose, onSaved }) {
+function PromocionModal({ regla, services, businessId, currency = 'gtq', onClose, onSaved }) {
   const supabase = createClient()
   const { toast } = useToast()
   const isEdit = Boolean(regla?.id)
@@ -241,7 +242,7 @@ function PromocionModal({ regla, services, businessId, onClose, onSaved }) {
                 <option value="">Elige un servicio</option>
                 {services.map((s) => (
                   <option key={s.id} value={s.id} style={{ color: 'var(--dash-text)', background: 'var(--dash-ink-raised)' }}>
-                    {s.name}{s.price != null ? ` — Q${Number(s.price).toFixed(0)}` : ''}
+                    {s.name}{s.price != null ? ` — ${formatServicePrice(s.price, currency)}` : ''}
                   </option>
                 ))}
               </select>
@@ -347,7 +348,8 @@ function PromocionModal({ regla, services, businessId, onClose, onSaved }) {
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function PromocionesPage() {
   const supabase = createClient()
-  const { businessId } = useOrg()
+  const { businessId, business } = useOrg()
+  const currency = business?.currency || 'gtq'
   const { toast } = useToast()
 
   const [rules, setRules]     = useState([])
@@ -603,6 +605,7 @@ export default function PromocionesPage() {
           regla={editTarget === 'new' ? null : editTarget}
           services={services}
           businessId={businessId}
+          currency={currency}
           onClose={() => setEditTarget(null)}
           onSaved={() => { load(); setEditTarget(null) }}
         />

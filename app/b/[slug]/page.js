@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { composeTheme, themeCssVars, DEFAULT_VERTICAL } from '@/lib/verticals'
+import { formatServicePrice } from '@/lib/plans'
 import BusinessJsonLd from '@/components/BusinessJsonLd'
 
 function fmtDuration(min) {
@@ -191,7 +192,7 @@ export default function BookPage({ params }) {
 
       const { data: biz } = await supabase
         .from('businesses')
-        .select('id, name, address, whatsapp_number, opening_hours')
+        .select('id, name, address, whatsapp_number, opening_hours, currency')
         .eq('organization_id', orgRow.id)
         .eq('active', true)
         .limit(1)
@@ -576,7 +577,7 @@ export default function BookPage({ params }) {
                   {selected.services.map((s) => (
                     <li key={s.id} className="text-sm font-medium flex items-center justify-between" style={{ color: theme.text }}>
                       <span>{s.name}</span>
-                      {s.price != null && <span className="tabular-nums" style={{ color: theme.primary }}>${Number(s.price).toFixed(0)}</span>}
+                      {s.price != null && <span className="tabular-nums" style={{ color: theme.primary }}>{formatServicePrice(s.price, business?.currency)}</span>}
                     </li>
                   ))}
                 </ul>
@@ -756,7 +757,7 @@ export default function BookPage({ params }) {
                     <div className="flex items-center gap-3 shrink-0">
                       {svc.price != null && (
                         <p className="text-base font-semibold tabular-nums" style={{ color: theme.primary }}>
-                          ${Number(svc.price).toFixed(0)}
+                          {formatServicePrice(svc.price, business?.currency)}
                         </p>
                       )}
                       <div
@@ -797,7 +798,7 @@ export default function BookPage({ params }) {
                 </div>
                 {hasPrice && (
                   <p className="text-lg font-semibold tabular-nums" style={{ color: theme.primary }}>
-                    ${totalPrice.toFixed(0)}
+                    {formatServicePrice(totalPrice, business?.currency)}
                   </p>
                 )}
               </div>
@@ -1178,7 +1179,7 @@ export default function BookPage({ params }) {
                   <Row label="Servicio" value={selected.services[0].name} theme={theme} />
                   <Row label="Duración" value={fmtDuration(selected.services[0].duration_minutes)} theme={theme} />
                   {selected.services[0].price != null && (
-                    <Row label="Precio" value={`$${Number(selected.services[0].price).toFixed(0)}`} accent={theme.primary} theme={theme} />
+                    <Row label="Precio" value={formatServicePrice(selected.services[0].price, business?.currency)} accent={theme.primary} theme={theme} />
                   )}
                 </>
               ) : (
@@ -1189,14 +1190,14 @@ export default function BookPage({ params }) {
                       {selected.services.map((s) => (
                         <li key={s.id} className="flex items-center justify-between text-sm" style={{ color: theme.text }}>
                           <span>{s.name} <span style={{ color: theme.textMuted }}>· {fmtDuration(s.duration_minutes)}</span></span>
-                          {s.price != null && <span className="tabular-nums font-medium" style={{ color: theme.primary }}>${Number(s.price).toFixed(0)}</span>}
+                          {s.price != null && <span className="tabular-nums font-medium" style={{ color: theme.primary }}>{formatServicePrice(s.price, business?.currency)}</span>}
                         </li>
                       ))}
                     </ul>
                   </div>
                   <Row label="Duración total" value={fmtDuration(totalDuration)} theme={theme} />
                   {hasPrice && (
-                    <Row label="Precio total" value={`$${totalPrice.toFixed(0)}`} accent={theme.primary} theme={theme} />
+                    <Row label="Precio total" value={formatServicePrice(totalPrice, business?.currency)} accent={theme.primary} theme={theme} />
                   )}
                 </>
               )}
@@ -1358,7 +1359,7 @@ export default function BookPage({ params }) {
                         </div>
                         {a.service_price != null && (
                           <p className="text-sm font-semibold shrink-0 tabular-nums" style={{ color: theme.primary }}>
-                            ${Number(a.service_price).toFixed(0)}
+                            {formatServicePrice(a.service_price, business?.currency)}
                           </p>
                         )}
                       </div>
@@ -1417,7 +1418,7 @@ export default function BookPage({ params }) {
                         </div>
                         {a.service_price != null && (
                           <p className="text-sm shrink-0 tabular-nums" style={{ color: theme.textSoft }}>
-                            ${Number(a.service_price).toFixed(0)}
+                            {formatServicePrice(a.service_price, business?.currency)}
                           </p>
                         )}
                       </div>

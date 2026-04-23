@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useOrg } from '@/lib/org-context'
 import { useToast } from '@/components/ui/Toast'
 import { localToUtcIso } from '@/lib/tz'
+import { formatServicePrice } from '@/lib/plans'
 
 export default function NuevaCitaModal({ onClose, onCreated }) {
   const { businessId, business } = useOrg()
@@ -176,7 +177,7 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
                   <option value="">Sin asignar</option>
                   {services.map((s) => (
                     <option key={s.id} value={s.id} style={{ color: 'var(--dash-text)', background: 'var(--dash-ink-sunken)' }}>
-                      {s.name}{s.price != null ? ` — Q${Number(s.price).toFixed(0)}` : ''}
+                      {s.name}{s.price != null ? ` — ${formatServicePrice(s.price, business?.currency)}` : ''}
                     </option>
                   ))}
                 </select>

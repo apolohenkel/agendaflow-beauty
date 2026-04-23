@@ -6,6 +6,7 @@ import { STATUS_MAP, STATUS_OPTIONS } from '@/lib/status'
 import { useOrg } from '@/lib/org-context'
 import { useToast } from '@/components/ui/Toast'
 import { logger } from '@/lib/logger'
+import { formatServicePrice } from '@/lib/plans'
 import Chip, { STATUS_TO_CHIP } from '@/components/ui/Chip'
 import Hairline from '@/components/ui/Hairline'
 import NuevaCitaModal from '@/components/dashboard/citas/NuevaCitaModal'
@@ -246,7 +247,7 @@ function EditarCitaModal({ appt, onClose, onSaved }) {
 }
 
 // ─── VISTA LISTA ─────────────────────────────────────────────────────────────
-function ListView({ appointments, filterStatus, setFilterStatus, onEdit }) {
+function ListView({ appointments, filterStatus, setFilterStatus, onEdit, currency }) {
   return (
     <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl overflow-hidden">
       {/* Filtros */}
@@ -346,7 +347,7 @@ function ListView({ appointments, filterStatus, setFilterStatus, onEdit }) {
                     className="hidden sm:block text-[var(--dash-primary-soft)] text-sm shrink-0 tabular-nums tracking-tight"
                     style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}
                   >
-                    Q{Number(appt.services.price).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatServicePrice(appt.services.price, currency)}
                   </p>
                 )}
 
@@ -451,6 +452,8 @@ function CalendarView({ appointments, weekStart, onEdit }) {
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 export default function CitasPage() {
   const supabase = createClient()
+  const { business } = useOrg()
+  const currency = business?.currency || 'gtq'
 
   const [view, setView]               = useState('lista')
   const [appointments, setAppointments] = useState([])
@@ -637,6 +640,7 @@ export default function CitasPage() {
           filterStatus={filterStatus}
           setFilterStatus={setFilterStatus}
           onEdit={setEditTarget}
+          currency={currency}
         />
       ) : (
         <CalendarView
