@@ -270,18 +270,55 @@ export default function ConfiguracionPage() {
     const file = e.target.files?.[0]
     if (!file || !orgId) return
     if (file.size > 2 * 1024 * 1024) { setBrandError('El archivo supera los 2 MB.'); return }
+
+    // Derivar MIME + extensión a partir del MIME type del navegador (más
+    // confiable que el nombre del archivo). Bucket solo acepta:
+    // image/png, image/jpeg, image/webp, image/svg+xml
+    const MIME_TO_EXT = {
+      'image/png':     'png',
+      'image/jpeg':    'jpg',
+      'image/jpg':     'jpg',    // algunos browsers devuelven esto incorrectamente
+      'image/pjpeg':   'jpg',    // IE legacy
+      'image/webp':    'webp',
+      'image/svg+xml': 'svg',
+    }
+    const normalizedType = MIME_TO_EXT[file.type] ? (file.type === 'image/jpg' || file.type === 'image/pjpeg' ? 'image/jpeg' : file.type) : null
+
+    if (!normalizedType) {
+      setBrandError('Formato no válido. Sube PNG, JPG, WEBP o SVG.')
+      return
+    }
+
     setUploadingLogo(true)
     setBrandError(null)
 
-    const ext = file.name.split('.').pop().toLowerCase()
+    const ext = MIME_TO_EXT[file.type]
     const path = `${orgId}/logo.${ext}`
 
     const { error: uploadErr } = await supabase.storage
       .from('logos')
-      .upload(path, file, { upsert: true, contentType: file.type })
+      .upload(path, file, { upsert: true, contentType: normalizedType })
 
     if (uploadErr) {
-      setBrandError('No se pudo subir el logo. Intenta de nuevo.')
+      logger.error('logo_upload', uploadErr, { org_id: orgId, file_name: file.name, file_type: file.type, file_size: file.size })
+      // Mostrar el error real de Supabase para diagnosticar en vez de
+      // el mensaje genérico de antes. Los más comunes son:
+      //  "new row violates row-level security policy" → no es owner de la org
+      //  "The resource was not found" → bucket no existe
+      //  "Payload too large" → >2MB
+      //  "mime type not allowed" → extensión rara
+      const msg = uploadErr.message || ''
+      let friendly = 'No se pudo subir el logo. Intenta de nuevo.'
+      if (msg.toLowerCase().includes('row-level security') || msg.toLowerCase().includes('unauthorized')) {
+        friendly = 'No tienes permiso para subir el logo. Solo el dueño de la organización puede.'
+      } else if (msg.toLowerCase().includes('mime')) {
+        friendly = 'Formato no soportado. Usa PNG, JPG, WEBP o SVG.'
+      } else if (msg.toLowerCase().includes('payload too large') || msg.toLowerCase().includes('exceeded')) {
+        friendly = 'La imagen supera los 2 MB.'
+      } else if (msg) {
+        friendly = `No se pudo subir: ${msg}`
+      }
+      setBrandError(friendly)
       setUploadingLogo(false)
       return
     }
@@ -289,7 +326,13 @@ export default function ConfiguracionPage() {
     const { data: pub } = supabase.storage.from('logos').getPublicUrl(path)
     const cacheBustedUrl = `${pub.publicUrl}?v=${Date.now()}`
 
-    await supabase.from('organizations').update({ logo_url: cacheBustedUrl }).eq('id', orgId)
+    const { error: dbErr } = await supabase.from('organizations').update({ logo_url: cacheBustedUrl }).eq('id', orgId)
+    if (dbErr) {
+      logger.error('logo_db_update', dbErr, { org_id: orgId })
+      setBrandError('Logo subido pero no se pudo guardar en tu cuenta. Recarga la página.')
+      setUploadingLogo(false)
+      return
+    }
     setBrandForm((f) => ({ ...f, logo_url: cacheBustedUrl }))
     await refreshOrg()
     setUploadingLogo(false)
