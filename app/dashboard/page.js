@@ -22,63 +22,65 @@ function AppointmentRow({ appt, isActive, birthdayIds, currency }) {
   return (
     <div
       className={`
-        group flex items-center gap-4 px-6 py-4 transition-all duration-150
+        group flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 transition-all duration-150
         hover:bg-[var(--dash-ink)]/60
         ${isActive ? 'bg-[var(--dash-primary-bg-8)]' : ''}
       `}
     >
       {/* Time rail — hora grande en Fraunces + minutos sub */}
-      <div className="w-14 shrink-0 text-right">
+      <div className="w-12 sm:w-14 shrink-0 text-right">
         <p
-          className="text-[var(--dash-text)] text-base leading-none tabular-nums"
+          className="text-[var(--dash-text)] text-sm sm:text-base leading-none tabular-nums"
           style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}
         >
           {fmt(appt.starts_at)}
         </p>
-        <p className="text-[var(--dash-text-dim)] text-[10px] tabular-nums mt-1">
-          hasta {fmt(appt.ends_at)}
+        <p className="text-[var(--dash-text-dim)] text-[9px] sm:text-[10px] tabular-nums mt-1">
+          <span className="hidden sm:inline">hasta </span>{fmt(appt.ends_at)}
         </p>
       </div>
 
       {/* Hairline vertical divisor */}
-      <div className="self-stretch flex items-center">
+      <div className="self-stretch flex items-center shrink-0">
         <div className="w-px h-10" style={{ background: isActive ? 'var(--dash-primary)' : 'var(--dash-border)' }} />
       </div>
 
-      {/* Info cliente */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="text-[var(--dash-text)] text-sm font-medium truncate">
-            {appt.clients?.name || 'Cliente sin nombre'}
+      {/* Info cliente + precio/estado stackeados en mobile */}
+      <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <p className="text-[var(--dash-text)] text-sm font-medium truncate">
+              {appt.clients?.name || 'Cliente sin nombre'}
+            </p>
+            {isBirthday && (
+              <span
+                className="text-xs select-none shrink-0"
+                title="Cumpleaños hoy"
+                aria-label="Cumpleaños"
+              >
+                ✦
+              </span>
+            )}
+          </div>
+          <p className="text-[var(--dash-text-muted)] text-xs truncate mt-0.5">
+            {appt.services?.name || 'Servicio'}
+            {appt.staff?.name ? <> <span className="text-[var(--dash-text-dim)]">·</span> {appt.staff.name}</> : ''}
           </p>
-          {isBirthday && (
-            <span
-              className="text-xs select-none"
-              title="Cumpleaños hoy"
-              aria-label="Cumpleaños"
-            >
-              ✦
-            </span>
-          )}
         </div>
-        <p className="text-[var(--dash-text-muted)] text-xs truncate mt-0.5">
-          {appt.services?.name || 'Servicio'}
-          {appt.staff?.name ? <> <span className="text-[var(--dash-text-dim)]">·</span> {appt.staff.name}</> : ''}
-        </p>
+
+        {/* Precio + Estado: en mobile van a una segunda línea abajo del cliente; en sm+ a la derecha */}
+        <div className="flex items-center gap-2 mt-1.5 sm:mt-0 shrink-0">
+          {appt.services?.price != null && (
+            <p
+              className="text-[var(--dash-primary-soft)] text-xs sm:text-sm tabular-nums tracking-tight"
+              style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}
+            >
+              {formatServicePrice(appt.services.price, currency)}
+            </p>
+          )}
+          <Chip variant={chipVariant} size="sm">{label}</Chip>
+        </div>
       </div>
-
-      {/* Precio */}
-      {appt.services?.price != null && (
-        <p
-          className="text-[var(--dash-primary-soft)] text-sm shrink-0 tabular-nums tracking-tight"
-          style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}
-        >
-          {formatServicePrice(appt.services.price, currency)}
-        </p>
-      )}
-
-      {/* Estado */}
-      <Chip variant={chipVariant} size="sm">{label}</Chip>
     </div>
   )
 }

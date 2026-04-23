@@ -93,9 +93,9 @@ export default function NotificationBell() {
       {/* Campana */}
       <button
         onClick={handleOpen}
-        className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 text-[#525252] hover:text-[var(--dash-text)] hover:bg-[var(--dash-border)] group"
+        className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 text-[var(--dash-text-muted)] hover:text-[var(--dash-text)] hover:bg-[var(--dash-border)] group"
       >
-        <span className="text-[#383838] group-hover:text-[#686460] transition-colors">
+        <span className="text-[var(--dash-text-dim)] group-hover:text-[var(--dash-text-soft)] transition-colors">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -118,8 +118,8 @@ export default function NotificationBell() {
             onClick={() => setOpen(false)}
           />
 
-          {/* Panel */}
-          <div className="fixed right-0 top-0 h-full w-80 z-50 bg-[var(--dash-ink-raised)] border-l border-[var(--dash-border)] flex flex-col shadow-2xl shadow-black/60">
+          {/* Panel — full-width en mobile, 320px fijo en sm+ */}
+          <div className="fixed right-0 top-0 h-full w-full sm:w-80 max-w-full z-50 bg-[var(--dash-ink-raised)] border-l border-[var(--dash-border)] flex flex-col shadow-2xl shadow-black/60">
 
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-5 border-b border-[var(--dash-border)]">
@@ -127,7 +127,7 @@ export default function NotificationBell() {
                 <h2 className="text-[var(--dash-text)] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
                   Notificaciones
                 </h2>
-                <p className="text-[#383430] text-[10px] mt-0.5">Citas activas y próximas de hoy</p>
+                <p className="text-[var(--dash-text-muted)] text-[10px] mt-0.5">Citas activas y próximas de hoy</p>
               </div>
               <button
                 onClick={() => setOpen(false)}
@@ -147,13 +147,13 @@ export default function NotificationBell() {
                 </div>
               ) : items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3 px-5 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-[var(--dash-ink-sunken)] border border-[#1C1C1C] flex items-center justify-center">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E2E2E" strokeWidth="1.5" strokeLinecap="round">
+                  <div className="w-12 h-12 rounded-2xl bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] flex items-center justify-center">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--dash-text-muted)" strokeWidth="1.5" strokeLinecap="round">
                       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                     </svg>
                   </div>
-                  <p className="text-[#383430] text-sm">Sin citas pendientes hoy</p>
+                  <p className="text-[var(--dash-text-soft)] text-sm">Sin citas pendientes hoy</p>
                 </div>
               ) : (
                 <div className="divide-y divide-[var(--dash-ink-sunken)]">
