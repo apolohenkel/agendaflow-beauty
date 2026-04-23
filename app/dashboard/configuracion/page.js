@@ -30,12 +30,12 @@ const TIMEZONES = [
 // ─── COMPONENTES BASE ─────────────────────────────────────────────────────────
 function Section({ title, description, children }) {
   return (
-    <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl overflow-hidden">
-      <div className="px-6 py-5 border-b border-[#161616]">
-        <h2 className="text-[#D4CFC8] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
+    <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl overflow-hidden">
+      <div className="px-6 py-5 border-b border-[var(--dash-border)]">
+        <h2 className="text-[var(--dash-text)] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
           {title}
         </h2>
-        {description && <p className="text-[#777] text-xs mt-0.5">{description}</p>}
+        {description && <p className="text-[var(--dash-text-muted)] text-xs mt-0.5">{description}</p>}
       </div>
       <div className="px-6 py-5">{children}</div>
     </div>
@@ -45,7 +45,7 @@ function Section({ title, description, children }) {
 function Field({ label, children }) {
   return (
     <div className="space-y-1.5">
-      <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">{label}</p>
+      <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">{label}</p>
       {children}
     </div>
   )
@@ -56,11 +56,11 @@ function SaveButton({ saving, saved, label = 'Guardar cambios', disabled = false
     <button
       type="submit"
       disabled={saving || disabled}
-      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#C8A96E] hover:bg-[#D4B87A] text-[#080808] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-[var(--dash-primary)] hover:bg-[var(--dash-primary-soft)] text-[var(--dash-ink)] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
     >
       {saving ? (
         <>
-          <span className="w-3.5 h-3.5 border border-[#080808]/20 border-t-[#080808]/70 rounded-full animate-spin" />
+          <span className="w-3.5 h-3.5 border border-[var(--dash-ink)]/20 border-t-[var(--dash-ink)]/70 rounded-full animate-spin" />
           Guardando...
         </>
       ) : saved ? (
@@ -398,7 +398,7 @@ export default function ConfiguracionPage() {
         >
           Ajustes
         </h1>
-        <p className="text-[#777] text-xs mt-1">Personaliza tu negocio y preferencias</p>
+        <p className="text-[var(--dash-text-muted)] text-xs mt-1">Personaliza tu negocio y preferencias</p>
       </div>
 
       {/* ── Link público ── */}
@@ -407,8 +407,8 @@ export default function ConfiguracionPage() {
         description="La dirección donde tus clientes reservan. Cámbialo cuando quieras — valida que no esté en uso."
       >
         <form onSubmit={handleSaveSlug} className="space-y-3">
-          <div className="flex items-stretch rounded-xl overflow-hidden border border-[#222] bg-[#0D0D0D]">
-            <span className="px-3 py-3 text-xs flex items-center whitespace-nowrap text-[#888] bg-[#111]">
+          <div className="flex items-stretch rounded-xl overflow-hidden border border-[#222] bg-[var(--dash-ink-raised)]">
+            <span className="px-3 py-3 text-xs flex items-center whitespace-nowrap text-[var(--dash-text-muted)] bg-[var(--dash-ink-sunken)]">
               agendaflow.beauty/b/
             </span>
             <input
@@ -417,11 +417,11 @@ export default function ConfiguracionPage() {
               onChange={(e) => setSlugDraft(e.target.value.toLowerCase())}
               pattern="[a-z0-9-]+"
               placeholder="tu-negocio"
-              className="flex-1 px-3 py-3 text-sm bg-transparent text-[#E8E3DC] placeholder-[#333] focus:outline-none"
+              className="flex-1 px-3 py-3 text-sm bg-transparent text-[var(--dash-text)] placeholder-[var(--dash-border)] focus:outline-none"
             />
             <div className="flex items-center px-3 shrink-0">
               {slugState === 'checking' && (
-                <span className="w-3.5 h-3.5 border border-[#888]/30 border-t-[#888] rounded-full animate-spin" />
+                <span className="w-3.5 h-3.5 border border-[var(--dash-text-muted)]/30 border-t-[var(--dash-text-muted)] rounded-full animate-spin" />
               )}
               {slugState === 'available' && (
                 <span className="flex items-center gap-1 text-emerald-400 text-xs">
@@ -438,7 +438,7 @@ export default function ConfiguracionPage() {
                 <span className="text-[#E89B7A] text-xs">Inválido</span>
               )}
               {slugState === 'same' && (
-                <span className="text-[#888] text-xs">Actual</span>
+                <span className="text-[var(--dash-text-muted)] text-xs">Actual</span>
               )}
             </div>
           </div>
@@ -461,15 +461,15 @@ export default function ConfiguracionPage() {
                     navigator.clipboard.writeText(url).catch(() => {})
                   }
                 }}
-                className="text-[#888] text-xs hover:text-[#C8C3BC]"
+                className="text-[var(--dash-text-muted)] text-xs hover:text-[var(--dash-text-soft)]"
               >
                 Copiar URL
               </button>
             </div>
           )}
 
-          <p className="text-[#666] text-[11px] leading-relaxed">
-            Solo letras minúsculas, números y guiones. 2 a 40 caracteres. Ejemplo: <code className="text-[#C8A96E]">salon-bella</code>
+          <p className="text-[var(--dash-text-dim)] text-[11px] leading-relaxed">
+            Solo letras minúsculas, números y guiones. 2 a 40 caracteres. Ejemplo: <code className="text-[var(--dash-primary)]">salon-bella</code>
           </p>
 
           {slugError && (
@@ -478,7 +478,7 @@ export default function ConfiguracionPage() {
 
           <SaveButton saving={savingSlug} saved={savedSlug} label="Cambiar link" disabled={slugState !== 'available'} />
           {slugState !== 'available' && slugDraft && slugDraft !== orgSlug && (
-            <p className="text-[#666] text-[11px]">
+            <p className="text-[var(--dash-text-dim)] text-[11px]">
               {slugState === 'checking' ? 'Verificando disponibilidad...'
                 : slugState === 'taken' ? 'Elige otro link.'
                 : slugState === 'invalid' ? 'Usa letras, números o guiones.'
@@ -500,7 +500,7 @@ export default function ConfiguracionPage() {
                 onChange={(e) => setInfo('name', e.target.value)}
                 placeholder="Ej: Salón Bella"
                 required
-                className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+                className="w-full bg-[var(--dash-ink-sunken)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors"
               />
             </Field>
             <Field label="Teléfono">
@@ -509,7 +509,7 @@ export default function ConfiguracionPage() {
                 value={infoForm.phone}
                 onChange={(e) => setInfo('phone', e.target.value)}
                 placeholder="Ej: +502 2222-3333"
-                className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+                className="w-full bg-[var(--dash-ink-sunken)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors"
               />
             </Field>
           </div>
@@ -521,17 +521,17 @@ export default function ConfiguracionPage() {
                 value={infoForm.whatsapp_number}
                 onChange={(e) => setInfo('whatsapp_number', e.target.value)}
                 placeholder="Ej: +502 5555-1234"
-                className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+                className="w-full bg-[var(--dash-ink-sunken)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors"
               />
             </Field>
             <Field label="Zona horaria">
               <select
                 value={infoForm.timezone}
                 onChange={(e) => setInfo('timezone', e.target.value)}
-                className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors appearance-none cursor-pointer"
+                className="w-full bg-[var(--dash-ink-sunken)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors appearance-none cursor-pointer"
               >
                 {TIMEZONES.map((tz) => (
-                  <option key={tz.value} value={tz.value} style={{ background: '#111' }}>
+                  <option key={tz.value} value={tz.value} style={{ background: 'var(--dash-ink-sunken)' }}>
                     {tz.label}
                   </option>
                 ))}
@@ -545,7 +545,7 @@ export default function ConfiguracionPage() {
               value={infoForm.address}
               onChange={(e) => setInfo('address', e.target.value)}
               placeholder="Ej: 5a Av 10-05, Zona 1, Guatemala"
-              className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+              className="w-full bg-[var(--dash-ink-sunken)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors"
             />
           </Field>
 
@@ -570,16 +570,16 @@ export default function ConfiguracionPage() {
                   disabled={savingVertical}
                   className="flex flex-col items-center gap-2 rounded-2xl py-5 px-3 transition-all disabled:opacity-60"
                   style={{
-                    backgroundColor: active ? `${v.theme.primary}15` : '#111',
+                    backgroundColor: active ? `${v.theme.primary}15` : 'var(--dash-ink-sunken)',
                     borderWidth: active ? 2 : 1,
                     borderStyle: 'solid',
-                    borderColor: active ? v.theme.primary : '#1E1E1E',
+                    borderColor: active ? v.theme.primary : 'var(--dash-border)',
                   }}
                 >
                   <span className="text-3xl">{v.emoji}</span>
                   <span
                     className="text-xs font-medium"
-                    style={{ color: active ? v.theme.primary : '#9A9A9A' }}
+                    style={{ color: active ? v.theme.primary : 'var(--dash-text-muted)' }}
                   >
                     {v.name}
                   </span>
@@ -595,12 +595,12 @@ export default function ConfiguracionPage() {
             })}
           </div>
 
-          <div className="flex items-center justify-between px-4 py-3 bg-[#111] border border-[#1C1C1C] rounded-xl">
+          <div className="flex items-center justify-between px-4 py-3 bg-[var(--dash-ink-sunken)] border border-[#1C1C1C] rounded-xl">
             <div className="flex items-center gap-2 text-xs">
               {savingVertical ? (
                 <>
-                  <span className="w-3 h-3 border border-[#C8A96E]/30 border-t-[#C8A96E] rounded-full animate-spin" />
-                  <span className="text-[#888]">Aplicando cambio…</span>
+                  <span className="w-3 h-3 border border-[var(--dash-primary)]/30 border-t-[var(--dash-primary)] rounded-full animate-spin" />
+                  <span className="text-[var(--dash-text-muted)]">Aplicando cambio…</span>
                 </>
               ) : savedVertical ? (
                 <>
@@ -610,8 +610,8 @@ export default function ConfiguracionPage() {
                   <span className="text-[#3DBA6E]">Guardado · el booking y emails ya usan el nuevo tema</span>
                 </>
               ) : (
-                <span className="text-[#888]">
-                  Actualmente: <span className="text-[#E8E3DC] font-medium">{VERTICALS[vertical].emoji} {VERTICALS[vertical].name}</span>
+                <span className="text-[var(--dash-text-muted)]">
+                  Actualmente: <span className="text-[var(--dash-text)] font-medium">{VERTICALS[vertical].emoji} {VERTICALS[vertical].name}</span>
                 </span>
               )}
             </div>
@@ -625,9 +625,9 @@ export default function ConfiguracionPage() {
 
           {/* Logo */}
           <div className="space-y-2">
-            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Logo</p>
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Logo</p>
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-2xl bg-[#111] border border-[#1E1E1E] flex items-center justify-center overflow-hidden shrink-0">
+              <div className="w-20 h-20 rounded-2xl bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] flex items-center justify-center overflow-hidden shrink-0">
                 {brandForm.logo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={brandForm.logo_url} alt="Logo" className="w-full h-full object-contain" />
@@ -641,17 +641,17 @@ export default function ConfiguracionPage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium bg-[#1A1A1A] border border-[#2A2A2A] text-[#C8C3BC] hover:border-[#3A3A3A] transition-all w-fit">
+                <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium bg-[var(--dash-border)] border border-[var(--dash-border)] text-[var(--dash-text-soft)] hover:border-[#3A3A3A] transition-all w-fit">
                   <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={handleLogoUpload} className="hidden" disabled={uploadingLogo} />
                   {uploadingLogo ? 'Subiendo…' : (brandForm.logo_url ? 'Cambiar logo' : 'Subir logo')}
                 </label>
                 {brandForm.logo_url && (
                   <button type="button" onClick={handleRemoveLogo} disabled={uploadingLogo}
-                    className="text-[#666] hover:text-red-400 text-xs text-left transition-colors w-fit">
+                    className="text-[var(--dash-text-dim)] hover:text-red-400 text-xs text-left transition-colors w-fit">
                     Eliminar logo
                   </button>
                 )}
-                <p className="text-[#888] text-[10px]">PNG, JPG, WEBP o SVG · máx 2 MB</p>
+                <p className="text-[var(--dash-text-muted)] text-[10px]">PNG, JPG, WEBP o SVG · máx 2 MB</p>
               </div>
             </div>
           </div>
@@ -660,7 +660,7 @@ export default function ConfiguracionPage() {
           <form onSubmit={handleSaveBrand} className="space-y-3">
             <Field label="Color primario">
               <div className="flex items-center gap-3">
-                <div className="relative w-12 h-12 rounded-xl border border-[#2A2A2A] overflow-hidden">
+                <div className="relative w-12 h-12 rounded-xl border border-[var(--dash-border)] overflow-hidden">
                   <input
                     type="color"
                     value={brandForm.primary_color}
@@ -673,11 +673,11 @@ export default function ConfiguracionPage() {
                   value={brandForm.primary_color}
                   onChange={(e) => setBrandForm((f) => ({ ...f, primary_color: e.target.value }))}
                   pattern="^#[0-9A-Fa-f]{6}$"
-                  className="w-32 bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm tabular-nums focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+                  className="w-32 bg-[var(--dash-ink-sunken)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm tabular-nums focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors"
                 />
                 <div
-                  className="flex-1 h-10 rounded-xl border border-[#2A2A2A] flex items-center justify-center text-xs font-semibold"
-                  style={{ backgroundColor: brandForm.primary_color, color: '#080808' }}
+                  className="flex-1 h-10 rounded-xl border border-[var(--dash-border)] flex items-center justify-center text-xs font-semibold"
+                  style={{ backgroundColor: brandForm.primary_color, color: 'var(--dash-ink)' }}
                 >
                   Vista previa
                 </div>
@@ -698,16 +698,16 @@ export default function ConfiguracionPage() {
       {/* ── Seña (depósito) ── */}
       <Section title="Seña / depósito" description="Cobra un anticipo sólo en los servicios que elijas. Reduces ausencias sin pedirle seña al corte rápido.">
         <form onSubmit={handleSaveDeposit} className="space-y-4">
-          <label className="flex items-start gap-3 px-4 py-3 bg-[#111] border border-[#1E1E1E] rounded-xl cursor-pointer hover:border-[#2A2A2A] transition-colors">
+          <label className="flex items-start gap-3 px-4 py-3 bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] rounded-xl cursor-pointer hover:border-[var(--dash-border)] transition-colors">
             <input
               type="checkbox"
               checked={depositForm.enabled}
               onChange={(e) => setDepositForm((f) => ({ ...f, enabled: e.target.checked }))}
-              className="mt-0.5 accent-[#C8A96E]"
+              className="mt-0.5 accent-[var(--dash-primary)]"
             />
             <span>
-              <p className="text-[#E8E3DC] text-sm font-medium">Activar cobro de seña en el salón</p>
-              <p className="text-[#888] text-xs mt-0.5">El monto se define por servicio en <span className="text-[#C8A96E]">Servicios → Seña</span>. Si un servicio tiene seña 0, no se cobra al reservar.</p>
+              <p className="text-[var(--dash-text)] text-sm font-medium">Activar cobro de seña en el salón</p>
+              <p className="text-[var(--dash-text-muted)] text-xs mt-0.5">El monto se define por servicio en <span className="text-[var(--dash-primary)]">Servicios → Seña</span>. Si un servicio tiene seña 0, no se cobra al reservar.</p>
             </span>
           </label>
 
@@ -716,7 +716,7 @@ export default function ConfiguracionPage() {
               <select
                 value={depositForm.currency}
                 onChange={(e) => setDepositForm((f) => ({ ...f, currency: e.target.value }))}
-                className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors appearance-none cursor-pointer"
+                className="w-full bg-[var(--dash-ink-sunken)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors appearance-none cursor-pointer"
               >
                 <option value="usd">USD · Dólar</option>
                 <option value="mxn">MXN · Peso mexicano</option>
@@ -745,7 +745,7 @@ export default function ConfiguracionPage() {
               <div
                 key={key}
                 className={`rounded-xl border transition-colors ${
-                  active ? 'border-[#2A2A2A] bg-[#111]' : 'border-[#161616] bg-transparent'
+                  active ? 'border-[var(--dash-border)] bg-[var(--dash-ink-sunken)]' : 'border-[var(--dash-border)] bg-transparent'
                 }`}
               >
                 <div className="flex items-center gap-4 px-4 py-3">
@@ -754,7 +754,7 @@ export default function ConfiguracionPage() {
                     type="button"
                     onClick={() => toggleDia(key)}
                     className={`relative w-8 h-5 rounded-full transition-colors shrink-0 ${
-                      active ? 'bg-[#C8A96E]' : 'bg-[#2A2A2A]'
+                      active ? 'bg-[var(--dash-primary)]' : 'bg-[var(--dash-border)]'
                     }`}
                   >
                     <span
@@ -765,7 +765,7 @@ export default function ConfiguracionPage() {
                   </button>
 
                   {/* Día */}
-                  <p className={`text-sm font-medium w-24 ${active ? 'text-[#C8C3BC]' : 'text-[#333]'}`}>
+                  <p className={`text-sm font-medium w-24 ${active ? 'text-[var(--dash-text-soft)]' : 'text-[var(--dash-border)]'}`}>
                     {label}
                   </p>
 
@@ -776,14 +776,14 @@ export default function ConfiguracionPage() {
                         type="time"
                         value={schedule[key]?.start || '09:00'}
                         onChange={(e) => setHorario(key, 'start', e.target.value)}
-                        className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg px-3 py-1.5 text-[#E8E3DC] text-xs focus:outline-none focus:border-[#C8A96E]/50 w-28"
+                        className="bg-[var(--dash-border)] border border-[var(--dash-border)] rounded-lg px-3 py-1.5 text-[var(--dash-text)] text-xs focus:outline-none focus:border-[var(--dash-primary)]/50 w-28"
                       />
                       <span className="text-[#2E2E2E] text-sm">—</span>
                       <input
                         type="time"
                         value={schedule[key]?.end || '18:00'}
                         onChange={(e) => setHorario(key, 'end', e.target.value)}
-                        className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg px-3 py-1.5 text-[#E8E3DC] text-xs focus:outline-none focus:border-[#C8A96E]/50 w-28"
+                        className="bg-[var(--dash-border)] border border-[var(--dash-border)] rounded-lg px-3 py-1.5 text-[var(--dash-text)] text-xs focus:outline-none focus:border-[var(--dash-primary)]/50 w-28"
                       />
                     </div>
                   ) : (
@@ -810,7 +810,7 @@ export default function ConfiguracionPage() {
                 value={pwForm.nueva}
                 onChange={(e) => setPwForm((f) => ({ ...f, nueva: e.target.value }))}
                 placeholder="Mínimo 8 caracteres"
-                className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+                className="w-full bg-[var(--dash-ink-sunken)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors"
               />
             </Field>
             <Field label="Confirmar contraseña">
@@ -819,7 +819,7 @@ export default function ConfiguracionPage() {
                 value={pwForm.confirmar}
                 onChange={(e) => setPwForm((f) => ({ ...f, confirmar: e.target.value }))}
                 placeholder="Repite la contraseña"
-                className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+                className="w-full bg-[var(--dash-ink-sunken)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors"
               />
             </Field>
           </div>
@@ -844,7 +844,7 @@ export default function ConfiguracionPage() {
         <div className="space-y-3">
 
           {/* WhatsApp */}
-          <div className="flex items-center justify-between px-4 py-3.5 bg-[#111] rounded-xl border border-[#1C1C1C]">
+          <div className="flex items-center justify-between px-4 py-3.5 bg-[var(--dash-ink-sunken)] rounded-xl border border-[#1C1C1C]">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-[#3DBA6E]/10 border border-[#3DBA6E]/20 flex items-center justify-center shrink-0">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3DBA6E" strokeWidth="2" strokeLinecap="round">
@@ -852,8 +852,8 @@ export default function ConfiguracionPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-[#C8C3BC] text-sm font-medium">WhatsApp Business</p>
-                <p className="text-[#888] text-xs mt-0.5">
+                <p className="text-[var(--dash-text-soft)] text-sm font-medium">WhatsApp Business</p>
+                <p className="text-[var(--dash-text-muted)] text-xs mt-0.5">
                   {infoForm.whatsapp_number || 'Sin número configurado'}
                 </p>
               </div>
@@ -865,22 +865,22 @@ export default function ConfiguracionPage() {
           </div>
 
           {/* Recordatorios */}
-          <div className="flex items-center justify-between px-4 py-3.5 bg-[#111] rounded-xl border border-[#1C1C1C]">
+          <div className="flex items-center justify-between px-4 py-3.5 bg-[var(--dash-ink-sunken)] rounded-xl border border-[#1C1C1C]">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#C8A96E]/10 border border-[#C8A96E]/20 flex items-center justify-center shrink-0">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" strokeWidth="1.8" strokeLinecap="round">
+              <div className="w-9 h-9 rounded-xl bg-[var(--dash-primary)]/10 border border-[var(--dash-primary)]/20 flex items-center justify-center shrink-0">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--dash-primary)" strokeWidth="1.8" strokeLinecap="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
               </div>
               <div>
-                <p className="text-[#C8C3BC] text-sm font-medium">Recordatorios automáticos</p>
-                <p className="text-[#888] text-xs mt-0.5">24h y 1h antes de cada cita</p>
+                <p className="text-[var(--dash-text-soft)] text-sm font-medium">Recordatorios automáticos</p>
+                <p className="text-[var(--dash-text-muted)] text-xs mt-0.5">24h y 1h antes de cada cita</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#C8A96E]" />
-              <span className="text-[#C8A96E] text-xs font-medium">Activo</span>
+              <div className="w-1.5 h-1.5 rounded-full bg-[var(--dash-primary)]" />
+              <span className="text-[var(--dash-primary)] text-xs font-medium">Activo</span>
             </div>
           </div>
 

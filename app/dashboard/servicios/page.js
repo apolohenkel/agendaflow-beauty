@@ -80,14 +80,14 @@ function ServicioModal({ servicio, businessId, depositCurrency, depositEnabled, 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-[#111] border border-[#222] rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
+      <div className="relative w-full max-w-md bg-[var(--dash-ink-sunken)] border border-[#222] rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#1A1A1A]">
-          <h2 className="text-[#F0EBE3] text-lg font-light" style={{ fontFamily: 'var(--font-display)' }}>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--dash-border)]">
+          <h2 className="text-[var(--dash-text)] text-lg font-light" style={{ fontFamily: 'var(--font-display)' }}>
             {isEdit ? 'Editar servicio' : 'Nuevo servicio'}
           </h2>
-          <button onClick={onClose} className="text-[#444] hover:text-[#888] transition-colors">
+          <button onClick={onClose} className="text-[var(--dash-text-dim)] hover:text-[var(--dash-text-muted)] transition-colors">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -98,19 +98,19 @@ function ServicioModal({ servicio, businessId, depositCurrency, depositEnabled, 
 
           {/* Nombre */}
           <div className="space-y-1">
-            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Nombre *</p>
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Nombre *</p>
             <input
               type="text"
               placeholder="Ej: Corte de cabello"
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
-              className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+              className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors"
             />
           </div>
 
           {/* Categoría */}
           <div className="space-y-1">
-            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Categoría</p>
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Categoría</p>
             <div className="flex gap-2 flex-wrap">
               {CATEGORIAS.map((cat) => (
                 <button
@@ -119,8 +119,8 @@ function ServicioModal({ servicio, businessId, depositCurrency, depositEnabled, 
                   onClick={() => set('category', form.category === cat ? '' : cat)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     form.category === cat
-                      ? 'bg-[#C8A96E]/15 text-[#C8A96E] border border-[#C8A96E]/30'
-                      : 'bg-[#0D0D0D] text-[#555] border border-[#1E1E1E] hover:border-[#333]'
+                      ? 'bg-[var(--dash-primary)]/15 text-[var(--dash-primary)] border border-[var(--dash-primary)]/30'
+                      : 'bg-[var(--dash-ink-raised)] text-[var(--dash-text-dim)] border border-[var(--dash-border)] hover:border-[var(--dash-border)]'
                   }`}
                 >
                   {cat}
@@ -131,7 +131,7 @@ function ServicioModal({ servicio, businessId, depositCurrency, depositEnabled, 
 
           {/* Duración */}
           <div className="space-y-1">
-            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Duración</p>
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Duración</p>
             <div className="flex gap-2 flex-wrap">
               {DURACIONES.map((d) => (
                 <button
@@ -140,8 +140,8 @@ function ServicioModal({ servicio, businessId, depositCurrency, depositEnabled, 
                   onClick={() => set('duration_minutes', d.value)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     form.duration_minutes === d.value
-                      ? 'bg-[#C8A96E]/15 text-[#C8A96E] border border-[#C8A96E]/30'
-                      : 'bg-[#0D0D0D] text-[#555] border border-[#1E1E1E] hover:border-[#333]'
+                      ? 'bg-[var(--dash-primary)]/15 text-[var(--dash-primary)] border border-[var(--dash-primary)]/30'
+                      : 'bg-[var(--dash-ink-raised)] text-[var(--dash-text-dim)] border border-[var(--dash-border)] hover:border-[var(--dash-border)]'
                   }`}
                 >
                   {d.label}
@@ -153,7 +153,7 @@ function ServicioModal({ servicio, businessId, depositCurrency, depositEnabled, 
           {/* Precio y seña */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Precio</p>
+              <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Precio</p>
               <input
                 type="number"
                 min="0"
@@ -161,12 +161,12 @@ function ServicioModal({ servicio, businessId, depositCurrency, depositEnabled, 
                 placeholder="Ej: 150.00"
                 value={form.price}
                 onChange={(e) => set('price', e.target.value)}
-                className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+                className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors"
               />
             </div>
             <div className="space-y-1">
-              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">
-                Seña <span className="normal-case text-[#555]">({(depositCurrency || 'usd').toUpperCase()}, opcional)</span>
+              <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">
+                Seña <span className="normal-case text-[var(--dash-text-dim)]">({(depositCurrency || 'usd').toUpperCase()}, opcional)</span>
               </p>
               <input
                 type="number"
@@ -176,36 +176,36 @@ function ServicioModal({ servicio, businessId, depositCurrency, depositEnabled, 
                 value={form.deposit}
                 onChange={(e) => set('deposit', e.target.value)}
                 disabled={!depositEnabled}
-                className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               />
               {!depositEnabled && (
-                <p className="text-[10px] text-[#666]">Activa la seña en <span className="text-[#C8A96E]">Configuración</span> para cobrar.</p>
+                <p className="text-[10px] text-[var(--dash-text-dim)]">Activa la seña en <span className="text-[var(--dash-primary)]">Configuración</span> para cobrar.</p>
               )}
             </div>
           </div>
 
           {/* Descripción */}
           <div className="space-y-1">
-            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Descripción</p>
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Descripción</p>
             <textarea
               placeholder="Descripción del servicio..."
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
               rows={2}
-              className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors resize-none"
+              className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors resize-none"
             />
           </div>
 
           {/* Activo */}
           <div className="flex items-center justify-between py-1">
             <div>
-              <p className="text-[#C8C3BC] text-sm">Servicio activo</p>
-              <p className="text-[#888] text-xs mt-0.5">Aparece disponible para agendar</p>
+              <p className="text-[var(--dash-text-soft)] text-sm">Servicio activo</p>
+              <p className="text-[var(--dash-text-muted)] text-xs mt-0.5">Aparece disponible para agendar</p>
             </div>
             <button
               type="button"
               onClick={() => set('active', !form.active)}
-              className={`relative w-10 h-6 rounded-full transition-colors ${form.active ? 'bg-[#C8A96E]' : 'bg-[#2A2A2A]'}`}
+              className={`relative w-10 h-6 rounded-full transition-colors ${form.active ? 'bg-[var(--dash-primary)]' : 'bg-[var(--dash-border)]'}`}
             >
               <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${form.active ? 'left-5' : 'left-1'}`} />
             </button>
@@ -219,14 +219,14 @@ function ServicioModal({ servicio, businessId, depositCurrency, depositEnabled, 
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-[#555] border border-[#1E1E1E] hover:border-[#333] hover:text-[#888] transition-all"
+              className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-[var(--dash-text-dim)] border border-[var(--dash-border)] hover:border-[var(--dash-border)] hover:text-[var(--dash-text-muted)] transition-all"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#C8A96E] hover:bg-[#D4B87A] text-[#080808] transition-all disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[var(--dash-primary)] hover:bg-[var(--dash-primary-soft)] text-[var(--dash-ink)] transition-all disabled:opacity-50"
             >
               {loading ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear servicio'}
             </button>
@@ -403,30 +403,30 @@ export default function ServiciosPage() {
                     </span>
                   )}
                   {!s.active && (
-                    <span className="text-[#888] text-[10px] bg-[#111] border border-[#1E1E1E] px-2 py-0.5 rounded-full shrink-0">
+                    <span className="text-[var(--dash-text-muted)] text-[10px] bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] px-2 py-0.5 rounded-full shrink-0">
                       Inactivo
                     </span>
                   )}
                 </div>
                 {s.description && (
-                  <p className="text-[#888] text-xs mt-0.5 truncate">{s.description}</p>
+                  <p className="text-[var(--dash-text-muted)] text-xs mt-0.5 truncate">{s.description}</p>
                 )}
               </div>
 
               {/* Duración */}
               <div className="text-center shrink-0">
-                <p className="text-[#888] text-xs tabular-nums">{fmtDuration(s.duration_minutes)}</p>
-                <p className="text-[#666] text-[10px] mt-0.5">duración</p>
+                <p className="text-[var(--dash-text-muted)] text-xs tabular-nums">{fmtDuration(s.duration_minutes)}</p>
+                <p className="text-[var(--dash-text-dim)] text-[10px] mt-0.5">duración</p>
               </div>
 
               {/* Precio */}
               <div className="text-right shrink-0 w-20">
                 {s.price != null ? (
                   <>
-                    <p className="text-[#C8A96E] text-base font-medium tabular-nums">Q{Number(s.price).toFixed(2)}</p>
+                    <p className="text-[var(--dash-primary)] text-base font-medium tabular-nums">Q{Number(s.price).toFixed(2)}</p>
                   </>
                 ) : (
-                  <p className="text-[#333] text-sm">—</p>
+                  <p className="text-[var(--dash-border)] text-sm">—</p>
                 )}
               </div>
 
@@ -434,7 +434,7 @@ export default function ServiciosPage() {
               <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => openEdit(s)}
-                  className="p-2 text-[#444] hover:text-[#C8A96E] hover:bg-[#C8A96E]/10 rounded-lg transition-all"
+                  className="p-2 text-[var(--dash-text-dim)] hover:text-[var(--dash-primary)] hover:bg-[var(--dash-primary)]/10 rounded-lg transition-all"
                   title="Editar"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -444,7 +444,7 @@ export default function ServiciosPage() {
                 </button>
                 <button
                   onClick={() => setDeleteConfirm(s)}
-                  className="p-2 text-[#444] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                  className="p-2 text-[var(--dash-text-dim)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                   title="Eliminar"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -476,15 +476,15 @@ export default function ServiciosPage() {
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
-          <div className="relative bg-[#111] border border-[#222] rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4">
-            <h3 className="text-[#F0EBE3] text-base font-medium">Eliminar servicio</h3>
-            <p className="text-[#666] text-sm">
-              ¿Eliminar <span className="text-[#C8C3BC]">{deleteConfirm.name}</span>? Esta acción no se puede deshacer.
+          <div className="relative bg-[var(--dash-ink-sunken)] border border-[#222] rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4">
+            <h3 className="text-[var(--dash-text)] text-base font-medium">Eliminar servicio</h3>
+            <p className="text-[var(--dash-text-dim)] text-sm">
+              ¿Eliminar <span className="text-[var(--dash-text-soft)]">{deleteConfirm.name}</span>? Esta acción no se puede deshacer.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm text-[#555] border border-[#1E1E1E] hover:border-[#333] transition-all"
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm text-[var(--dash-text-dim)] border border-[var(--dash-border)] hover:border-[var(--dash-border)] transition-all"
               >
                 Cancelar
               </button>

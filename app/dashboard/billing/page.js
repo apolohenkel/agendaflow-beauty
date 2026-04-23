@@ -15,7 +15,7 @@ function fmtDate(iso) {
 function StatusBadge({ status, trialActive }) {
   let label = 'Inactivo', color = 'bg-zinc-500/10 text-zinc-400'
   if (status === 'active') { label = 'Activo'; color = 'bg-emerald-500/10 text-emerald-400' }
-  else if (status === 'trialing' || trialActive) { label = 'Prueba gratis'; color = 'bg-[#C8A96E]/10 text-[#C8A96E]' }
+  else if (status === 'trialing' || trialActive) { label = 'Prueba gratis'; color = 'bg-[var(--dash-primary)]/10 text-[var(--dash-primary)]' }
   else if (status === 'past_due') { label = 'Pago fallido'; color = 'bg-red-500/10 text-red-400' }
   else if (status === 'canceled') { label = 'Cancelado'; color = 'bg-zinc-500/10 text-zinc-400' }
   return <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${color}`}>{label}</span>
@@ -156,7 +156,7 @@ export default function BillingPage() {
   if (orgLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
+        <div className="w-5 h-5 border border-[var(--dash-primary)]/20 border-t-[var(--dash-primary)] rounded-full animate-spin" />
       </div>
     )
   }
@@ -186,27 +186,27 @@ export default function BillingPage() {
         <div className={`px-4 py-3 rounded-xl border text-sm ${
           notice.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
           notice.type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-          'bg-[#1A1A1A] border-[#2A2A2A] text-[#888]'
+          'bg-[var(--dash-border)] border-[var(--dash-border)] text-[var(--dash-text-muted)]'
         }`}>
           {notice.text}
         </div>
       )}
 
       {/* Plan actual */}
-      <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-6 space-y-4">
+      <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl p-6 space-y-4">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-[#888] text-[10px] uppercase tracking-widest font-medium">Plan actual</p>
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest font-medium">Plan actual</p>
             <div className="flex items-center gap-3 mt-1">
-              <h2 className="text-[#F0EBE3] text-2xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
+              <h2 className="text-[var(--dash-text)] text-2xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
                 {currentPlan?.name || 'Sin plan'}
               </h2>
               <StatusBadge status={status} trialActive={trialActive} />
             </div>
             {periodEnd && (
-              <p className="text-[#A0A0A0] text-xs mt-2">
+              <p className="text-[var(--dash-text-soft)] text-xs mt-2">
                 {sub?.cancel_at_period_end ? 'Termina el ' : (status === 'trialing' || trialActive ? 'Prueba termina el ' : 'Próxima factura el ')}
-                <span className="text-[#888]">{fmtDate(periodEnd)}</span>
+                <span className="text-[var(--dash-text-muted)]">{fmtDate(periodEnd)}</span>
               </p>
             )}
           </div>
@@ -218,11 +218,11 @@ export default function BillingPage() {
         </div>
 
         {sub && status !== 'expired' ? (
-          <div className="flex gap-3 pt-2 border-t border-[#161616] flex-wrap">
+          <div className="flex gap-3 pt-2 border-t border-[var(--dash-border)] flex-wrap">
             <button
               onClick={handlePortal}
               disabled={busy === 'portal'}
-              className="px-4 py-2 rounded-xl text-sm bg-[#1A1A1A] border border-[#2A2A2A] text-[#C8C3BC] hover:border-[#3A3A3A] disabled:opacity-50 transition-all"
+              className="px-4 py-2 rounded-xl text-sm bg-[var(--dash-border)] border border-[var(--dash-border)] text-[var(--dash-text-soft)] hover:border-[#3A3A3A] disabled:opacity-50 transition-all"
             >
               {busy === 'portal' ? 'Abriendo…' : 'Gestionar suscripción'}
             </button>
@@ -238,7 +238,7 @@ export default function BillingPage() {
               <button
                 onClick={handleCancel}
                 disabled={busy === 'cancel'}
-                className="px-4 py-2 rounded-xl text-sm bg-transparent border border-[#2A2A2A] text-[#888] hover:border-red-500/40 hover:text-red-300 disabled:opacity-50 transition-all"
+                className="px-4 py-2 rounded-xl text-sm bg-transparent border border-[var(--dash-border)] text-[var(--dash-text-muted)] hover:border-red-500/40 hover:text-red-300 disabled:opacity-50 transition-all"
               >
                 {busy === 'cancel' ? 'Cancelando…' : 'Cancelar suscripción'}
               </button>
@@ -249,7 +249,7 @@ export default function BillingPage() {
 
       {/* Planes disponibles */}
       <div className="space-y-3">
-        <h2 className="text-[#D4CFC8] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
+        <h2 className="text-[var(--dash-text)] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
           {currentPlan && status === 'active' ? 'Cambiar de plan' : 'Elige tu plan'}
         </h2>
 
@@ -261,12 +261,12 @@ export default function BillingPage() {
             return (
               <div
                 key={key}
-                className={`relative bg-[#0D0D0D] border rounded-2xl p-6 flex flex-col gap-4 ${
-                  highlighted ? 'border-[#C8A96E]/40' : 'border-[#1A1A1A]'
+                className={`relative bg-[var(--dash-ink-raised)] border rounded-2xl p-6 flex flex-col gap-4 ${
+                  highlighted ? 'border-[var(--dash-primary)]/40' : 'border-[var(--dash-border)]'
                 }`}
               >
                 {highlighted && (
-                  <span className="absolute -top-2 left-6 bg-[#C8A96E] text-[#080808] text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  <span className="absolute -top-2 left-6 bg-[var(--dash-primary)] text-[var(--dash-ink)] text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider">
                     Más popular
                   </span>
                 )}
@@ -279,8 +279,8 @@ export default function BillingPage() {
 
                 <ul className="space-y-2 flex-1">
                   {p.features?.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-[#C8C3BC] text-xs">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" strokeWidth="2.5" strokeLinecap="round" className="mt-0.5 shrink-0">
+                    <li key={f} className="flex items-start gap-2 text-[var(--dash-text-soft)] text-xs">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--dash-primary)" strokeWidth="2.5" strokeLinecap="round" className="mt-0.5 shrink-0">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                       {f}
@@ -293,8 +293,8 @@ export default function BillingPage() {
                   disabled={busy === key || isCurrent}
                   className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 ${
                     isCurrent
-                      ? 'bg-[#1A1A1A] text-[#666] cursor-default'
-                      : 'bg-[#C8A96E] text-[#080808] hover:bg-[#D4B87A]'
+                      ? 'bg-[var(--dash-border)] text-[var(--dash-text-dim)] cursor-default'
+                      : 'bg-[var(--dash-primary)] text-[var(--dash-ink)] hover:bg-[var(--dash-primary-soft)]'
                   }`}
                 >
                   {isCurrent ? 'Plan actual' : busy === key ? 'Cargando…' : 'Suscribirme'}

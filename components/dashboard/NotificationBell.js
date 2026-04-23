@@ -93,7 +93,7 @@ export default function NotificationBell() {
       {/* Campana */}
       <button
         onClick={handleOpen}
-        className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 text-[#525252] hover:text-[#D4CFC8] hover:bg-[#161616] group"
+        className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 text-[#525252] hover:text-[var(--dash-text)] hover:bg-[var(--dash-border)] group"
       >
         <span className="text-[#383838] group-hover:text-[#686460] transition-colors">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -103,7 +103,7 @@ export default function NotificationBell() {
         </span>
         <span className="font-medium">Notificaciones</span>
         {badge > 0 && (
-          <span className="ml-auto min-w-[18px] h-[18px] flex items-center justify-center bg-[#C8A96E] text-[#080808] text-[9px] font-bold rounded-full px-1">
+          <span className="ml-auto min-w-[18px] h-[18px] flex items-center justify-center bg-[var(--dash-primary)] text-[var(--dash-ink)] text-[9px] font-bold rounded-full px-1">
             {badge > 9 ? '9+' : badge}
           </span>
         )}
@@ -119,19 +119,19 @@ export default function NotificationBell() {
           />
 
           {/* Panel */}
-          <div className="fixed right-0 top-0 h-full w-80 z-50 bg-[#0D0D0D] border-l border-[#1A1A1A] flex flex-col shadow-2xl shadow-black/60">
+          <div className="fixed right-0 top-0 h-full w-80 z-50 bg-[var(--dash-ink-raised)] border-l border-[var(--dash-border)] flex flex-col shadow-2xl shadow-black/60">
 
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-5 border-b border-[#161616]">
+            <div className="flex items-center justify-between px-5 py-5 border-b border-[var(--dash-border)]">
               <div>
-                <h2 className="text-[#E8E3DC] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
+                <h2 className="text-[var(--dash-text)] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
                   Notificaciones
                 </h2>
                 <p className="text-[#383430] text-[10px] mt-0.5">Citas activas y próximas de hoy</p>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="text-[#444] hover:text-[#888] transition-colors p-1"
+                className="text-[var(--dash-text-dim)] hover:text-[var(--dash-text-muted)] transition-colors p-1"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                   <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -143,11 +143,11 @@ export default function NotificationBell() {
             <div className="flex-1 overflow-y-auto">
               {loading ? (
                 <div className="flex items-center justify-center py-20">
-                  <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
+                  <div className="w-5 h-5 border border-[var(--dash-primary)]/20 border-t-[var(--dash-primary)] rounded-full animate-spin" />
                 </div>
               ) : items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3 px-5 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-[#111] border border-[#1C1C1C] flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-2xl bg-[var(--dash-ink-sunken)] border border-[#1C1C1C] flex items-center justify-center">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E2E2E" strokeWidth="1.5" strokeLinecap="round">
                       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -156,11 +156,11 @@ export default function NotificationBell() {
                   <p className="text-[#383430] text-sm">Sin citas pendientes hoy</p>
                 </div>
               ) : (
-                <div className="divide-y divide-[#111]">
+                <div className="divide-y divide-[var(--dash-ink-sunken)]">
 
                   {/* En curso ahora */}
                   {active.length > 0 && (
-                    <NotifGroup label="En curso ahora" accent="text-[#C8A96E]">
+                    <NotifGroup label="En curso ahora" accent="text-[var(--dash-primary)]">
                       {active.map(a => <NotifCard key={a.id} appt={a} highlight />)}
                     </NotifGroup>
                   )}
@@ -191,10 +191,10 @@ export default function NotificationBell() {
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-4 border-t border-[#161616]">
+            <div className="px-5 py-4 border-t border-[var(--dash-border)]">
               <button
                 onClick={() => { load(); markSeen() }}
-                className="w-full text-center text-[#444] hover:text-[#888] text-xs transition-colors py-1"
+                className="w-full text-center text-[var(--dash-text-dim)] hover:text-[var(--dash-text-muted)] text-xs transition-colors py-1"
               >
                 Actualizar
               </button>
@@ -207,7 +207,7 @@ export default function NotificationBell() {
 }
 
 // ─── SUB-COMPONENTES ──────────────────────────────────────────────────────────
-function NotifGroup({ label, accent = 'text-[#555]', children }) {
+function NotifGroup({ label, accent = 'text-[var(--dash-text-dim)]', children }) {
   return (
     <div>
       <p className={`px-5 pt-4 pb-2 text-[10px] uppercase tracking-widest font-medium ${accent}`}>
@@ -221,19 +221,19 @@ function NotifGroup({ label, accent = 'text-[#555]', children }) {
 function NotifCard({ appt, highlight = false }) {
   const s = STATUS_MAP[appt.status] || STATUS_MAP.pending
   return (
-    <div className={`px-5 py-3.5 hover:bg-[#111] transition-colors ${highlight ? 'border-l-2 border-[#C8A96E]' : 'border-l-2 border-transparent'}`}>
+    <div className={`px-5 py-3.5 hover:bg-[var(--dash-ink-sunken)] transition-colors ${highlight ? 'border-l-2 border-[var(--dash-primary)]' : 'border-l-2 border-transparent'}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[#E8E3DC] text-sm font-medium truncate">
+          <p className="text-[var(--dash-text)] text-sm font-medium truncate">
             {appt.clients?.name || '—'}
           </p>
-          <p className="text-[#555] text-xs mt-0.5 truncate">
+          <p className="text-[var(--dash-text-dim)] text-xs mt-0.5 truncate">
             {appt.services?.name || 'Sin servicio'}
             {appt.staff?.name ? ` · ${appt.staff.name}` : ''}
           </p>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-[#888] text-xs tabular-nums">{fmt(appt.starts_at)}</p>
+          <p className="text-[var(--dash-text-muted)] text-xs tabular-nums">{fmt(appt.starts_at)}</p>
           <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9px] font-medium ${s.bg} ${s.text}`}>
             <span className={`w-1 h-1 rounded-full ${s.dot}`} />
             {s.label}

@@ -7,7 +7,7 @@ import { getVertical, DEFAULT_VERTICAL } from '@/lib/verticals'
 // dueño. Orden de prioridad:
 //   1. organizations.primary_color (override custom del dueño)
 //   2. theme del vertical (beauty_salon, barbershop, nail_salon, spa)
-//   3. #C8A96E default (champagne gold)
+//   3. var(--dash-primary) default (champagne gold)
 
 function hexWithAlpha(hex, alpha) {
   if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) return null
@@ -51,6 +51,7 @@ export default function DashboardTheme({ children }) {
   const verticalKey = vertical || DEFAULT_VERTICAL
   const v = getVertical(verticalKey)
 
+  // Fallback hex explícito (NO var(--...) porque causa recursión self-reference)
   const primary = primaryColorOverride || v?.theme?.primary || '#C8A96E'
   const primaryDeep = darken(primary, 0.3)
   const primarySoft = lighten(primary, 0.35)

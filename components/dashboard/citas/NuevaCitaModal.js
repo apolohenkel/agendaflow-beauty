@@ -126,11 +126,11 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
       <div className="relative w-full sm:max-w-md bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-t-3xl sm:rounded-2xl shadow-2xl shadow-black/50 overflow-hidden max-h-[92vh] overflow-y-auto animate-modal-in pb-safe">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#1A1A1A]">
-          <h2 className="text-[#F0EBE3] text-lg font-light" style={{ fontFamily: 'var(--font-display)' }}>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--dash-border)]">
+          <h2 className="text-[var(--dash-text)] text-lg font-light" style={{ fontFamily: 'var(--font-display)' }}>
             Nueva cita
           </h2>
-          <button onClick={onClose} className="text-[#444] hover:text-[#888] transition-colors">
+          <button onClick={onClose} className="text-[var(--dash-text-dim)] hover:text-[var(--dash-text-muted)] transition-colors">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -139,59 +139,59 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
 
         {loadingData ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
+            <div className="w-5 h-5 border border-[var(--dash-primary)]/20 border-t-[var(--dash-primary)] rounded-full animate-spin" />
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
 
             {/* Cliente */}
             <div className="space-y-1">
-              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Cliente *</p>
+              <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Cliente *</p>
               <input
                 type="text"
                 placeholder="Nombre completo"
                 value={form.clientName}
                 onChange={(e) => set('clientName', e.target.value)}
-                className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+                className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors"
               />
               <input
                 type="text"
                 placeholder="Teléfono / WhatsApp *"
                 value={form.clientPhone}
                 onChange={(e) => set('clientPhone', e.target.value)}
-                className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+                className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors"
               />
             </div>
 
             {/* Servicio y Staff */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Servicio</p>
+                <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Servicio</p>
                 <select
                   value={form.serviceId}
                   onChange={(e) => set('serviceId', e.target.value)}
-                  className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors appearance-none"
-                  style={{ color: form.serviceId ? '#E8E3DC' : '#333' }}
+                  className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors appearance-none"
+                  style={{ color: form.serviceId ? 'var(--dash-text)' : 'var(--dash-border)' }}
                 >
                   <option value="">Sin asignar</option>
                   {services.map((s) => (
-                    <option key={s.id} value={s.id} style={{ color: '#E8E3DC', background: '#111' }}>
+                    <option key={s.id} value={s.id} style={{ color: 'var(--dash-text)', background: 'var(--dash-ink-sunken)' }}>
                       {s.name}{s.price != null ? ` — Q${Number(s.price).toFixed(0)}` : ''}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="space-y-1">
-                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Colaborador</p>
+                <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Colaborador</p>
                 <select
                   value={form.staffId}
                   onChange={(e) => set('staffId', e.target.value)}
-                  className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors appearance-none"
-                  style={{ color: form.staffId ? '#E8E3DC' : '#333' }}
+                  className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors appearance-none"
+                  style={{ color: form.staffId ? 'var(--dash-text)' : 'var(--dash-border)' }}
                 >
                   <option value="">Cualquiera</option>
                   {staff.map((m) => (
-                    <option key={m.id} value={m.id} style={{ color: '#E8E3DC', background: '#111' }}>
+                    <option key={m.id} value={m.id} style={{ color: 'var(--dash-text)', background: 'var(--dash-ink-sunken)' }}>
                       {m.name}{m.role ? ` (${m.role})` : ''}
                     </option>
                   ))}
@@ -201,11 +201,11 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
 
             {/* Duración calculada */}
             {selectedService && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-[#C8A96E]/5 border border-[#C8A96E]/15 rounded-xl">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" strokeWidth="1.5" strokeLinecap="round">
+              <div className="flex items-center gap-2 px-3 py-2 bg-[var(--dash-primary)]/5 border border-[var(--dash-primary)]/15 rounded-xl">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--dash-primary)" strokeWidth="1.5" strokeLinecap="round">
                   <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                 </svg>
-                <p className="text-[#C8A96E] text-xs">
+                <p className="text-[var(--dash-primary)] text-xs">
                   Duración: {duration < 60 ? `${duration} min` : `${Math.floor(duration / 60)}h${duration % 60 ? ` ${duration % 60}min` : ''}`}
                 </p>
               </div>
@@ -214,34 +214,34 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
             {/* Fecha y Hora */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Fecha *</p>
+                <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Fecha *</p>
                 <input
                   type="date"
                   value={form.date}
                   onChange={(e) => set('date', e.target.value)}
-                  className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+                  className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors"
                 />
               </div>
               <div className="space-y-1">
-                <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Hora *</p>
+                <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Hora *</p>
                 <input
                   type="time"
                   value={form.time}
                   onChange={(e) => set('time', e.target.value)}
-                  className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors"
+                  className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors"
                 />
               </div>
             </div>
 
             {/* Notas */}
             <div className="space-y-1">
-              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Notas</p>
+              <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Notas</p>
               <textarea
                 placeholder="Indicaciones especiales..."
                 value={form.notes}
                 onChange={(e) => set('notes', e.target.value)}
                 rows={2}
-                className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors resize-none"
+                className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors resize-none"
               />
             </div>
 
@@ -251,11 +251,11 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
 
             <div className="flex gap-3 pt-1">
               <button type="button" onClick={onClose}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-[#555] border border-[#1E1E1E] hover:border-[#333] hover:text-[#888] transition-all">
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-[var(--dash-text-dim)] border border-[var(--dash-border)] hover:border-[var(--dash-border)] hover:text-[var(--dash-text-muted)] transition-all">
                 Cancelar
               </button>
               <button type="submit" disabled={loading}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#C8A96E] hover:bg-[#D4B87A] text-[#080808] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[var(--dash-primary)] hover:bg-[var(--dash-primary-soft)] text-[var(--dash-ink)] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                 {loading ? 'Guardando...' : 'Crear cita'}
               </button>
             </div>

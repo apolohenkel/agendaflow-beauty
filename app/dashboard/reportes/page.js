@@ -54,18 +54,18 @@ function StatCard({ label, value, sub, gold, trend }) {
 }
 
 // ─── BARRA HORIZONTAL ─────────────────────────────────────────────────────────
-function BarRow({ label, value, max, sub, color = '#C8A96E' }) {
+function BarRow({ label, value, max, sub, color = 'var(--dash-primary)' }) {
   const w = max ? Math.round((value / max) * 100) : 0
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <p className="text-[#C8C3BC] text-sm truncate max-w-[60%]">{label}</p>
+        <p className="text-[var(--dash-text-soft)] text-sm truncate max-w-[60%]">{label}</p>
         <div className="flex items-center gap-2">
-          {sub && <p className="text-[#A0A0A0] text-xs">{sub}</p>}
-          <p className="text-[#E8E3DC] text-sm font-medium tabular-nums w-8 text-right">{value}</p>
+          {sub && <p className="text-[var(--dash-text-soft)] text-xs">{sub}</p>}
+          <p className="text-[var(--dash-text)] text-sm font-medium tabular-nums w-8 text-right">{value}</p>
         </div>
       </div>
-      <div className="h-1.5 bg-[#1A1A1A] rounded-full overflow-hidden">
+      <div className="h-1.5 bg-[var(--dash-border)] rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-700"
           style={{ width: `${w}%`, backgroundColor: color }}
@@ -88,13 +88,13 @@ function DailyBars({ data }) {
         return (
           <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
             {d.count > 0 && (
-              <p className="text-[#888] text-[9px] tabular-nums">{d.count}</p>
+              <p className="text-[var(--dash-text-muted)] text-[9px] tabular-nums">{d.count}</p>
             )}
             <div
-              className={`w-full rounded-t-sm transition-all duration-500 ${isToday ? 'bg-[#C8A96E]' : 'bg-[#1E1E1E]'}`}
+              className={`w-full rounded-t-sm transition-all duration-500 ${isToday ? 'bg-[var(--dash-primary)]' : 'bg-[var(--dash-border)]'}`}
               style={{ height: `${h}%`, minHeight: '3px' }}
             />
-            <p className={`text-[9px] ${isToday ? 'text-[#C8A96E]' : 'text-[#333]'}`}>{d.label}</p>
+            <p className={`text-[9px] ${isToday ? 'text-[var(--dash-primary)]' : 'text-[var(--dash-border)]'}`}>{d.label}</p>
           </div>
         )
       })}
@@ -210,7 +210,7 @@ export default function ReportesPage() {
         { label: 'Completadas', value: completed, color: '#38bdf8' },
         { label: 'No asistió',  value: noShows,   color: '#71717a' },
         { label: 'Canceladas',  value: cancelled,  color: '#f87171' },
-        { label: 'Pendientes / Confirmadas', value: total - completed - noShows - cancelled, color: '#C8A96E' },
+        { label: 'Pendientes / Confirmadas', value: total - completed - noShows - cancelled, color: 'var(--dash-primary)' },
       ].filter((s) => s.value > 0)
 
       setData({
@@ -318,23 +318,23 @@ export default function ReportesPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
 
             {/* Citas por día (últimos 14 días) */}
-            <div className="col-span-2 bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-6 space-y-4">
+            <div className="col-span-2 bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-[#D4CFC8] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
+                <h2 className="text-[var(--dash-text)] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
                   Citas por día
                 </h2>
-                <p className="text-[#666] text-xs">últimos 14 días</p>
+                <p className="text-[var(--dash-text-dim)] text-xs">últimos 14 días</p>
               </div>
               <DailyBars data={data.dailyData} />
             </div>
 
             {/* Distribución de estados */}
-            <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-6 space-y-4">
-              <h2 className="text-[#D4CFC8] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
+            <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl p-6 space-y-4">
+              <h2 className="text-[var(--dash-text)] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
                 Estado de citas
               </h2>
               {data.total === 0 ? (
-                <p className="text-[#333] text-sm text-center py-8">Sin datos</p>
+                <p className="text-[var(--dash-border)] text-sm text-center py-8">Sin datos</p>
               ) : (
                 <div className="space-y-4">
                   {data.statusDist.map((s) => (
@@ -353,12 +353,12 @@ export default function ReportesPage() {
           </div>
 
           {/* Servicios más solicitados */}
-          <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-6 space-y-4">
-            <h2 className="text-[#D4CFC8] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
+          <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl p-6 space-y-4">
+            <h2 className="text-[var(--dash-text)] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
               Servicios más solicitados
             </h2>
             {data.topServices.length === 0 ? (
-              <p className="text-[#333] text-sm text-center py-8">
+              <p className="text-[var(--dash-border)] text-sm text-center py-8">
                 Sin datos — las citas con servicio asignado aparecerán aquí
               </p>
             ) : (
@@ -376,21 +376,21 @@ export default function ReportesPage() {
           </div>
 
           {/* Resumen ejecutivo */}
-          <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-6">
-            <h2 className="text-[#D4CFC8] text-base font-light mb-4" style={{ fontFamily: 'var(--font-display)' }}>
+          <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl p-6">
+            <h2 className="text-[var(--dash-text)] text-base font-light mb-4" style={{ fontFamily: 'var(--font-display)' }}>
               Resumen del período
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[#161616] rounded-xl overflow-hidden">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--dash-border)] rounded-xl overflow-hidden">
               {[
                 { label: 'Completadas', value: data.completed, pct: pct(data.completed, data.total) },
                 { label: 'No asistió',  value: data.noShows,   pct: pct(data.noShows, data.total) },
                 { label: 'Canceladas',  value: data.cancelled, pct: pct(data.cancelled, data.total) },
                 { label: 'Otras',       value: data.total - data.completed - data.noShows - data.cancelled, pct: pct(data.total - data.completed - data.noShows - data.cancelled, data.total) },
               ].map((s) => (
-                <div key={s.label} className="bg-[#0D0D0D] px-6 py-5 text-center">
-                  <p className="text-[#E8E3DC] text-2xl font-light tabular-nums">{s.value}</p>
-                  <p className="text-[#777] text-xs mt-1">{s.label}</p>
-                  <p className="text-[#C8A96E] text-[10px] mt-1">{s.pct}%</p>
+                <div key={s.label} className="bg-[var(--dash-ink-raised)] px-6 py-5 text-center">
+                  <p className="text-[var(--dash-text)] text-2xl font-light tabular-nums">{s.value}</p>
+                  <p className="text-[var(--dash-text-muted)] text-xs mt-1">{s.label}</p>
+                  <p className="text-[var(--dash-primary)] text-[10px] mt-1">{s.pct}%</p>
                 </div>
               ))}
             </div>

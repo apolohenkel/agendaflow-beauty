@@ -101,24 +101,24 @@ export default function WhatsAppPage() {
         >
           Asistente WhatsApp
         </h1>
-        <p className="text-[#777] text-xs mt-1">Conecta tu número de WhatsApp Business para que el bot agende por ti.</p>
+        <p className="text-[var(--dash-text-muted)] text-xs mt-1">Conecta tu número de WhatsApp Business para que el bot agende por ti.</p>
       </div>
 
       {!canUseWhatsApp && (
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 flex items-center justify-between gap-4">
           <p className="text-amber-300 text-sm">El bot de WhatsApp está disponible en planes <strong>Pro</strong> y <strong>Business</strong>, o durante la prueba gratis.</p>
-          <Link href="/dashboard/billing" className="shrink-0 bg-amber-400 hover:bg-amber-300 text-[#080808] text-xs font-semibold px-3 py-1.5 rounded-lg transition-all">
+          <Link href="/dashboard/billing" className="shrink-0 bg-amber-400 hover:bg-amber-300 text-[var(--dash-ink)] text-xs font-semibold px-3 py-1.5 rounded-lg transition-all">
             Mejorar plan
           </Link>
         </div>
       )}
 
       {/* Status */}
-      <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-5">
+      <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`w-2 h-2 rounded-full ${account?.enabled ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'}`} />
-            <p className="text-[#E8E3DC] text-sm font-medium">
+            <p className="text-[var(--dash-text)] text-sm font-medium">
               {account?.enabled ? `Bot activo en ${account.display_phone || account.phone_number_id}` : 'Bot no configurado'}
             </p>
           </div>
@@ -131,18 +131,18 @@ export default function WhatsAppPage() {
       </div>
 
       {/* Wizard / Setup */}
-      <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-6 space-y-5">
+      <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl p-6 space-y-5">
         <div>
-          <h2 className="text-[#D4CFC8] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
+          <h2 className="text-[var(--dash-text)] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
             Configuración
           </h2>
-          <p className="text-[#A0A0A0] text-xs mt-1">Ingresa los datos de tu WhatsApp Business Cloud API (Meta).</p>
+          <p className="text-[var(--dash-text-soft)] text-xs mt-1">Ingresa los datos de tu WhatsApp Business Cloud API (Meta).</p>
         </div>
 
-        <details className="bg-[#111] border border-[#1A1A1A] rounded-xl p-4 group">
-          <summary className="cursor-pointer text-[#C8C3BC] text-sm font-medium">¿Cómo obtengo estos datos?</summary>
-          <ol className="text-[#888] text-xs mt-3 space-y-2 list-decimal pl-5">
-            <li>Crea una cuenta en <a className="text-[#C8A96E] hover:underline" href="https://business.facebook.com" target="_blank">Meta Business</a>.</li>
+        <details className="bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] rounded-xl p-4 group">
+          <summary className="cursor-pointer text-[var(--dash-text-soft)] text-sm font-medium">¿Cómo obtengo estos datos?</summary>
+          <ol className="text-[var(--dash-text-muted)] text-xs mt-3 space-y-2 list-decimal pl-5">
+            <li>Crea una cuenta en <a className="text-[var(--dash-primary)] hover:underline" href="https://business.facebook.com" target="_blank">Meta Business</a>.</li>
             <li>En "WhatsApp Business Platform" agrega un número de prueba (gratis) o tu número real.</li>
             <li>Copia el <strong>Phone Number ID</strong> y el <strong>Access Token</strong> permanente.</li>
             <li>Configura el webhook en Meta con la URL y el Verify Token de abajo.</li>
@@ -151,45 +151,45 @@ export default function WhatsAppPage() {
 
         <form onSubmit={handleSave} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-[#9A9A9A] text-[10px] uppercase tracking-widest block">Phone Number ID *</label>
+            <label className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest block">Phone Number ID *</label>
             <input
               type="text"
               value={form.phone_number_id}
               onChange={(e) => setForm((f) => ({ ...f, phone_number_id: e.target.value }))}
               placeholder="Ej: 1234567890"
-              className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50"
+              className="w-full bg-[var(--dash-ink-sunken)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm focus:outline-none focus:border-[var(--dash-primary)]/50"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-[#9A9A9A] text-[10px] uppercase tracking-widest block">Access Token (permanente) *</label>
+            <label className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest block">Access Token (permanente) *</label>
             <input
               type="text"
               value={form.access_token}
               onChange={(e) => setForm((f) => ({ ...f, access_token: e.target.value }))}
               placeholder="EAAG..."
-              className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm font-mono focus:outline-none focus:border-[#C8A96E]/50"
+              className="w-full bg-[var(--dash-ink-sunken)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm font-mono focus:outline-none focus:border-[var(--dash-primary)]/50"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-[#9A9A9A] text-[10px] uppercase tracking-widest block">Número visible (opcional)</label>
+            <label className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest block">Número visible (opcional)</label>
             <input
               type="text"
               value={form.display_phone}
               onChange={(e) => setForm((f) => ({ ...f, display_phone: e.target.value }))}
               placeholder="+52 55 1234 5678"
-              className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50"
+              className="w-full bg-[var(--dash-ink-sunken)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm focus:outline-none focus:border-[var(--dash-primary)]/50"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-[#9A9A9A] text-[10px] uppercase tracking-widest block">Verify Token (úsalo en Meta) *</label>
+            <label className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest block">Verify Token (úsalo en Meta) *</label>
             <input
               type="text"
               value={form.verify_token}
               onChange={(e) => setForm((f) => ({ ...f, verify_token: e.target.value }))}
-              className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm font-mono focus:outline-none focus:border-[#C8A96E]/50"
+              className="w-full bg-[var(--dash-ink-sunken)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm font-mono focus:outline-none focus:border-[var(--dash-primary)]/50"
             />
           </div>
 
@@ -200,7 +200,7 @@ export default function WhatsAppPage() {
           <button
             type="submit"
             disabled={saving}
-            className="bg-[#C8A96E] hover:bg-[#D4B87A] text-[#080808] text-sm font-semibold px-5 py-2.5 rounded-xl transition-all disabled:opacity-60"
+            className="bg-[var(--dash-primary)] hover:bg-[var(--dash-primary-soft)] text-[var(--dash-ink)] text-sm font-semibold px-5 py-2.5 rounded-xl transition-all disabled:opacity-60"
           >
             {saving ? 'Guardando…' : saved ? '✓ Guardado' : 'Conectar WhatsApp'}
           </button>
@@ -208,22 +208,22 @@ export default function WhatsAppPage() {
       </div>
 
       {/* Webhook info */}
-      <div className="bg-[#0D0D0D] border border-[#1A1A1A] rounded-2xl p-6 space-y-3">
-        <h2 className="text-[#D4CFC8] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
+      <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl p-6 space-y-3">
+        <h2 className="text-[var(--dash-text)] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
           Datos para configurar en Meta
         </h2>
         <div className="space-y-2">
           <div>
-            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest mb-1">Webhook URL</p>
-            <code className="block bg-[#111] border border-[#1E1E1E] rounded-xl px-3 py-2 text-[#C8C3BC] text-xs font-mono break-all">{webhookUrl}</code>
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest mb-1">Webhook URL</p>
+            <code className="block bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] rounded-xl px-3 py-2 text-[var(--dash-text-soft)] text-xs font-mono break-all">{webhookUrl}</code>
           </div>
           <div>
-            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest mb-1">Verify Token</p>
-            <code className="block bg-[#111] border border-[#1E1E1E] rounded-xl px-3 py-2 text-[#C8C3BC] text-xs font-mono break-all">{form.verify_token || '(genera uno arriba)'}</code>
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest mb-1">Verify Token</p>
+            <code className="block bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] rounded-xl px-3 py-2 text-[var(--dash-text-soft)] text-xs font-mono break-all">{form.verify_token || '(genera uno arriba)'}</code>
           </div>
           <div>
-            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest mb-1">Eventos a suscribir</p>
-            <code className="block bg-[#111] border border-[#1E1E1E] rounded-xl px-3 py-2 text-[#C8C3BC] text-xs font-mono">messages</code>
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest mb-1">Eventos a suscribir</p>
+            <code className="block bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] rounded-xl px-3 py-2 text-[var(--dash-text-soft)] text-xs font-mono">messages</code>
           </div>
         </div>
       </div>

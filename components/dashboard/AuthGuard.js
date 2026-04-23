@@ -32,8 +32,8 @@ export default function AuthGuard({ children }) {
 
   if (!ready) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#080808]">
-        <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
+      <div className="flex-1 flex items-center justify-center bg-[var(--dash-ink)]">
+        <div className="w-5 h-5 border border-[var(--dash-primary)]/20 border-t-[var(--dash-primary)] rounded-full animate-spin" />
       </div>
     )
   }

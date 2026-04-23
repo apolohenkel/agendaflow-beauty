@@ -28,7 +28,7 @@ export default function TrialBanner() {
         </p>
         <Link
           href="/dashboard/billing"
-          className="shrink-0 bg-red-400 hover:bg-red-300 text-[#080808] text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+          className="shrink-0 bg-red-400 hover:bg-red-300 text-[var(--dash-ink)] text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
         >
           Ver planes
         </Link>
@@ -38,13 +38,13 @@ export default function TrialBanner() {
 
   if (days <= 7) {
     return (
-      <div className="bg-[#C8A96E]/10 border-b border-[#C8A96E]/20 px-6 py-3 flex items-center justify-between gap-4">
-        <p className="text-[#C8A96E] text-sm">
+      <div className="bg-[var(--dash-primary)]/10 border-b border-[var(--dash-primary)]/20 px-6 py-3 flex items-center justify-between gap-4">
+        <p className="text-[var(--dash-primary)] text-sm">
           <strong>Tu prueba gratis termina en {days} {days === 1 ? 'día' : 'días'}.</strong> Suscríbete para no perder acceso.
         </p>
         <Link
           href="/dashboard/billing"
-          className="shrink-0 bg-[#C8A96E] hover:bg-[#D4B87A] text-[#080808] text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+          className="shrink-0 bg-[var(--dash-primary)] hover:bg-[var(--dash-primary-soft)] text-[var(--dash-ink)] text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
         >
           Ver planes
         </Link>

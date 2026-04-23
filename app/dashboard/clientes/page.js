@@ -18,10 +18,10 @@ function fmtTime(iso) {
 
 function FilterChip({ active, onClick, tone, children }) {
   const palette = active
-    ? { bg: '#C8A96E', color: '#080808', border: '#C8A96E' }
+    ? { bg: 'var(--dash-primary)', color: 'var(--dash-ink)', border: 'var(--dash-primary)' }
     : tone === 'warn'
       ? { bg: 'transparent', color: '#E89B7A', border: '#3A2A22' }
-      : { bg: 'transparent', color: '#A0A0A0', border: '#1E1E1E' }
+      : { bg: 'transparent', color: 'var(--dash-text-soft)', border: 'var(--dash-border)' }
   return (
     <button
       onClick={onClick}
@@ -85,12 +85,12 @@ function ClienteModal({ cliente, onClose, onSaved }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-sm bg-[#111] border border-[#222] rounded-2xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#1A1A1A]">
-          <h2 className="text-[#F0EBE3] text-lg font-light" style={{ fontFamily: 'var(--font-display)' }}>
+      <div className="relative w-full max-w-sm bg-[var(--dash-ink-sunken)] border border-[#222] rounded-2xl shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--dash-border)]">
+          <h2 className="text-[var(--dash-text)] text-lg font-light" style={{ fontFamily: 'var(--font-display)' }}>
             Editar cliente
           </h2>
-          <button onClick={onClose} className="text-[#444] hover:text-[#888] transition-colors">
+          <button onClick={onClose} className="text-[var(--dash-text-dim)] hover:text-[var(--dash-text-muted)] transition-colors">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -98,36 +98,36 @@ function ClienteModal({ cliente, onClose, onSaved }) {
         </div>
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           <div className="space-y-1">
-            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Nombre *</p>
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Nombre *</p>
             <input type="text" value={form.name} onChange={(e) => set('name', e.target.value)}
-              className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
+              className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors" />
           </div>
           <div className="space-y-1">
-            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Teléfono / WhatsApp</p>
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Teléfono / WhatsApp</p>
             <input type="text" value={form.phone} onChange={(e) => set('phone', e.target.value)}
-              className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
+              className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Correo</p>
+              <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Correo</p>
               <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)}
                 placeholder="cliente@correo.com"
-                className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
+                className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors" />
             </div>
             <div className="space-y-1">
-              <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Cumpleaños</p>
+              <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Cumpleaños</p>
               <input type="date" value={form.birthday} onChange={(e) => set('birthday', e.target.value)}
-                className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
+                className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors" />
             </div>
           </div>
           <div className="space-y-2">
-            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Etiquetas <span className="normal-case text-[#555]">(hasta 6)</span></p>
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Etiquetas <span className="normal-case text-[var(--dash-text-dim)]">(hasta 6)</span></p>
             {tags.length > 0 && (
               <div className="flex gap-1.5 flex-wrap">
                 {tags.map((t) => (
-                  <span key={t} className="inline-flex items-center gap-1 text-xs bg-[#C8A96E]/10 text-[#C8A96E] border border-[#C8A96E]/30 px-2.5 py-1 rounded-full">
+                  <span key={t} className="inline-flex items-center gap-1 text-xs bg-[var(--dash-primary)]/10 text-[var(--dash-primary)] border border-[var(--dash-primary)]/30 px-2.5 py-1 rounded-full">
                     {t}
-                    <button type="button" onClick={() => removeTag(t)} className="text-[#C8A96E]/60 hover:text-[#C8A96E]" aria-label="Quitar">×</button>
+                    <button type="button" onClick={() => removeTag(t)} className="text-[var(--dash-primary)]/60 hover:text-[var(--dash-primary)]" aria-label="Quitar">×</button>
                   </span>
                 ))}
               </div>
@@ -136,27 +136,27 @@ function ClienteModal({ cliente, onClose, onSaved }) {
               <input type="text" value={tagInput} onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
                 placeholder="VIP, Primeriza, Alergia al amoniaco…"
-                className="flex-1 bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors" />
+                className="flex-1 bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors" />
               <button type="button" onClick={addTag}
-                className="px-4 py-2 rounded-xl text-xs font-medium bg-[#1A1A1A] border border-[#2A2A2A] text-[#C8C3BC] hover:border-[#3A3A3A] transition-all">
+                className="px-4 py-2 rounded-xl text-xs font-medium bg-[var(--dash-border)] border border-[var(--dash-border)] text-[var(--dash-text-soft)] hover:border-[#3A3A3A] transition-all">
                 Agregar
               </button>
             </div>
           </div>
           <div className="space-y-1">
-            <p className="text-[#9A9A9A] text-[10px] uppercase tracking-widest">Notas internas</p>
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Notas internas</p>
             <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={2}
               placeholder="Preferencias, alergias, etc."
-              className="w-full bg-[#0D0D0D] border border-[#222] rounded-xl px-4 py-2.5 text-[#E8E3DC] text-sm placeholder-[#333] focus:outline-none focus:border-[#C8A96E]/50 transition-colors resize-none" />
+              className="w-full bg-[var(--dash-ink-raised)] border border-[#222] rounded-xl px-4 py-2.5 text-[var(--dash-text)] text-sm placeholder-[var(--dash-border)] focus:outline-none focus:border-[var(--dash-primary)]/50 transition-colors resize-none" />
           </div>
           {error && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 px-4 py-2.5 rounded-xl">{error}</p>}
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-xl text-sm text-[#555] border border-[#1E1E1E] hover:border-[#333] transition-all">
+              className="flex-1 px-4 py-2.5 rounded-xl text-sm text-[var(--dash-text-dim)] border border-[var(--dash-border)] hover:border-[var(--dash-border)] transition-all">
               Cancelar
             </button>
             <button type="submit" disabled={loading}
-              className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#C8A96E] hover:bg-[#D4B87A] text-[#080808] transition-all disabled:opacity-50">
+              className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[var(--dash-primary)] hover:bg-[var(--dash-primary-soft)] text-[var(--dash-ink)] transition-all disabled:opacity-50">
               {loading ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
@@ -317,22 +317,22 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
 
         {/* CRM stats: última visita + frecuencia */}
         {(daysAgo !== null || avgFrequencyDays) && (
-          <div className="px-6 py-3 border-b border-[#161616] space-y-1">
+          <div className="px-6 py-3 border-b border-[var(--dash-border)] space-y-1">
             {daysAgo !== null && (
-              <p className="text-xs" style={{ color: inactive ? '#E89B7A' : '#9A9A9A' }}>
-                <span className="text-[#777]">Última visita:</span> hace {daysAgo} {daysAgo === 1 ? 'día' : 'días'}
+              <p className="text-xs" style={{ color: inactive ? '#E89B7A' : 'var(--dash-text-muted)' }}>
+                <span className="text-[var(--dash-text-muted)]">Última visita:</span> hace {daysAgo} {daysAgo === 1 ? 'día' : 'días'}
                 {inactive && <span className="ml-1 text-[#E89B7A]">· suele venir cada {avgFrequencyDays}d</span>}
               </p>
             )}
             {!inactive && avgFrequencyDays && (
-              <p className="text-xs text-[#9A9A9A]">
-                <span className="text-[#777]">Viene cada:</span> ~{avgFrequencyDays} días
+              <p className="text-xs text-[var(--dash-text-muted)]">
+                <span className="text-[var(--dash-text-muted)]">Viene cada:</span> ~{avgFrequencyDays} días
               </p>
             )}
             {cliente.birthday && (
-              <p className="text-xs text-[#9A9A9A]">
-                <span className="text-[#777]">Cumpleaños:</span> {new Date(cliente.birthday).toLocaleDateString('es-GT', { day: 'numeric', month: 'long' })}
-                {birthdayToday && <span className="ml-1 text-[#C8A96E]">🎂 hoy</span>}
+              <p className="text-xs text-[var(--dash-text-muted)]">
+                <span className="text-[var(--dash-text-muted)]">Cumpleaños:</span> {new Date(cliente.birthday).toLocaleDateString('es-GT', { day: 'numeric', month: 'long' })}
+                {birthdayToday && <span className="ml-1 text-[var(--dash-primary)]">🎂 hoy</span>}
               </p>
             )}
           </div>
@@ -399,40 +399,40 @@ function ClienteDrawer({ cliente, onClose, onEdit }) {
 
         {/* Notas */}
         {cliente.notes && (
-          <div className="px-6 py-4 border-b border-[#161616]">
-            <p className="text-[#888] text-[10px] uppercase tracking-widest mb-1">Notas</p>
-            <p className="text-[#C8C3BC] text-xs leading-relaxed">{cliente.notes}</p>
+          <div className="px-6 py-4 border-b border-[var(--dash-border)]">
+            <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest mb-1">Notas</p>
+            <p className="text-[var(--dash-text-soft)] text-xs leading-relaxed">{cliente.notes}</p>
           </div>
         )}
 
         {/* Historial de citas */}
         <div className="flex-1 overflow-y-auto">
-          <p className="text-[#888] text-[10px] uppercase tracking-widest px-6 py-4">Historial de citas</p>
+          <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest px-6 py-4">Historial de citas</p>
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-4 h-4 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
+              <div className="w-4 h-4 border border-[var(--dash-primary)]/20 border-t-[var(--dash-primary)] rounded-full animate-spin" />
             </div>
           ) : appts.length === 0 ? (
-            <p className="text-[#333] text-sm text-center py-12">Sin citas registradas</p>
+            <p className="text-[var(--dash-border)] text-sm text-center py-12">Sin citas registradas</p>
           ) : (
-            <div className="divide-y divide-[#111]">
+            <div className="divide-y divide-[var(--dash-ink-sunken)]">
               {appts.map((a) => {
                 const st = STATUS_MAP[a.status] || STATUS_MAP.pending
                 return (
-                  <div key={a.id} className="px-6 py-4 hover:bg-[#111] transition-colors">
+                  <div key={a.id} className="px-6 py-4 hover:bg-[var(--dash-ink-sunken)] transition-colors">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-[#C8C3BC] text-xs font-medium">{fmtDate(a.starts_at)} · {fmtTime(a.starts_at)}</p>
-                        <p className="text-[#E8E3DC] text-sm mt-0.5 truncate">{a.services?.name || 'Servicio'}</p>
-                        {a.staff?.name && <p className="text-[#888] text-xs mt-0.5">{a.staff.name}</p>}
+                        <p className="text-[var(--dash-text-soft)] text-xs font-medium">{fmtDate(a.starts_at)} · {fmtTime(a.starts_at)}</p>
+                        <p className="text-[var(--dash-text)] text-sm mt-0.5 truncate">{a.services?.name || 'Servicio'}</p>
+                        {a.staff?.name && <p className="text-[var(--dash-text-muted)] text-xs mt-0.5">{a.staff.name}</p>}
                       </div>
                       <div className="text-right shrink-0">
                         {a.services?.price != null && (
-                          <p className="text-[#C8A96E] text-sm tabular-nums">Q{Number(a.services.price).toFixed(2)}</p>
+                          <p className="text-[var(--dash-primary)] text-sm tabular-nums">Q{Number(a.services.price).toFixed(2)}</p>
                         )}
                         <div className="flex items-center gap-1 mt-1 justify-end">
                           <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-                          <span className="text-[#9A9A9A] text-[10px]">{st.label}</span>
+                          <span className="text-[var(--dash-text-muted)] text-[10px]">{st.label}</span>
                         </div>
                       </div>
                     </div>
@@ -550,16 +550,16 @@ export default function ClientesPage() {
       {!loading && (clients.length > 0) && (
         <div className="flex gap-2 flex-wrap">
           <FilterChip active={activeFilter === 'all'} onClick={() => setActiveFilter('all')}>
-            Todas <span className="text-[#666]">· {clients.length}</span>
+            Todas <span className="text-[var(--dash-text-dim)]">· {clients.length}</span>
           </FilterChip>
           {birthdayCount > 0 && (
             <FilterChip active={activeFilter === 'birthday'} onClick={() => setActiveFilter('birthday')}>
-              🎂 Cumpleañeras <span className="text-[#666]">· {birthdayCount}</span>
+              🎂 Cumpleañeras <span className="text-[var(--dash-text-dim)]">· {birthdayCount}</span>
             </FilterChip>
           )}
           {inactiveCount > 0 && (
             <FilterChip active={activeFilter === 'inactive'} onClick={() => setActiveFilter('inactive')} tone="warn">
-              Inactivas {INACTIVITY_DAYS}+ d <span className="text-[#666]">· {inactiveCount}</span>
+              Inactivas {INACTIVITY_DAYS}+ d <span className="text-[var(--dash-text-dim)]">· {inactiveCount}</span>
             </FilterChip>
           )}
           {allTags.map((t) => (
@@ -573,7 +573,7 @@ export default function ClientesPage() {
       {/* Lista */}
       {loading ? (
         <div className="flex items-center justify-center py-32">
-          <div className="w-5 h-5 border border-[#C8A96E]/20 border-t-[#C8A96E] rounded-full animate-spin" />
+          <div className="w-5 h-5 border border-[var(--dash-primary)]/20 border-t-[var(--dash-primary)] rounded-full animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl flex flex-col items-center justify-center py-24 gap-4">
@@ -661,7 +661,7 @@ export default function ClientesPage() {
                       Saludar
                     </a>
                   ) : (
-                    <svg className="text-[#555] group-hover:text-[#444] transition-colors shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <svg className="text-[var(--dash-text-dim)] group-hover:text-[var(--dash-text-dim)] transition-colors shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
                   )}
