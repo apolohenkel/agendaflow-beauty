@@ -1256,11 +1256,29 @@ export default function BookPage({ params }) {
       </div>
 
       <div
-        className="text-center py-8"
+        className="text-center py-8 space-y-2"
         style={{ backgroundColor: theme.surface, borderTop: `1px solid ${theme.border}` }}
       >
-        <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.textMuted }}>
+        <a
+          href={`https://agendaes.com/?ref=b-${slug}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[10px] tracking-widest uppercase inline-block transition-opacity hover:opacity-80"
+          style={{ color: theme.textMuted }}
+        >
           Reservas con <span className="font-medium" style={{ color: theme.textSoft }}>AgendaFlow Beauty</span>
+        </a>
+        <p className="text-[10px]" style={{ color: theme.textMuted }}>
+          ¿Tienes un salón, barbería o spa?{' '}
+          <a
+            href={`https://agendaes.com/signup?ref=b-${slug}&v=${org?.vertical || 'beauty_salon'}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+            style={{ color: theme.primary }}
+          >
+            Crea tu link de reservas gratis
+          </a>
         </p>
       </div>
 
