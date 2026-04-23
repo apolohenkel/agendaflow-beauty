@@ -1,10 +1,11 @@
 import crypto from 'crypto'
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '../../../../lib/supabase/admin'
-import { sendText } from '../../../../lib/whatsapp/send'
+import { sendText, markAsRead } from '../../../../lib/whatsapp/send'
 import { runAgent } from '../../../../lib/whatsapp/agent'
 import { rateLimit } from '../../../../lib/rate-limit'
 import { logger } from '../../../../lib/logger'
+import { normalizePhone } from '../../../../lib/phone'
 
 function verifyMetaSignature(rawBody, signatureHeader) {
   const secret = process.env.WHATSAPP_APP_SECRET
@@ -67,9 +68,6 @@ export async function POST(request) {
     if (!phoneNumberId || !message) {
       return NextResponse.json({ ok: true, ignored: true })
     }
-    if (message.type !== 'text') {
-      return NextResponse.json({ ok: true, ignored: 'non-text' })
-    }
 
     const { data: account } = await admin
       .from('whatsapp_accounts')
@@ -80,9 +78,51 @@ export async function POST(request) {
       return NextResponse.json({ ok: true, ignored: 'no-account' })
     }
 
+    // Mensajes non-text: respondemos con un mensaje amigable explicando que
+    // aún no procesamos imágenes/audio/stickers. No procesamos la conversación
+    // pero sí dejamos un registro (sin agente).
+    if (message.type !== 'text') {
+      const fromNormalized = normalizePhone(message.from) || `+${message.from}`
+      const friendly = {
+        image: 'Gracias por la foto 🌷 Por ahora sólo puedo ayudarte por mensaje de texto. ¿Me cuentas qué necesitas?',
+        audio: 'Recibí tu audio 🎧 Por ahora sólo entiendo texto. ¿Me escribes qué necesitas y te ayudo al momento?',
+        video: 'Recibí tu video. Por ahora sólo puedo ayudarte por texto, ¿me cuentas qué necesitas?',
+        sticker: 'Jaja gracias 😊 ¿En qué te puedo ayudar? Escríbeme qué necesitas y lo coordinamos.',
+        location: 'Recibí tu ubicación 📍 Déjame saber con texto qué necesitas y te ayudo.',
+        document: 'Recibí el archivo. Por favor escríbeme qué necesitas y lo resolvemos por aquí.',
+      }[message.type] || 'Gracias por escribir. Por ahora sólo puedo ayudarte por mensaje de texto. ¿Me cuentas qué necesitas?'
+      try {
+        await sendText({
+          phoneNumberId,
+          accessToken: account.access_token,
+          to: fromNormalized,
+          body: friendly,
+        })
+      } catch (err) {
+        logger.warn('wa_webhook', 'non_text_reply_failed', { err: err?.message, type: message.type })
+      }
+      return NextResponse.json({ ok: true, handled: 'non-text' })
+    }
+
     const orgId = account.org_id
-    const customerPhone = message.from
+    // Meta manda el número sin '+'. Normalizamos a E.164 con '+' para ser
+    // consistentes con cómo los dueños guardan los teléfonos en el CRM.
+    const customerPhone = normalizePhone(message.from) || `+${message.from}`
     const incomingText = message.text.body
+
+    // Idempotencia: Meta reintenta el webhook si tardamos > unos segundos en
+    // responder 200. Si el mismo wa_message_id ya fue procesado, salimos
+    // para no duplicar la respuesta al cliente.
+    if (message.id) {
+      const { data: dup } = await admin
+        .from('whatsapp_messages')
+        .select('id')
+        .contains('meta', { wa_message_id: message.id })
+        .limit(1)
+      if (dup && dup.length > 0) {
+        return NextResponse.json({ ok: true, ignored: 'duplicate_wa_message_id' })
+      }
+    }
 
     const rl = await rateLimit(`wa:${orgId}:${customerPhone}`, 30, 60)
     if (!rl.allowed) {
@@ -115,6 +155,15 @@ export async function POST(request) {
       meta: { wa_message_id: message.id },
     })
 
+    // Palomita azul inmediata (fire-and-forget) — mejora percepción del bot.
+    if (message.id) {
+      markAsRead({
+        phoneNumberId,
+        accessToken: account.access_token,
+        messageId: message.id,
+      }).catch(() => {})
+    }
+
     // Cargar últimos 12 turnos para contexto
     const { data: history } = await admin
       .from('whatsapp_messages')
@@ -137,17 +186,35 @@ export async function POST(request) {
     })
 
     // Enviar respuesta
-    await sendText({
-      phoneNumberId,
-      accessToken: account.access_token,
-      to: customerPhone,
-      body: reply,
-    })
+    try {
+      await sendText({
+        phoneNumberId,
+        accessToken: account.access_token,
+        to: customerPhone,
+        body: reply,
+      })
+    } catch (err) {
+      logger.error('wa_webhook', 'send_failed', {
+        err: err?.message,
+        orgId,
+        wa_message_id: message.id,
+        conv_id: conv.id,
+      })
+      // Aún devolvemos 200 para que Meta no reintente — el log captura el fallo.
+      return NextResponse.json({ ok: true, send_failed: true })
+    }
 
     await admin.from('whatsapp_messages').insert({
       conversation_id: conv.id,
       direction: 'out',
       body: reply,
+    })
+
+    logger.info('wa_webhook', 'reply_sent', {
+      orgId,
+      wa_message_id: message.id,
+      conv_id: conv.id,
+      reply_len: reply.length,
     })
 
     return NextResponse.json({ ok: true })
