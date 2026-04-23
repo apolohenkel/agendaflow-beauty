@@ -15,7 +15,10 @@ function fmtDate(d) {
   return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
-function generateSlots(openingHours, date, duration) {
+// Genera slots de 30 min. Cada slot incluye flag `taken` si colisiona con
+// una cita existente (busyList) o si ya pasó (si date es hoy).
+// busyList: [{ start: ms, end: ms }] — rangos en milisegundos UTC.
+function generateSlots(openingHours, date, duration, busyList = []) {
   const day = date.getDay()
   const horario = openingHours?.[day]
   if (!horario) return []
@@ -24,10 +27,30 @@ function generateSlots(openingHours, date, duration) {
   const slots = []
   let cur = startH * 60 + startM
   const end = endH * 60 + endM
+
+  const today = new Date()
+  const isToday =
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
+  const nowMin = today.getHours() * 60 + today.getMinutes()
+
   while (cur + duration <= end) {
     const h = Math.floor(cur / 60).toString().padStart(2, '0')
     const m = (cur % 60).toString().padStart(2, '0')
-    slots.push(`${h}:${m}`)
+    const label = `${h}:${m}`
+
+    // Calcular el timestamp del slot para comparar con busyList
+    const slotStart = new Date(date)
+    slotStart.setHours(Math.floor(cur / 60), cur % 60, 0, 0)
+    const slotEnd = new Date(slotStart.getTime() + duration * 60000)
+
+    const collides = busyList.some(
+      (b) => slotStart.getTime() < b.end && slotEnd.getTime() > b.start
+    )
+    const past = isToday && cur < nowMin
+
+    slots.push({ label, taken: collides || past, reason: past ? 'past' : collides ? 'busy' : null })
     cur += 30
   }
   return slots
@@ -89,10 +112,31 @@ export default function BookPage({ params }) {
 
   const [step, setStep] = useState(0)
   const [selected, setSelected] = useState({ services: [], staffId: '', date: null, time: '' })
+  const [busySlots, setBusySlots] = useState([]) // [{starts_at, ends_at}] para el día seleccionado
 
   const totalDuration = selected.services.reduce((sum, s) => sum + (s?.duration_minutes || 0), 0)
   const totalPrice = selected.services.reduce((sum, s) => (s?.price != null ? sum + Number(s.price) : sum), 0)
   const hasPrice = selected.services.some((s) => s?.price != null)
+
+  // Carga los slots ocupados cada vez que cambia fecha o staff
+  useEffect(() => {
+    if (!selected.date) { setBusySlots([]); return }
+    const dateStr = selected.date.toISOString().slice(0, 10)
+    let cancelled = false
+    supabase.rpc('get_busy_slots', {
+      p_slug: slug,
+      p_date: dateStr,
+      p_staff_id: selected.staffId || null,
+    }).then(({ data, error }) => {
+      if (cancelled) return
+      if (error || !data) { setBusySlots([]); return }
+      setBusySlots(data.map((r) => ({
+        start: new Date(r.starts_at).getTime(),
+        end:   new Date(r.ends_at).getTime(),
+      })))
+    })
+    return () => { cancelled = true }
+  }, [slug, selected.date, selected.staffId, supabase])
 
   function toggleService(svc) {
     setSelected((s) => {
@@ -198,7 +242,7 @@ export default function BookPage({ params }) {
   })()
 
   const slots = selected.date && totalDuration > 0
-    ? generateSlots(business?.opening_hours, selected.date, totalDuration)
+    ? generateSlots(business?.opening_hours, selected.date, totalDuration, busySlots)
     : []
 
   async function handleSubmit() {
@@ -937,27 +981,45 @@ export default function BookPage({ params }) {
                 {slots.length === 0 ? (
                   <p className="text-sm py-4 text-center" style={{ color: 'var(--text-muted)' }}>No hay horarios disponibles este día</p>
                 ) : (
-                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-                    {slots.map((slot) => {
-                      const isActive = selected.time === slot
-                      return (
-                        <button
-                          key={slot}
-                          onClick={() => setSelected((s) => ({ ...s, time: slot }))}
-                          className="py-2.5 rounded-xl text-sm font-medium tabular-nums transition-all hover:shadow-sm"
-                          style={{
-                            backgroundColor: isActive ? `${theme.primary}0D` : theme.surface,
-                            color: isActive ? theme.primary : theme.text,
-                            borderWidth: 1,
-                            borderStyle: 'solid',
-                            borderColor: isActive ? theme.primary : theme.border,
-                          }}
-                        >
-                          {slot}
-                        </button>
-                      )
-                    })}
-                  </div>
+                  <>
+                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                      {slots.map((slot) => {
+                        const isActive = selected.time === slot.label
+                        const taken = slot.taken
+                        return (
+                          <button
+                            key={slot.label}
+                            onClick={() => !taken && setSelected((s) => ({ ...s, time: slot.label }))}
+                            disabled={taken}
+                            aria-label={taken ? `${slot.label} no disponible` : slot.label}
+                            className={`relative py-2.5 rounded-xl text-sm font-medium tabular-nums transition-all ${taken ? 'cursor-not-allowed' : 'hover:shadow-sm'}`}
+                            style={{
+                              backgroundColor: taken
+                                ? theme.borderSoft
+                                : isActive ? `${theme.primary}0D` : theme.surface,
+                              color: taken
+                                ? theme.textMuted
+                                : isActive ? theme.primary : theme.text,
+                              borderWidth: 1,
+                              borderStyle: 'solid',
+                              borderColor: taken
+                                ? theme.border
+                                : isActive ? theme.primary : theme.border,
+                              opacity: taken ? 0.45 : 1,
+                              textDecoration: taken ? 'line-through' : 'none',
+                            }}
+                          >
+                            {slot.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {slots.some((s) => s.taken) && (
+                      <p className="text-[11px] mt-2" style={{ color: 'var(--text-muted)' }}>
+                        Los horarios en gris ya están reservados.
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             )}
