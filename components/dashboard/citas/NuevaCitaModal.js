@@ -165,7 +165,7 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
             </div>
 
             {/* Servicio y Staff */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Servicio</p>
                 <select
@@ -213,7 +213,7 @@ export default function NuevaCitaModal({ onClose, onCreated }) {
             )}
 
             {/* Fecha y Hora */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Fecha *</p>
                 <input

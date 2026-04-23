@@ -152,7 +152,7 @@ function ServicioModal({ servicio, businessId, depositCurrency, depositEnabled, 
           </div>
 
           {/* Precio y seña */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-widest">Precio</p>
               <input

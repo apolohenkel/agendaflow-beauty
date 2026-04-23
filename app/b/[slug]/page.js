@@ -577,7 +577,7 @@ export default function BookPage({ params }) {
                   {selected.services.map((s) => (
                     <li key={s.id} className="text-sm font-medium flex items-center justify-between" style={{ color: theme.text }}>
                       <span>{s.name}</span>
-                      {s.price != null && <span className="tabular-nums" style={{ color: theme.primary }}>{formatServicePrice(s.price, business?.currency)}</span>}
+                      {s.price != null && <span className="tabular-nums" style={{ color: theme.text }}>{formatServicePrice(s.price, business?.currency)}</span>}
                     </li>
                   ))}
                 </ul>
@@ -879,7 +879,7 @@ export default function BookPage({ params }) {
                               <span
                                 key={t}
                                 className="text-[10px] px-2 py-0.5 rounded-full"
-                                style={{ color: theme.primary, backgroundColor: `${theme.primary}14`, borderWidth: 1, borderStyle: 'solid', borderColor: `${theme.primary}33` }}
+                                style={{ color: theme.text, backgroundColor: `${theme.primary}14`, borderWidth: 1, borderStyle: 'solid', borderColor: `${theme.primary}33` }}
                               >
                                 {t}
                               </span>
@@ -1443,7 +1443,7 @@ export default function BookPage({ params }) {
                       <button
                         onClick={() => repeatBooking(a)}
                         className="w-full py-2 rounded-full text-xs font-medium transition-all hover:brightness-95"
-                        style={{ backgroundColor: theme.surface, color: theme.primary, borderWidth: 1, borderStyle: 'solid', borderColor: `${theme.primary}66` }}
+                        style={{ backgroundColor: theme.surface, color: theme.text, borderWidth: 1, borderStyle: 'solid', borderColor: `${theme.primary}66` }}
                       >
                         Reservar otra vez
                       </button>

@@ -203,7 +203,7 @@ function PromocionModal({ regla, services, businessId, currency = 'gtq', onClose
           {/* Tipo de recompensa */}
           <div className="space-y-2">
             <p className="eyebrow">Recompensa *</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {REWARD_TYPES.map((rt) => {
                 const selected = form.reward_type === rt.value
                 return (

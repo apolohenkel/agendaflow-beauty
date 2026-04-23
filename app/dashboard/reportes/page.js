@@ -279,7 +279,7 @@ export default function ReportesPage() {
       ) : (
         <>
           {/* Stats principales */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             <StatCard
               label="Citas totales"
               value={data.total}
@@ -322,7 +322,7 @@ export default function ReportesPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
 
             {/* Citas por día (últimos 14 días) */}
-            <div className="col-span-2 bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl p-6 space-y-4">
+            <div className="md:col-span-2 bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl p-4 sm:p-6 space-y-4 overflow-x-auto">
               <div className="flex items-center justify-between">
                 <h2 className="text-[var(--dash-text)] text-base font-light" style={{ fontFamily: 'var(--font-display)' }}>
                   Citas por día

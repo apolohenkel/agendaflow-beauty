@@ -261,7 +261,7 @@ export default function BillingPage() {
             return (
               <div
                 key={key}
-                className={`relative bg-[var(--dash-ink-raised)] border rounded-2xl p-6 flex flex-col gap-4 ${
+                className={`relative bg-[var(--dash-ink-raised)] border rounded-2xl p-4 sm:p-6 flex flex-col gap-4 ${
                   highlighted ? 'border-[var(--dash-primary)]/40' : 'border-[var(--dash-border)]'
                 }`}
               >
