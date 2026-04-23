@@ -1,18 +1,19 @@
-import { Inter, Fraunces } from 'next/font/google'
+import { Onest, Fraunces } from 'next/font/google'
 import './globals.css'
 
-const inter = Inter({
+// Onest es la tipografía oficial del brand AgendaFlow para UI, wordmark y copy.
+const onest = Onest({
   subsets: ['latin'],
   variable: '--font-body',
   weight: ['300', '400', '500', '600', '700'],
   display: 'swap',
 })
 
+// Fraunces para display/headlines (italics y opsz grandes).
 const fraunces = Fraunces({
   subsets: ['latin'],
   variable: '--font-display',
   weight: ['300', '400', '500', '600', '700'],
-  // Fraunces es variable: opsz (óptica) 9-144, soft 0-100. Usamos defaults.
   display: 'swap',
 })
 
@@ -76,9 +77,12 @@ export const metadata = {
     // Imagen generada dinámicamente por app/twitter-image.js (usa el mismo OG)
   },
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-    apple: '/favicon.ico',
+    icon: [
+      { url: '/brand/agendaflow-favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/brand/agendaflow-favicon.svg',
+    apple: '/brand/agendaflow-app-icon-1024.svg',
   },
   verification: {
     // Rellenar cuando el dueño cree las propiedades en Search Console / Bing.
@@ -93,7 +97,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: 'cover',
-  themeColor: '#0B0A08',
+  themeColor: '#17384A',
 }
 
 // Workaround Vercel CLI 51 + Next.js 16: el adapter no encuentra lambdas
@@ -104,7 +108,7 @@ export const dynamic = 'force-dynamic'
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es" className={`${inter.variable} ${fraunces.variable} h-full antialiased`}>
+    <html lang="es" className={`${onest.variable} ${fraunces.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col" style={{ fontFamily: 'var(--font-body)' }}>
         {children}
       </body>

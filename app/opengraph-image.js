@@ -1,6 +1,8 @@
 // Open Graph image generada con edge runtime.
 // Se sirve automáticamente en /opengraph-image y se usa en metadata.openGraph.images.
 // La imagen es 1200x630 (recomendado por Facebook, Twitter, LinkedIn).
+//
+// Brand AgendaFlow: navy #17384A + gold #C8A263 sobre cream #FBFAF7.
 
 import { ImageResponse } from 'next/og'
 
@@ -8,6 +10,10 @@ export const runtime = 'edge'
 export const alt = 'AgendaFlow Beauty — Agenda con WhatsApp IA'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
+
+const NAVY = '#17384A'
+const GOLD = '#C8A263'
+const CREAM = '#FBFAF7'
 
 export default async function Image() {
   return new ImageResponse(
@@ -20,7 +26,7 @@ export default async function Image() {
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: '72px 80px',
-          background: 'linear-gradient(135deg, #FAF6F0 0%, #EDE5DB 100%)',
+          background: `linear-gradient(135deg, ${CREAM} 0%, #F1EEE8 100%)`,
           fontFamily: 'serif',
           position: 'relative',
         }}
@@ -33,34 +39,24 @@ export default async function Image() {
             right: 48,
             width: 80,
             height: 2,
-            background: '#B8824B',
+            background: GOLD,
           }}
         />
 
-        {/* Top: logo + brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 14,
-              background: 'linear-gradient(135deg, #B8824B, #8C5E35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 8px 24px rgba(184,130,75,0.3)',
-            }}
-          >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round">
-              <path d="M4.5 20 L12 4 L19.5 20" />
-              <path d="M7.8 13.8 C12 13 15 13.3 21 18.2" />
-            </svg>
-          </div>
+        {/* Top: isotipo AF + wordmark */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <svg width="68" height="68" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 12 82 L 28 18 L 44 82" fill="none" stroke={NAVY} strokeWidth="6.5" strokeLinecap="round" strokeLinejoin="round" />
+            <line x1="19.5" y1="60" x2="36.5" y2="60" stroke={NAVY} strokeWidth="5" strokeLinecap="round" />
+            <line x1="54" y1="18" x2="54" y2="82" stroke={NAVY} strokeWidth="6.5" strokeLinecap="round" />
+            <line x1="54" y1="18" x2="78" y2="18" stroke={NAVY} strokeWidth="5.5" strokeLinecap="round" />
+            <path d="M 54 46 L 70 46 C 82.5 46 90 40 92 31" fill="none" stroke={GOLD} strokeWidth="5" strokeLinecap="round" />
+          </svg>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: 32, color: '#2B1810', letterSpacing: '0.01em', lineHeight: 1 }}>
-              AgendaFlow
+            <span style={{ fontSize: 40, color: NAVY, letterSpacing: '-0.02em', lineHeight: 1, fontWeight: 600 }}>
+              Agenda<span style={{ color: GOLD }}>Flow</span>
             </span>
-            <span style={{ fontSize: 12, color: '#B8824B', letterSpacing: '0.3em', marginTop: 6, textTransform: 'uppercase', fontFamily: 'sans-serif' }}>
+            <span style={{ fontSize: 13, color: GOLD, letterSpacing: '0.3em', marginTop: 6, textTransform: 'uppercase', fontFamily: 'sans-serif', fontWeight: 500 }}>
               Beauty
             </span>
           </div>
@@ -70,19 +66,19 @@ export default async function Image() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           <div
             style={{
-              fontSize: 76,
+              fontSize: 80,
               lineHeight: 1.05,
-              color: '#2B1810',
+              color: NAVY,
               fontWeight: 300,
-              letterSpacing: '-0.02em',
+              letterSpacing: '-0.03em',
               display: 'flex',
               flexDirection: 'column',
             }}
           >
             <span>Tu agenda se llena</span>
-            <span style={{ fontStyle: 'italic', color: '#B8824B' }}>sola</span>
+            <span style={{ fontStyle: 'italic', color: GOLD }}>sola</span>
           </div>
-          <p style={{ fontSize: 28, color: '#6B5A4F', fontFamily: 'sans-serif', maxWidth: 800, lineHeight: 1.35 }}>
+          <p style={{ fontSize: 28, color: '#5C6B75', fontFamily: 'sans-serif', maxWidth: 880, lineHeight: 1.35 }}>
             Bot de WhatsApp con IA para salones, barberías, spas y nail studios.
           </p>
         </div>
@@ -97,8 +93,8 @@ export default async function Image() {
                   padding: '10px 18px',
                   borderRadius: 999,
                   background: 'white',
-                  border: '1px solid #EDE5DB',
-                  color: '#2B1810',
+                  border: `1px solid rgba(23,56,74,0.12)`,
+                  color: NAVY,
                   display: 'flex',
                   alignItems: 'center',
                 }}
@@ -111,8 +107,8 @@ export default async function Image() {
             style={{
               padding: '16px 32px',
               borderRadius: 999,
-              background: '#2B1810',
-              color: '#FAF6F0',
+              background: NAVY,
+              color: CREAM,
               fontSize: 22,
               fontFamily: 'sans-serif',
               fontWeight: 500,

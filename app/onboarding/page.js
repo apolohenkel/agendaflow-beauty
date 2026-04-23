@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { VERTICALS, VERTICAL_KEYS, DEFAULT_VERTICAL, getVertical, themeCssVars } from '@/lib/verticals'
 import { createClient } from '@/lib/supabase/client'
+import Logo from '@/components/Logo'
 
 const TIMEZONES = [
   { value: 'America/Mexico_City', label: 'México' },
@@ -125,13 +126,8 @@ export default function OnboardingPage() {
 
         {/* Header */}
         <div className="text-center space-y-3">
-          <div
-            className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center shadow-lg"
-            style={{ backgroundColor: 'var(--primary)', boxShadow: `0 10px 24px ${v.theme.primary}33` }}
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--on-primary)" strokeWidth="2.2" strokeLinecap="round">
-              <path d="M4.5 20 L12 4 L19.5 20" /><path d="M7.8 13.8 C12 13 15 13.3 21 18.2" />
-            </svg>
+          <div className="mx-auto flex items-center justify-center">
+            <Logo variant="isotipo" size={64} />
           </div>
           <div>
             <h1 className="text-4xl font-light" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>

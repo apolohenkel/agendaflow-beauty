@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="AgendaFlow favicon">
+  <title>AgendaFlow — Favicon</title>
+  <desc>Versión simplificada del ícono para pestañas de navegador y resoluciones bajas. Fondo navy redondeado, AF en blanco con punto dorado.</desc>
+  <rect x="0" y="0" width="32" height="32" rx="7" fill="#17384A"/>
+  <g transform="translate(5, 5)">
+    <path d="M 1 19 L 5.5 3 L 10 19" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="2.7" y1="13.5" x2="8.3" y2="13.5" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="13" y1="3" x2="13" y2="19" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>
+    <line x1="13" y1="3" x2="19" y2="3" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round"/>
+    <line x1="13" y1="10.5" x2="17.5" y2="10.5" stroke="#C8A263" stroke-width="1.9" stroke-linecap="round"/>
+  </g>
+</svg>

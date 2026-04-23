@@ -83,7 +83,7 @@ export default function LandingJsonLd() {
     name: 'AgendaFlow Beauty',
     legalName: 'Szofa',
     url: SITE_URL,
-    logo: `${SITE_URL}/favicon.ico`,
+    logo: `${SITE_URL}/brand/agendaflow-app-icon-1024.svg`,
     foundingLocation: {
       '@type': 'Place',
       address: {

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import Logo from '@/components/Logo'
 
 const RESEND_COOLDOWN = 60
 
@@ -69,24 +70,20 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-8">
 
         {/* Brand */}
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-14 h-14 bg-gradient-to-br from-[#B8824B] to-[#8C5E35] rounded-2xl flex items-center justify-center shadow-xl shadow-[#B8824B]/25">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">
-              <path d="M4.5 20 L12 4 L19.5 20" /><path d="M7.8 13.8 C12 13 15 13.3 21 18.2" />
-            </svg>
-          </div>
+        <div className="flex flex-col items-center gap-3">
+          <Logo variant="isotipo" size={64} />
           <div className="text-center">
-            <h1 className="text-[#2B1810] text-3xl font-light tracking-wide" style={{ fontFamily: 'var(--font-display)' }}>
-              AgendaFlow
+            <h1 className="text-[#17384A] text-3xl font-light tracking-tight" style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.5px' }}>
+              Agenda<span style={{ color: '#C8A263' }}>Flow</span>
             </h1>
-            <p className="text-[#B8824B] text-[10px] tracking-[0.3em] uppercase mt-1 font-medium">Beauty</p>
+            <p className="text-[#C8A263] text-[10px] tracking-[0.3em] uppercase mt-1 font-medium">Beauty</p>
           </div>
         </div>
 
         {/* Card */}
-        <div className="bg-white border border-[#EDE5DB] rounded-3xl p-8 space-y-5 shadow-xl shadow-[#2B1810]/5">
+        <div className="bg-white border border-[#EDE5DB] rounded-3xl p-8 space-y-5 shadow-xl shadow-[#17384A]/5">
           <div className="space-y-1 mb-2">
-            <h2 className="text-[#2B1810] text-xl font-medium">Bienvenida de vuelta</h2>
+            <h2 className="text-[#17384A] text-xl font-medium">Bienvenida de vuelta</h2>
             <p className="text-[#6B5A4F] text-sm">Entra al panel de tu salón</p>
           </div>
 
@@ -100,7 +97,7 @@ export default function LoginPage() {
                 placeholder="sofia@tusalon.com"
                 autoComplete="email"
                 required
-                className="w-full bg-[#FDFBF7] border border-[#EDE5DB] rounded-xl px-4 py-3 text-[#2B1810] text-sm placeholder-[#A89582] focus:outline-none focus:border-[#B8824B] focus:bg-white transition-all"
+                className="w-full bg-[#FDFBF7] border border-[#EDE5DB] rounded-xl px-4 py-3 text-[#17384A] text-sm placeholder-[#A89582] focus:outline-none focus:border-[#C8A263] focus:bg-white transition-all"
               />
             </div>
 
@@ -113,7 +110,7 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 autoComplete="current-password"
                 required
-                className="w-full bg-[#FDFBF7] border border-[#EDE5DB] rounded-xl px-4 py-3 text-[#2B1810] text-sm placeholder-[#A89582] focus:outline-none focus:border-[#B8824B] focus:bg-white transition-all"
+                className="w-full bg-[#FDFBF7] border border-[#EDE5DB] rounded-xl px-4 py-3 text-[#17384A] text-sm placeholder-[#A89582] focus:outline-none focus:border-[#C8A263] focus:bg-white transition-all"
               />
             </div>
 
@@ -138,7 +135,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={handleResend}
                     disabled={resending || cooldown > 0}
-                    className="w-full flex items-center justify-center gap-2 border border-[#B8824B]/40 hover:border-[#B8824B] text-[#B8824B] text-xs font-medium py-2.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full flex items-center justify-center gap-2 border border-[#C8A263]/40 hover:border-[#C8A263] text-[#C8A263] text-xs font-medium py-2.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {resending ? 'Reenviando…' : cooldown > 0 ? `Reenviar en ${cooldown}s` : 'Reenviar correo de verificación'}
                   </button>
@@ -149,7 +146,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-[#2B1810] hover:bg-[#3D241A] active:scale-[0.99] text-[#FAF6F0] text-sm font-medium py-3.5 rounded-full transition-all disabled:opacity-60 mt-2 shadow-lg shadow-[#2B1810]/15"
+              className="w-full flex items-center justify-center gap-2 bg-[#17384A] hover:bg-[#1F4A60] active:scale-[0.99] text-[#FAF6F0] text-sm font-medium py-3.5 rounded-full transition-all disabled:opacity-60 mt-2 shadow-lg shadow-[#17384A]/15"
             >
               {loading ? (
                 <>
@@ -160,7 +157,7 @@ export default function LoginPage() {
             </button>
 
             <p className="text-center -mt-1">
-              <Link href="/forgot-password" className="text-[#6B5A4F] hover:text-[#B8824B] text-xs transition-colors">
+              <Link href="/forgot-password" className="text-[#6B5A4F] hover:text-[#C8A263] text-xs transition-colors">
                 ¿Olvidaste tu contraseña?
               </Link>
             </p>
@@ -168,7 +165,7 @@ export default function LoginPage() {
 
           <p className="text-center text-[#6B5A4F] text-sm pt-4 border-t border-[#EDE5DB]">
             ¿Aún no tienes cuenta?{' '}
-            <Link href="/signup" className="text-[#B8824B] hover:text-[#8C5E35] font-semibold transition-colors">
+            <Link href="/signup" className="text-[#C8A263] hover:text-[#A88548] font-semibold transition-colors">
               Empieza gratis
             </Link>
           </p>

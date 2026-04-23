@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useOrg } from '@/lib/org-context'
 import NotificationBell from '@/components/dashboard/NotificationBell'
+import Logo from '@/components/Logo'
 
 // Barra superior sólo visible en mobile (< md).
 // Contiene: logo + nombre + notificaciones + logout.
@@ -25,23 +26,16 @@ export default function MobileTopBar() {
   return (
     <header className="md:hidden sticky top-0 z-30 bg-[var(--dash-ink-raised)]/95 backdrop-blur-sm border-b border-[var(--dash-border)]">
       <div className="flex items-center justify-between px-4 py-3 gap-3">
-        <Link href="/dashboard" className="flex items-center gap-2 min-w-0">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-            style={{
-              background: 'linear-gradient(135deg, var(--dash-primary), var(--dash-primary-deep))',
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--dash-ink)" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M4.5 20 L12 4 L19.5 20" /><path d="M7.8 13.8 C12 13 15 13.3 21 18.2" />
-            </svg>
+        <Link href="/dashboard" className="flex items-center gap-2 min-w-0" aria-label="AgendaFlow — ir al panel">
+          <div className="shrink-0">
+            <Logo variant="isotipo-reversa" size={32} ariaLabel="AgendaFlow" />
           </div>
           <div className="min-w-0">
             <p
               className="text-[var(--dash-text)] text-sm font-medium tracking-tight leading-none truncate"
-              style={{ fontFamily: 'var(--font-display)' }}
+              style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.5px' }}
             >
-              AgendaFlow
+              Agenda<span style={{ color: '#C8A263' }}>Flow</span>
             </p>
             <p className="text-[var(--dash-text-muted)] text-[9px] uppercase tracking-[0.2em] mt-0.5 truncate">
               {bizName}

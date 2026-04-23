@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { PLANS, PUBLIC_PLANS, formatPlanPrice, CURRENCY_LOCALES } from '@/lib/plans'
 import { VERTICALS, VERTICAL_KEYS, DEFAULT_VERTICAL, getVertical, themeCssVars } from '@/lib/verticals'
 import LandingJsonLd from '@/components/LandingJsonLd'
+import Logo from '@/components/Logo'
 
 function PainCard({ emoji, title, body }) {
   return (
@@ -214,17 +215,14 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="px-4 sm:px-6 py-4 sm:py-5">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-            <div
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 shadow-md"
-              style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.primaryHover})`, boxShadow: `0 4px 14px ${theme.primary}33` }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">
-                <path d="M4.5 20 L12 4 L19.5 20" /><path d="M7.8 13.8 C12 13 15 13.3 21 18.2" />
-              </svg>
+          <Link href="/" className="flex items-center gap-2 sm:gap-2.5 min-w-0" aria-label="AgendaFlow — inicio">
+            <div className="shrink-0">
+              <Logo variant="isotipo" size={36} ariaLabel="AgendaFlow" />
             </div>
-            <span className="text-base sm:text-lg tracking-wide" style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}>AgendaFlow</span>
-          </div>
+            <span className="text-base sm:text-lg tracking-tight" style={{ fontFamily: 'var(--font-display)', color: '#17384A', letterSpacing: '-0.5px' }}>
+              Agenda<span style={{ color: '#C8A263' }}>Flow</span>
+            </span>
+          </Link>
           <div className="flex items-center gap-1 sm:gap-4 shrink-0">
             <Link href="/login" className="text-sm transition-colors px-3 py-2 hover:opacity-80" style={{ color: 'var(--text-soft)' }}>Entrar</Link>
             <Link
@@ -518,14 +516,7 @@ export default function LandingPage() {
       <footer className="px-5 sm:px-6 py-10" style={{ backgroundColor: theme.borderSoft, borderTop: '1px solid var(--border)' }}>
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.primaryHover})` }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M4.5 20 L12 4 L19.5 20" /><path d="M7.8 13.8 C12 13 15 13.3 21 18.2" />
-              </svg>
-            </div>
+            <Logo variant="isotipo" size={28} ariaLabel="AgendaFlow" />
             <p className="text-sm" style={{ color: 'var(--text-soft)' }}>© 2026 AgendaFlow Beauty</p>
           </div>
           <div className="flex items-center gap-6 text-sm" style={{ color: 'var(--text-soft)' }}>

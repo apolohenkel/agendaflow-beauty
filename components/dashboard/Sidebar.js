@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useOrg } from '@/lib/org-context'
 import NotificationBell from '@/components/dashboard/NotificationBell'
 import Hairline from '@/components/ui/Hairline'
+import Logo from '@/components/Logo'
 
 // Grupos semánticos — cada grupo tiene un eyebrow small.
 const navGroups = [
@@ -174,26 +175,18 @@ export default function Sidebar() {
         }}
       />
 
-      {/* Logo */}
+      {/* Logo AF — isotipo reversa (AF blanco + swash dorado sobre sidebar navy) */}
       <div className="px-5 pt-7 pb-5">
-        <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105"
-            style={{
-              background: 'linear-gradient(135deg, var(--dash-primary), var(--dash-primary-deep))',
-              boxShadow: '0 4px 14px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.04) inset',
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dash-ink)" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M4.5 20 L12 4 L19.5 20" /><path d="M7.8 13.8 C12 13 15 13.3 21 18.2" />
-            </svg>
+        <Link href="/dashboard" className="flex items-center gap-3 group" aria-label="AgendaFlow — ir al panel">
+          <div className="transition-transform duration-200 group-hover:scale-105 shrink-0">
+            <Logo variant="isotipo-reversa" size={36} ariaLabel="AgendaFlow" />
           </div>
           <div>
             <p
               className="text-[var(--dash-text)] text-[15px] font-medium tracking-tight leading-none"
-              style={{ fontFamily: 'var(--font-display)' }}
+              style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.5px' }}
             >
-              AgendaFlow
+              Agenda<span style={{ color: '#C8A263' }}>Flow</span>
             </p>
             <p className="text-[var(--dash-text-muted)] text-[9px] tracking-[0.24em] uppercase mt-1.5">
               Beauty

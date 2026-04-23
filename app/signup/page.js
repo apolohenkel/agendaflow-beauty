@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '../../lib/supabase/client'
+import Logo from '@/components/Logo'
 
 const RESEND_COOLDOWN = 60 // segundos
 
@@ -78,32 +79,28 @@ export default function SignupPage() {
     <div className="min-h-screen bg-[#FAF6F0] flex items-center justify-center p-5" style={{ fontFamily: 'var(--font-body)' }}>
       <div className="w-full max-w-sm space-y-8">
 
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-14 h-14 bg-gradient-to-br from-[#B8824B] to-[#8C5E35] rounded-2xl flex items-center justify-center shadow-xl shadow-[#B8824B]/25">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">
-              <path d="M4.5 20 L12 4 L19.5 20" /><path d="M7.8 13.8 C12 13 15 13.3 21 18.2" />
-            </svg>
-          </div>
+        <div className="flex flex-col items-center gap-3">
+          <Logo variant="isotipo" size={64} />
           <div className="text-center">
-            <h1 className="text-[#2B1810] text-3xl font-light tracking-wide" style={{ fontFamily: 'var(--font-display)' }}>
-              AgendaFlow
+            <h1 className="text-[#17384A] text-3xl font-light tracking-tight" style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.5px' }}>
+              Agenda<span style={{ color: '#C8A263' }}>Flow</span>
             </h1>
-            <p className="text-[#B8824B] text-[10px] tracking-[0.3em] uppercase mt-1 font-medium">Beauty</p>
+            <p className="text-[#C8A263] text-[10px] tracking-[0.3em] uppercase mt-1 font-medium">Beauty</p>
           </div>
         </div>
 
-        <div className="bg-white border border-[#EDE5DB] rounded-3xl p-8 space-y-5 shadow-xl shadow-[#2B1810]/5">
+        <div className="bg-white border border-[#EDE5DB] rounded-3xl p-8 space-y-5 shadow-xl shadow-[#17384A]/5">
           {sent ? (
             <div className="space-y-4 text-center">
               <div className="w-12 h-12 mx-auto rounded-full bg-[#E8C5B8]/40 flex items-center justify-center">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B8824B" strokeWidth="2" strokeLinecap="round">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C8A263" strokeWidth="2" strokeLinecap="round">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                   <polyline points="22,6 12,13 2,6" />
                 </svg>
               </div>
-              <h2 className="text-[#2B1810] text-xl font-medium" style={{ fontFamily: 'var(--font-display)' }}>Revisa tu correo</h2>
+              <h2 className="text-[#17384A] text-xl font-medium" style={{ fontFamily: 'var(--font-display)' }}>Revisa tu correo</h2>
               <p className="text-[#6B5A4F] text-sm leading-relaxed">
-                Te enviamos un enlace a <span className="text-[#B8824B] font-medium">{email}</span>. Ábrelo para activar tu cuenta.
+                Te enviamos un enlace a <span className="text-[#C8A263] font-medium">{email}</span>. Ábrelo para activar tu cuenta.
               </p>
               <p className="text-[#A89582] text-xs">
                 ¿No llegó? Revisa la carpeta de spam.
@@ -119,11 +116,11 @@ export default function SignupPage() {
                   <button
                     onClick={handleResend}
                     disabled={resending || cooldown > 0}
-                    className="w-full flex items-center justify-center gap-2 border border-[#EDE5DB] hover:border-[#D4C4B5] text-[#6B5A4F] hover:text-[#2B1810] text-sm font-medium py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full flex items-center justify-center gap-2 border border-[#EDE5DB] hover:border-[#D4C4B5] text-[#6B5A4F] hover:text-[#17384A] text-sm font-medium py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {resending ? (
                       <>
-                        <span className="w-3.5 h-3.5 border border-[#B8824B]/30 border-t-[#B8824B] rounded-full animate-spin" />
+                        <span className="w-3.5 h-3.5 border border-[#C8A263]/30 border-t-[#C8A263] rounded-full animate-spin" />
                         Reenviando…
                       </>
                     ) : cooldown > 0 ? (
@@ -148,7 +145,7 @@ export default function SignupPage() {
           ) : (
             <>
               <div className="space-y-1 mb-2">
-                <h2 className="text-[#2B1810] text-xl font-medium">Crea tu cuenta</h2>
+                <h2 className="text-[#17384A] text-xl font-medium">Crea tu cuenta</h2>
                 <p className="text-[#6B5A4F] text-sm">14 días gratis · Sin tarjeta · Cancela cuando quieras</p>
               </div>
 
@@ -162,7 +159,7 @@ export default function SignupPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="sofia@tusalon.com"
                     autoComplete="email"
-                    className="w-full bg-[#FDFBF7] border border-[#EDE5DB] rounded-xl px-4 py-3 text-[#2B1810] text-sm placeholder-[#A89582] focus:outline-none focus:border-[#B8824B] focus:bg-white transition-all"
+                    className="w-full bg-[#FDFBF7] border border-[#EDE5DB] rounded-xl px-4 py-3 text-[#17384A] text-sm placeholder-[#A89582] focus:outline-none focus:border-[#C8A263] focus:bg-white transition-all"
                   />
                 </div>
 
@@ -176,7 +173,7 @@ export default function SignupPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Mínimo 8 caracteres"
                     autoComplete="new-password"
-                    className="w-full bg-[#FDFBF7] border border-[#EDE5DB] rounded-xl px-4 py-3 text-[#2B1810] text-sm placeholder-[#A89582] focus:outline-none focus:border-[#B8824B] focus:bg-white transition-all"
+                    className="w-full bg-[#FDFBF7] border border-[#EDE5DB] rounded-xl px-4 py-3 text-[#17384A] text-sm placeholder-[#A89582] focus:outline-none focus:border-[#C8A263] focus:bg-white transition-all"
                   />
                 </div>
 
@@ -192,7 +189,7 @@ export default function SignupPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 bg-[#2B1810] hover:bg-[#3D241A] active:scale-[0.99] text-[#FAF6F0] text-sm font-medium py-3.5 rounded-full transition-all disabled:opacity-60 mt-2 shadow-lg shadow-[#2B1810]/15"
+                  className="w-full flex items-center justify-center gap-2 bg-[#17384A] hover:bg-[#1F4A60] active:scale-[0.99] text-[#FAF6F0] text-sm font-medium py-3.5 rounded-full transition-all disabled:opacity-60 mt-2 shadow-lg shadow-[#17384A]/15"
                 >
                   {loading ? (
                     <>
@@ -205,7 +202,7 @@ export default function SignupPage() {
 
               <p className="text-center text-[#6B5A4F] text-sm pt-4 border-t border-[#EDE5DB]">
                 ¿Ya tienes cuenta?{' '}
-                <Link href="/login" className="text-[#B8824B] hover:text-[#8C5E35] font-semibold transition-colors">
+                <Link href="/login" className="text-[#C8A263] hover:text-[#A88548] font-semibold transition-colors">
                   Inicia sesión
                 </Link>
               </p>

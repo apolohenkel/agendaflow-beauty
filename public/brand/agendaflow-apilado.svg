@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 240 240" role="img" aria-label="AgendaFlow — logo apilado">
+  <title>AgendaFlow — Logo apilado</title>
+  <desc>Logo en disposición vertical: isotipo centrado arriba, wordmark debajo. Ideal para tarjetas, formatos cuadrados y redes sociales.</desc>
+  <defs>
+    <style><![CDATA[
+      @import url('https://fonts.googleapis.com/css2?family=Onest:wght@500;600&display=swap');
+      .wm { font-family: 'Onest', -apple-system, 'Segoe UI', 'Helvetica Neue', system-ui, sans-serif; font-weight: 600; font-size: 36px; letter-spacing: -1.2px; text-anchor: middle; }
+    ]]></style>
+  </defs>
+  <g transform="translate(70, 20) scale(1)">
+    <path d="M 12 82 L 28 18 L 44 82" fill="none" stroke="#17384A" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="19.5" y1="60" x2="36.5" y2="60" stroke="#17384A" stroke-width="5" stroke-linecap="round"/>
+    <line x1="54" y1="18" x2="54" y2="82" stroke="#17384A" stroke-width="6.5" stroke-linecap="round"/>
+    <line x1="54" y1="18" x2="78" y2="18" stroke="#17384A" stroke-width="5.5" stroke-linecap="round"/>
+    <path d="M 54 46 L 70 46 C 82.5 46 90 40 92 31" fill="none" stroke="#C8A263" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <text x="120" y="180" class="wm" fill="#17384A">Agenda<tspan fill="#C8A263">Flow</tspan></text>
+</svg>
