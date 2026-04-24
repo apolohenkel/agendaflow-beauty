@@ -454,6 +454,7 @@ const INACTIVITY_DAYS = 60
 
 export default function ClientesPage() {
   const supabase = createClient()
+  const { businessId } = useOrg()
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -463,13 +464,52 @@ export default function ClientesPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('clients')
-      .select('id, name, phone, email, notes, created_at, last_visit, birthday, tags')
-      .order('name')
-    setClients(data || [])
+    // Cargamos clientes + agregamos por separado las appointments completadas
+    // y calculamos last_visit + visits_count cliente-lado (la columna
+    // clients.last_visit no siempre se mantiene al día, y así evitamos
+    // depender de triggers en DB).
+    const [clientsRes, apptsRes] = await Promise.all([
+      supabase
+        .from('clients')
+        .select('id, name, phone, email, notes, created_at, last_visit, birthday, tags')
+        .order('name'),
+      businessId
+        ? supabase
+            .from('appointments')
+            .select('client_id, starts_at')
+            .eq('business_id', businessId)
+            .eq('status', 'completed')
+        : Promise.resolve({ data: [] }),
+    ])
+
+    // Indexar appointments por client_id → { last_visit, visits_count }
+    const byClient = new Map()
+    for (const a of apptsRes.data || []) {
+      const prev = byClient.get(a.client_id)
+      if (!prev) {
+        byClient.set(a.client_id, { last_visit: a.starts_at, visits_count: 1 })
+      } else {
+        byClient.set(a.client_id, {
+          last_visit: new Date(a.starts_at) > new Date(prev.last_visit) ? a.starts_at : prev.last_visit,
+          visits_count: prev.visits_count + 1,
+        })
+      }
+    }
+
+    // Mezclar: si la DB tiene last_visit lo usamos como fallback, pero
+    // calculado desde appointments gana (es la fuente de verdad).
+    const enriched = (clientsRes.data || []).map((c) => {
+      const agg = byClient.get(c.id)
+      return {
+        ...c,
+        last_visit: agg?.last_visit ?? c.last_visit,
+        visits_count: agg?.visits_count ?? 0,
+      }
+    })
+
+    setClients(enriched)
     setLoading(false)
-  }, [])
+  }, [businessId])
 
   useEffect(() => { load() }, [load])
 
@@ -604,66 +644,73 @@ export default function ClientesPage() {
               const birthday = isBirthdayToday(c.birthday)
               const wa = activeFilter === 'inactive' ? waLink(c.phone) : null
               return (
+                // Row entero clickeable — antes solo el <button> interno (avatar+info)
+                // era tappable, así que en mobile si tocabas "Sin visitas" o el
+                // chevron a la derecha no abría el detalle.
                 <div
                   key={c.id}
-                  className="flex items-center gap-4 px-6 py-4 hover:bg-[var(--dash-ink)]/60 transition-colors group"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelected(c)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(c) }
+                  }}
+                  className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 hover:bg-[var(--dash-ink)]/60 active:bg-[var(--dash-ink)]/80 transition-colors group cursor-pointer"
                 >
-                  <button onClick={() => setSelected(c)} className="flex items-center gap-4 flex-1 min-w-0 text-left">
-                    {/* Avatar */}
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border"
-                      style={{
-                        background: 'var(--dash-primary-bg-8)',
-                        borderColor: 'var(--dash-border-hover)',
-                      }}>
-                      <span className="text-[var(--dash-primary)] text-sm font-medium" style={{ fontFamily: 'var(--font-display)' }}>
-                        {c.name ? c.name[0].toUpperCase() : '?'}
-                      </span>
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-[var(--dash-text)] text-sm font-medium truncate">{c.name || '—'}</p>
-                        {birthday && (
-                          <span className="text-xs select-none" title="Cumpleaños hoy" aria-label="Cumpleaños">✦</span>
-                        )}
-                        {Array.isArray(c.tags) && c.tags.slice(0, 2).map((t) => (
-                          <span key={t} className="text-[9px] text-[var(--dash-primary-soft)] bg-[var(--dash-primary-bg-8)] border border-[var(--dash-primary)]/20 px-1.5 py-0.5 rounded-full uppercase tracking-[0.1em]">
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-[var(--dash-text-muted)] text-xs mt-0.5 truncate">{c.phone || 'Sin teléfono'}</p>
-                    </div>
-                  </button>
-
-                  {/* Última visita */}
-                  <div className="text-right shrink-0">
-                    {c.last_visit ? (
-                      <>
-                        <p className={`text-xs ${isInactive ? 'text-[var(--dash-warn)]' : 'text-[var(--dash-text-soft)]'}`}>
-                          {daysAgo === 0 ? 'Hoy' : daysAgo === 1 ? 'Ayer' : `hace ${daysAgo}d`}
-                        </p>
-                        <p className="text-[var(--dash-text-dim)] text-[10px] mt-0.5">última visita</p>
-                      </>
-                    ) : (
-                      <p className="text-[var(--dash-text-dim)] text-xs">Sin visitas</p>
-                    )}
+                  {/* Avatar */}
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border"
+                    style={{
+                      background: 'var(--dash-primary-bg-8)',
+                      borderColor: 'var(--dash-border-hover)',
+                    }}>
+                    <span className="text-[var(--dash-primary)] text-sm font-medium" style={{ fontFamily: 'var(--font-display)' }}>
+                      {c.name ? c.name[0].toUpperCase() : '?'}
+                    </span>
                   </div>
 
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="text-[var(--dash-text)] text-sm font-medium truncate">{c.name || '—'}</p>
+                      {birthday && (
+                        <span className="text-xs select-none" title="Cumpleaños hoy" aria-label="Cumpleaños">✦</span>
+                      )}
+                      {Array.isArray(c.tags) && c.tags.slice(0, 2).map((t) => (
+                        <span key={t} className="text-[9px] text-[var(--dash-primary-soft)] bg-[var(--dash-primary-bg-8)] border border-[var(--dash-primary)]/20 px-1.5 py-0.5 rounded-full uppercase tracking-[0.1em]">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5 text-xs">
+                      <p className="text-[var(--dash-text-muted)] truncate">{c.phone || 'Sin teléfono'}</p>
+                      {c.last_visit && (
+                        <>
+                          <span className="text-[var(--dash-text-dim)] shrink-0">·</span>
+                          <p className={`shrink-0 ${isInactive ? 'text-[var(--dash-warn)]' : 'text-[var(--dash-text-muted)]'}`}>
+                            {c.visits_count > 0 && `${c.visits_count} ${c.visits_count === 1 ? 'visita' : 'visitas'} · `}
+                            {daysAgo === 0 ? 'hoy' : daysAgo === 1 ? 'ayer' : `hace ${daysAgo}d`}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Acción WhatsApp (opcional, cuando filtro inactivas) — usa
+                      stopPropagation para no abrir el drawer al tocar */}
                   {wa ? (
                     <a
                       href={wa}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       className="shrink-0 inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full bg-[#3DBA6E]/10 text-[#3DBA6E] border border-[#3DBA6E]/30 hover:bg-[#3DBA6E]/20 transition-all"
-                      title="Enviar WhatsApp"
+                      aria-label="Enviar WhatsApp"
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
                       Saludar
                     </a>
                   ) : (
-                    <svg className="text-[var(--dash-text-dim)] group-hover:text-[var(--dash-text-dim)] transition-colors shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <svg className="text-[var(--dash-text-dim)] transition-colors shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
                   )}
