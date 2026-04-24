@@ -487,65 +487,69 @@ export default function PersonalPage() {
           {staff.map((m) => (
             <div
               key={m.id}
-              className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl px-6 py-5 flex items-start gap-5 hover:border-[var(--dash-border-hover)] transition-all group card-sweep"
+              className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl px-4 py-4 sm:px-6 sm:py-5 hover:border-[var(--dash-border-hover)] transition-all group card-sweep"
             >
-              <Avatar name={m.name} photoUrl={m.photo_url} />
+              <div className="flex items-start gap-3 sm:gap-5">
+                <Avatar name={m.name} photoUrl={m.photo_url} />
 
-              <div className="flex-1 min-w-0 space-y-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-[var(--dash-text)] text-sm font-medium truncate">{m.name}</p>
-                  {m.role && (
-                    <span className="text-[var(--dash-text-soft)] text-[9px] uppercase tracking-[0.1em] border border-[var(--dash-border)] px-2 py-0.5 rounded-full shrink-0">
-                      {m.role}
-                    </span>
-                  )}
-                  {!m.active && (
-                    <span className="text-[var(--dash-text-muted)] text-[9px] uppercase tracking-[0.1em] bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] px-2 py-0.5 rounded-full shrink-0">
-                      Pausado
-                    </span>
-                  )}
-                </div>
-                {m.bio && (
-                  <p className="text-[var(--dash-text-muted)] text-xs leading-relaxed line-clamp-2">{m.bio}</p>
-                )}
-                {Array.isArray(m.specialties) && m.specialties.length > 0 && (
-                  <div className="flex gap-1 flex-wrap">
-                    {m.specialties.slice(0, 6).map((t) => (
-                      <span key={t} className="text-[9px] uppercase tracking-[0.1em] text-[var(--dash-primary-soft)] bg-[var(--dash-primary-bg-8)] border border-[var(--dash-primary)]/20 px-2 py-0.5 rounded-full">
-                        {t}
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-[var(--dash-text)] text-sm font-medium truncate">{m.name}</p>
+                    {m.role && (
+                      <span className="text-[var(--dash-text-soft)] text-[9px] uppercase tracking-[0.1em] border border-[var(--dash-border)] px-2 py-0.5 rounded-full shrink-0">
+                        {m.role}
                       </span>
-                    ))}
+                    )}
+                    {!m.active && (
+                      <span className="text-[var(--dash-text-muted)] text-[9px] uppercase tracking-[0.1em] bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] px-2 py-0.5 rounded-full shrink-0">
+                        Pausado
+                      </span>
+                    )}
                   </div>
-                )}
-                {m.phone && (
-                  <p className="text-[var(--dash-text-muted)] text-xs">{m.phone}</p>
-                )}
-                <HorarioChips schedule={m.schedule_config} />
+                  {m.bio && (
+                    <p className="text-[var(--dash-text-muted)] text-xs leading-relaxed line-clamp-2">{m.bio}</p>
+                  )}
+                  {Array.isArray(m.specialties) && m.specialties.length > 0 && (
+                    <div className="flex gap-1 flex-wrap">
+                      {m.specialties.slice(0, 6).map((t) => (
+                        <span key={t} className="text-[9px] uppercase tracking-[0.1em] text-[var(--dash-primary-soft)] bg-[var(--dash-primary-bg-8)] border border-[var(--dash-primary)]/20 px-2 py-0.5 rounded-full">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {m.phone && (
+                    <p className="text-[var(--dash-text-muted)] text-xs">{m.phone}</p>
+                  )}
+                  <HorarioChips schedule={m.schedule_config} />
+                </div>
               </div>
 
-              {/* Acciones */}
-              <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-1">
+              {/* Footer acciones — SIEMPRE visible */}
+              <div className="flex items-center justify-end gap-1 mt-3 pt-3 border-t border-[var(--dash-border)]/60">
                 <button
                   onClick={() => openEdit(m)}
-                  className="p-2 text-[var(--dash-text-dim)] hover:text-[var(--dash-primary)] hover:bg-[var(--dash-primary)]/10 rounded-lg transition-all"
-                  title="Editar"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[var(--dash-text-muted)] hover:text-[var(--dash-primary)] hover:bg-[var(--dash-primary)]/10 rounded-lg transition-all"
+                  aria-label="Editar colaborador"
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
+                  Editar
                 </button>
                 <button
                   onClick={() => setDeleteConfirm(m)}
-                  className="p-2 text-[var(--dash-text-dim)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                  title="Eliminar"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[var(--dash-text-muted)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                  aria-label="Eliminar colaborador"
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                     <polyline points="3 6 5 6 21 6" />
                     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                     <path d="M10 11v6M14 11v6" />
                     <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
                   </svg>
+                  Eliminar
                 </button>
               </div>
             </div>

@@ -290,9 +290,9 @@ export default function ServiciosPage() {
   return (
     <div className="min-h-screen p-4 sm:p-6 md:p-10 space-y-5 md:space-y-8 animate-fade-up">
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
+      {/* Header — stack en mobile para que título y botón no se traslapen */}
+      <div className="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap">
+        <div className="space-y-1.5 sm:space-y-2 min-w-0">
           <p className="text-[var(--dash-text-muted)] text-[10px] uppercase tracking-[0.24em]">
             Tu oferta
           </p>
@@ -302,7 +302,7 @@ export default function ServiciosPage() {
           >
             Servicios
             {!loading && services.length > 0 && (
-              <span className="text-[var(--dash-primary)] text-2xl ml-3" style={{ fontStyle: 'italic' }}>
+              <span className="text-[var(--dash-primary)] text-xl sm:text-2xl ml-2 sm:ml-3" style={{ fontStyle: 'italic' }}>
                 {services.length}
               </span>
             )}
@@ -315,7 +315,8 @@ export default function ServiciosPage() {
         </div>
         <button
           onClick={openNew}
-          className="flex items-center gap-2 text-sm font-semibold px-5 py-3 rounded-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+          aria-label="Nuevo servicio"
+          className="flex items-center gap-2 text-sm font-semibold px-3 sm:px-5 py-2.5 sm:py-3 rounded-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shrink-0"
           style={{
             background: 'linear-gradient(135deg, var(--dash-primary), var(--dash-primary-deep))',
             color: 'var(--dash-ink)',
@@ -325,7 +326,8 @@ export default function ServiciosPage() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Nuevo servicio
+          <span className="hidden sm:inline">Nuevo servicio</span>
+          <span className="sm:hidden">Nuevo</span>
         </button>
       </div>
 
@@ -379,81 +381,86 @@ export default function ServiciosPage() {
           {filtered.map((s) => (
             <div
               key={s.id}
-              className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl px-6 py-5 flex items-center gap-5 hover:border-[var(--dash-border-hover)] transition-all group card-sweep"
+              className="bg-[var(--dash-ink-raised)] border border-[var(--dash-border)] rounded-2xl px-4 py-4 sm:px-6 sm:py-5 hover:border-[var(--dash-border-hover)] transition-all group card-sweep"
             >
-              {/* Ícono / categoría */}
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: 'var(--dash-primary-bg-8)', border: '1px solid var(--dash-border-hover)' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--dash-primary)" strokeWidth="1.5" strokeLinecap="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
-              </div>
+              {/* Fila principal: ícono + info + duración/precio + acciones */}
+              <div className="flex items-start gap-3 sm:gap-5">
+                {/* Ícono */}
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--dash-primary-bg-8)', border: '1px solid var(--dash-border-hover)' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--dash-primary)" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                </div>
 
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
+                {/* Info — flex-1 con chips debajo si no caben */}
+                <div className="flex-1 min-w-0">
                   <p className="text-[var(--dash-text)] text-sm font-medium truncate">{s.name}</p>
-                  {s.category && (
-                    <span className="text-[var(--dash-text-soft)] text-[9px] uppercase tracking-[0.1em] border border-[var(--dash-border)] px-2 py-0.5 rounded-full shrink-0">
-                      {s.category}
-                    </span>
+                  {s.description && (
+                    <p className="text-[var(--dash-text-muted)] text-xs mt-0.5 truncate">{s.description}</p>
                   )}
-                  {depositEnabled && s.deposit_amount > 0 && (
-                    <span className="text-[9px] uppercase tracking-[0.1em] text-[var(--dash-primary-soft)] bg-[var(--dash-primary-bg-8)] border border-[var(--dash-primary)]/30 px-2 py-0.5 rounded-full shrink-0">
-                      Seña {(s.deposit_amount / 100).toFixed(2)} {depositCurrency.toUpperCase()}
-                    </span>
-                  )}
-                  {!s.active && (
-                    <span className="text-[var(--dash-text-muted)] text-[10px] bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] px-2 py-0.5 rounded-full shrink-0">
-                      Inactivo
-                    </span>
+                  {/* Meta: categoría/seña/inactivo — pueden wrappear */}
+                  {(s.category || (depositEnabled && s.deposit_amount > 0) || !s.active) && (
+                    <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                      {s.category && (
+                        <span className="text-[var(--dash-text-soft)] text-[9px] uppercase tracking-[0.1em] border border-[var(--dash-border)] px-2 py-0.5 rounded-full">
+                          {s.category}
+                        </span>
+                      )}
+                      {depositEnabled && s.deposit_amount > 0 && (
+                        <span className="text-[9px] uppercase tracking-[0.1em] text-[var(--dash-primary-soft)] bg-[var(--dash-primary-bg-8)] border border-[var(--dash-primary)]/30 px-2 py-0.5 rounded-full">
+                          Seña {(s.deposit_amount / 100).toFixed(2)} {depositCurrency.toUpperCase()}
+                        </span>
+                      )}
+                      {!s.active && (
+                        <span className="text-[var(--dash-text-muted)] text-[10px] bg-[var(--dash-ink-sunken)] border border-[var(--dash-border)] px-2 py-0.5 rounded-full">
+                          Inactivo
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
-                {s.description && (
-                  <p className="text-[var(--dash-text-muted)] text-xs mt-0.5 truncate">{s.description}</p>
-                )}
+
+                {/* Precio — visible siempre a la derecha */}
+                <div className="text-right shrink-0">
+                  {s.price != null ? (
+                    <p className="text-[var(--dash-primary)] text-sm sm:text-base font-medium tabular-nums">
+                      {formatServicePrice(s.price, business?.currency)}
+                    </p>
+                  ) : (
+                    <p className="text-[var(--dash-border)] text-sm">—</p>
+                  )}
+                  <p className="text-[var(--dash-text-muted)] text-[10px] tabular-nums mt-0.5">
+                    {fmtDuration(s.duration_minutes)}
+                  </p>
+                </div>
               </div>
 
-              {/* Duración */}
-              <div className="text-center shrink-0">
-                <p className="text-[var(--dash-text-muted)] text-xs tabular-nums">{fmtDuration(s.duration_minutes)}</p>
-                <p className="text-[var(--dash-text-dim)] text-[10px] mt-0.5">duración</p>
-              </div>
-
-              {/* Precio */}
-              <div className="text-right shrink-0 w-20">
-                {s.price != null ? (
-                  <>
-                    <p className="text-[var(--dash-primary)] text-base font-medium tabular-nums">{formatServicePrice(s.price, business?.currency)}</p>
-                  </>
-                ) : (
-                  <p className="text-[var(--dash-border)] text-sm">—</p>
-                )}
-              </div>
-
-              {/* Acciones */}
-              <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* Footer con acciones — SIEMPRE visible, con Hairline arriba */}
+              <div className="flex items-center justify-end gap-1 mt-3 pt-3 border-t border-[var(--dash-border)]/60">
                 <button
                   onClick={() => openEdit(s)}
-                  className="p-2 text-[var(--dash-text-dim)] hover:text-[var(--dash-primary)] hover:bg-[var(--dash-primary)]/10 rounded-lg transition-all"
-                  title="Editar"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[var(--dash-text-muted)] hover:text-[var(--dash-primary)] hover:bg-[var(--dash-primary)]/10 rounded-lg transition-all"
+                  aria-label="Editar servicio"
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
+                  Editar
                 </button>
                 <button
                   onClick={() => setDeleteConfirm(s)}
-                  className="p-2 text-[var(--dash-text-dim)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                  title="Eliminar"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[var(--dash-text-muted)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                  aria-label="Eliminar servicio"
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                     <polyline points="3 6 5 6 21 6" />
                     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                     <path d="M10 11v6M14 11v6" />
                     <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
                   </svg>
+                  Eliminar
                 </button>
               </div>
             </div>
